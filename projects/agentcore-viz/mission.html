@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Mission Control</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0e1a;--panel:#0d1525;--border:#1a2744;--accent:#00d4ff;
+  --green:#00ff88;--yellow:#ffd600;--orange:#ff8c00;--red:#ff3355;
+  --blue:#4488ff;--text:#c8d6e5;--dim:#556688;
+}
+@font-face{font-family:'M';src:local('Courier New'),local('monospace')}
+body{font-family:'M',monospace;background:var(--bg);color:var(--text);overflow-x:hidden;min-height:100vh}
+
+/* Stars background */
+.stars{position:fixed;top:0;left:0;width:100%;height:100%;z-index:0;overflow:hidden}
+.star{position:absolute;background:#fff;border-radius:50%}
+
+/* Layout */
+.app{position:relative;z-index:1;display:grid;grid-template-columns:280px 1fr 300px;grid-template-rows:60px 1fr 140px;height:100vh;gap:2px}
+.header{grid-column:1/-1;background:var(--panel);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 20px}
+.header h1{font-size:16px;color:var(--accent);letter-spacing:2px}
+.header .status{font-size:12px;color:var(--dim)}
+.header .clock{font-size:14px;color:var(--green);font-variant-numeric:tabular-nums}
+
+.left-panel{background:var(--panel);border-right:1px solid var(--border);padding:12px;overflow-y:auto}
+.center{position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.right-panel{background:var(--panel);border-left:1px solid var(--border);padding:12px;overflow-y:auto}
+.bottom{grid-column:1/-1;background:var(--panel);border-top:1px solid var(--border);padding:10px 20px;display:flex;gap:30px;align-items:center;overflow-x:auto}
+
+/* Panels */
+.panel-title{font-size:11px;color:var(--accent);letter-spacing:1px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+
+/* Control Panel */
+.control-group{margin-bottom:14px}
+.control-group label{font-size:10px;color:var(--dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:1px}
+.mission-select{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:8px;font-family:inherit;font-size:12px;border-radius:4px;cursor:pointer}
+.mission-select:focus{outline:none;border-color:var(--accent)}
+.mission-desc{font-size:10px;color:var(--dim);margin-top:4px;line-height:1.4}
+
+.btn-row{display:flex;gap:6px;margin-bottom:10px}
+.btn{flex:1;padding:10px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-family:inherit;font-size:11px;cursor:pointer;border-radius:4px;text-transform:uppercase;letter-spacing:1px;transition:all .2s}
+.btn-launch{border-color:var(--green);color:var(--green)}
+.btn-launch:hover{background:rgba(0,255,136,.1)}
+.btn-launch.active{background:var(--green);color:#000;animation:pulse-btn 1s infinite}
+.btn-abort{border-color:var(--red);color:var(--red)}
+.btn-abort:hover{background:rgba(255,51,85,.1)}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+
+@keyframes pulse-btn{0%,100%{opacity:1}50%{opacity:.7}}
+
+.speed-control{display:flex;align-items:center;gap:8px}
+.speed-control input[type=range]{flex:1;accent-color:var(--accent);background:transparent}
+.speed-val{font-size:12px;color:var(--accent);min-width:30px;text-align:right}
+
+/* Subsystem status */
+.subsystem-list{margin-top:10px}
+.subsystem-item{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid rgba(26,39,68,.5);font-size:11px}
+.subsystem-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.subsystem-dot.idle{background:var(--dim)}
+.subsystem-dot.active{background:var(--green);box-shadow:0 0 8px var(--green);animation:blink .8s infinite}
+.subsystem-dot.warning{background:var(--yellow);box-shadow:0 0 8px var(--yellow)}
+.subsystem-name{flex:1;color:var(--text)}
+.subsystem-status{color:var(--dim);font-size:10px}
+
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Timeline */
+.timeline{position:relative;padding-left:20px}
+.timeline::before{content:'';position:absolute;left:8px;top:0;bottom:0;width:2px;background:var(--border)}
+.tl-item{position:relative;padding:8px 0 8px 16px;font-size:11px;transition:all .3s}
+.tl-item::before{content:'';position:absolute;left:-14px;top:12px;width:10px;height:10px;border-radius:50%;border:2px solid var(--border);background:var(--bg);transition:all .3s;z-index:1}
+.tl-item.done::before{background:var(--green);border-color:var(--green);box-shadow:0 0 6px var(--green)}
+.tl-item.active::before{background:var(--accent);border-color:var(--accent);box-shadow:0 0 10px var(--accent);animation:tl-pulse 1s infinite}
+.tl-item.pending::before{background:var(--bg);border-color:var(--dim)}
+.tl-item .tl-time{color:var(--dim);font-size:10px}
+.tl-item .tl-label{color:var(--text)}
+.tl-item .tl-sub{color:var(--dim);font-size:10px}
+.tl-item.active .tl-label{color:var(--accent);font-weight:bold}
+.tl-item.done .tl-label{color:var(--green)}
+@keyframes tl-pulse{0%,100%{box-shadow:0 0 6px var(--accent)}50%{box-shadow:0 0 16px var(--accent)}}
+
+/* Spacecraft */
+.spacecraft-container{position:relative;width:320px;height:400px}
+.spacecraft{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%)}
+
+/* SVG Spacecraft */
+.ship-svg{width:200px;height:340px;filter:drop-shadow(0 0 20px rgba(0,212,255,.15))}
+.ship-part{transition:all .5s;opacity:.3}
+.ship-part.lit{opacity:1}
+.ship-part.lit.glow-green{filter:drop-shadow(0 0 12px var(--green))}
+.ship-part.lit.glow-blue{filter:drop-shadow(0 0 12px var(--blue))}
+.ship-part.lit.glow-yellow{filter:drop-shadow(0 0 12px var(--yellow))}
+.ship-part.lit.glow-orange{filter:drop-shadow(0 0 12px var(--orange))}
+.ship-part.lit.glow-accent{filter:drop-shadow(0 0 12px var(--accent))}
+
+/* Engine flame */
+.flame{position:absolute;bottom:-40px;left:50%;transform:translateX(-50%);opacity:0;transition:opacity .3s}
+.flame.on{opacity:1}
+.flame-inner{width:20px;height:50px;background:linear-gradient(to bottom,#ff8c00,#ff3355,transparent);border-radius:0 0 50% 50%;animation:flicker .1s infinite alternate;margin:0 auto}
+.flame-outer{width:34px;height:60px;background:linear-gradient(to bottom,rgba(0,212,255,.6),rgba(255,140,0,.4),transparent);border-radius:0 0 50% 50%;position:absolute;top:-5px;left:50%;transform:translateX(-50%);animation:flicker .15s infinite alternate}
+@keyframes flicker{0%{transform:translateX(-50%) scaleX(1) scaleY(1)}100%{transform:translateX(-50%) scaleX(.85) scaleY(1.08)}}
+
+/* Ship label */
+.ship-label{position:absolute;font-size:9px;color:var(--dim);pointer-events:none;white-space:nowrap;transition:color .3s}
+.ship-label.active{color:var(--accent)}
+
+/* Telemetry gauges */
+.telem-item{display:flex;align-items:center;gap:12px;margin-bottom:4px;padding:6px 0}
+.telem-icon{font-size:16px;width:24px;text-align:center}
+.telem-data{flex:1}
+.telem-label{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:1px}
+.telem-value{font-size:14px;color:var(--text);font-variant-numeric:tabular-nums}
+.telem-bar{height:3px;background:var(--border);border-radius:2px;margin-top:2px;overflow:hidden}
+.telem-bar-fill{height:100%;border-radius:2px;transition:width .5s,background .3s}
+
+/* Log console */
+.log-console{flex:1;font-size:11px;max-height:110px;overflow-y:auto;padding-right:10px}
+.log-line{padding:2px 0;border-bottom:1px solid rgba(26,39,68,.3)}
+.log-line .log-time{color:var(--dim);margin-right:8px}
+.log-line .log-msg{color:var(--text)}
+.log-line.log-ok .log-msg{color:var(--green)}
+.log-line.log-warn .log-msg{color:var(--yellow)}
+.log-line.log-err .log-msg{color:var(--red)}
+.log-line.log-info .log-msg{color:var(--accent)}
+
+/* Particles */
+.particle{position:absolute;pointer-events:none;border-radius:50%;z-index:10}
+
+/* Completion overlay */
+.mission-complete{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;z-index:20;pointer-events:none;opacity:0;transition:opacity .5s}
+.mission-complete.show{opacity:1}
+.mission-complete-text{font-size:28px;color:var(--green);text-shadow:0 0 30px var(--green);letter-spacing:4px;animation:complete-pulse 1.5s infinite}
+@keyframes complete-pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.8;transform:scale(1.03)}}
+
+/* Responsive */
+@media(max-width:1024px){
+  .app{grid-template-columns:1fr;grid-template-rows:50px auto auto auto auto}
+  .left-panel,.right-panel{border:none;border-bottom:1px solid var(--border)}
+  .center{min-height:380px}
+  .bottom{flex-wrap:wrap}
+}
+@media(max-width:600px){
+  .header h1{font-size:13px}
+  .spacecraft-container{width:220px;height:300px}
+  .ship-svg{width:140px;height:240px}
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <h1>◈ OPENCLAW MISSION CONTROL</h1>
+    <div class="status" id="missionStatus">대기 중</div>
+    <div class="clock" id="clock">00:00:00</div>
+  </div>
+
+  <!-- Left Panel: Controls -->
+  <div class="left-panel">
+    <div class="panel-title">◈ 컨트롤 패널</div>
+
+    <div class="control-group">
+      <label>미션 선택</label>
+      <select class="mission-select" id="missionSelect">
+        <option value="0">미션 1: 단순 대화</option>
+        <option value="1">미션 2: 툴호출 포함</option>
+        <option value="2">미션 3: 멀티턴 + 압축</option>
+      </select>
+      <div class="mission-desc" id="missionDesc">사용자 메시지 수신 → 추론 → 응답. 기본 에이전트 루프.</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-launch" id="btnLaunch" onclick="launchMission()">🚀 발사</button>
+      <button class="btn btn-abort" id="btnAbort" onclick="abortMission()" disabled>⛔ 중단</button>
+    </div>
+
+    <div class="control-group">
+      <label>속도 제어</label>
+      <div class="speed-control">
+        <input type="range" id="speedRange" min="1" max="10" value="5" oninput="updateSpeed()">
+        <span class="speed-val" id="speedVal">5x</span>
+      </div>
+    </div>
+
+    <div class="panel-title" style="margin-top:16px">◈ 서브시스템</div>
+    <div class="subsystem-list" id="subsystems">
+      <div class="subsystem-item"><div class="subsystem-dot idle" id="sub-channel"></div><span class="subsystem-name">Channel Adapter</span><span class="subsystem-status">IDLE</span></div>
+      <div class="subsystem-item"><div class="subsystem-dot idle" id="sub-queue"></div><span class="subsystem-name">Queue</span><span class="subsystem-status">IDLE</span></div>
+      <div class="subsystem-item"><div class="subsystem-dot idle" id="sub-session"></div><span class="subsystem-name">Session Manager</span><span class="subsystem-status">IDLE</span></div>
+      <div class="subsystem-item"><div class="subsystem-dot idle" id="sub-runtime"></div><span class="subsystem-name">Agent Runtime</span><span class="subsystem-status">IDLE</span></div>
+      <div class="subsystem-item"><div class="subsystem-dot idle" id="sub-tool"></div><span class="subsystem-name">Tool Policy</span><span class="subsystem-status">IDLE</span></div>
+    </div>
+  </div>
+
+  <!-- Center: Spacecraft -->
+  <div class="center" id="centerArea">
+    <div class="spacecraft-container" id="shipContainer">
+      <div class="spacecraft">
+        <svg class="ship-svg" viewBox="0 0 200 340">
+          <!-- Nose - Channel Adapter -->
+          <path class="ship-part" id="shipNose" d="M100 10 L130 80 L70 80 Z" fill="#1a3355" stroke="#2a5588" stroke-width="1.5"/>
+          <path d="M100 20 L120 70 L80 70 Z" fill="none" stroke="#2a5588" stroke-width=".5" opacity=".5"/>
+
+          <!-- Upper body - Queue -->
+          <rect class="ship-part" id="shipQueue" x="70" y="80" width="60" height="40" rx="3" fill="#1a3355" stroke="#2a5588" stroke-width="1.5"/>
+          <line x1="80" y1="90" x2="120" y2="90" stroke="#2a5588" stroke-width=".5" opacity=".5"/>
+          <line x1="80" y1="100" x2="120" y2="100" stroke="#2a5588" stroke-width=".5" opacity=".5"/>
+          <line x1="80" y1="110" x2="120" y2="110" stroke="#2a5588" stroke-width=".5" opacity=".5"/>
+
+          <!-- Mid body - Session Manager -->
+          <rect class="ship-part" id="shipSession" x="65" y="120" width="70" height="50" rx="3" fill="#1a3355" stroke="#2a5588" stroke-width="1.5"/>
+          <circle cx="100" cy="145" r="12" fill="none" stroke="#2a5588" stroke-width=".5" opacity=".5"/>
+          <circle cx="100" cy="145" r="6" fill="none" stroke="#2a5588" stroke-width=".5" opacity=".5"/>
+
+          <!-- Engine - Agent Runtime -->
+          <rect class="ship-part" id="shipEngine" x="72" y="170" width="56" height="70" rx="3" fill="#1a3355" stroke="#2a5588" stroke-width="1.5"/>
+          <rect x="82" y="180" width="36" height="20" rx="2" fill="none" stroke="#2a5588" stroke-width=".5" opacity=".5"/>
+          <rect x="82" y="205" width="36" height="20" rx="2" fill="none" stroke="#2a5588" stroke-width=".5" opacity=".5"/>
+
+          <!-- Nozzle -->
+          <path class="ship-part" id="shipNozzle" d="M78 240 L122 240 L128 280 L72 280 Z" fill="#1a2244" stroke="#2a5588" stroke-width="1.5"/>
+
+          <!-- Left wing - Tool Policy -->
+          <path class="ship-part" id="shipWingL" d="M65 150 L15 230 L15 260 L65 210 Z" fill="#1a3355" stroke="#2a5588" stroke-width="1.5"/>
+          <line x1="40" y1="200" x2="55" y2="180" stroke="#2a5588" stroke-width=".5" opacity=".5"/>
+
+          <!-- Right wing - Tool Policy -->
+          <path class="ship-part" id="shipWingR" d="M135 150 L185 230 L185 260 L135 210 Z" fill="#1a3355" stroke="#2a5588" stroke-width="1.5"/>
+          <line x1="160" y1="200" x2="145" y2="180" stroke="#2a5588" stroke-width=".5" opacity=".5"/>
+
+          <!-- Window -->
+          <ellipse cx="100" cy="55" rx="8" ry="10" fill="#0a1a33" stroke="#4488ff" stroke-width="1" opacity=".7"/>
+        </svg>
+
+        <!-- Flame -->
+        <div class="flame" id="engineFlame">
+          <div class="flame-outer"></div>
+          <div class="flame-inner"></div>
+        </div>
+      </div>
+
+      <!-- Ship labels -->
+      <div class="ship-label" id="lbl-nose" style="top:30px;right:-80px">Channel Adapter</div>
+      <div class="ship-label" id="lbl-queue" style="top:100px;right:-50px">Queue</div>
+      <div class="ship-label" id="lbl-session" style="top:150px;left:-90px">Session Mgr</div>
+      <div class="ship-label" id="lbl-engine" style="top:220px;right:-70px">Agent Runtime</div>
+      <div class="ship-label" id="lbl-wing" style="top:200px;left:-70px">Tool Policy</div>
+    </div>
+
+    <div class="mission-complete" id="missionComplete">
+      <div class="mission-complete-text">✅ 임무 완료</div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Timeline -->
+  <div class="right-panel">
+    <div class="panel-title">◈ 미션 타임라인</div>
+    <div class="timeline" id="timeline">
+      <div class="tl-item pending" id="tl-0"><div class="tl-time">T-00:00</div><div class="tl-label">🟢 메시지 수신</div><div class="tl-sub">Channel Adapter</div></div>
+      <div class="tl-item pending" id="tl-1"><div class="tl-time">T+00:01</div><div class="tl-label">🟡 큐 대기</div><div class="tl-sub">Queue</div></div>
+      <div class="tl-item pending" id="tl-2"><div class="tl-time">T+00:02</div><div class="tl-label">🟡 컨텍스트 조립</div><div class="tl-sub">Session Manager</div></div>
+      <div class="tl-item pending" id="tl-3"><div class="tl-time">T+00:03</div><div class="tl-label">🔵 추론</div><div class="tl-sub">Agent Runtime</div></div>
+      <div class="tl-item pending" id="tl-4" style="display:none"><div class="tl-time">T+00:04</div><div class="tl-label">🟠 툴호출</div><div class="tl-sub">Tool Execution</div></div>
+      <div class="tl-item pending" id="tl-5" style="display:none"><div class="tl-time">T+00:05</div><div class="tl-label">🔵 재추론</div><div class="tl-sub">Agent Runtime</div></div>
+      <div class="tl-item pending" id="tl-6"><div class="tl-time">T+00:06</div><div class="tl-label">🟢 응답 전송</div><div class="tl-sub">Channel Adapter</div></div>
+      <div class="tl-item pending" id="tl-7"><div class="tl-time">T+00:07</div><div class="tl-label">✅ 임무 완료</div><div class="tl-sub">Persistence</div></div>
+    </div>
+
+    <div class="panel-title" style="margin-top:20px">◈ 컨텍스트 윈도우</div>
+    <div id="ctxWindow" style="margin-top:6px">
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-bottom:4px"><span>System Prompt</span><span id="ctxSys">9,600 tok</span></div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:6px"><div id="ctxSysBar" style="width:12%;height:100%;background:var(--blue);border-radius:3px"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-bottom:4px"><span>Tool Schemas</span><span id="ctxTool">8,000 tok</span></div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:6px"><div id="ctxToolBar" style="width:10%;height:100%;background:var(--orange);border-radius:3px"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin-bottom:4px"><span>대화 기록</span><span id="ctxHist">0 tok</span></div>
+      <div style="height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:6px"><div id="ctxHistBar" style="width:0%;height:100%;background:var(--green);border-radius:3px;transition:width .5s"></div></div>
+      <div style="font-size:10px;color:var(--dim);text-align:right" id="ctxTotal">총: 17,600 / 200,000</div>
+    </div>
+  </div>
+
+  <!-- Bottom: Telemetry + Log -->
+  <div class="bottom">
+    <div style="display:flex;gap:24px;flex-shrink:0;flex-wrap:wrap">
+      <div class="telem-item">
+        <div class="telem-icon">📡</div>
+        <div class="telem-data">
+          <div class="telem-label">Signal</div>
+          <div class="telem-value" id="telSignal">0%</div>
+          <div class="telem-bar"><div class="telem-bar-fill" id="telSignalBar" style="width:0%;background:var(--green)"></div></div>
+        </div>
+      </div>
+      <div class="telem-item">
+        <div class="telem-icon">⛽</div>
+        <div class="telem-data">
+          <div class="telem-label">Fuel</div>
+          <div class="telem-value" id="telFuel">200,000</div>
+          <div class="telem-bar"><div class="telem-bar-fill" id="telFuelBar" style="width:100%;background:var(--accent)"></div></div>
+        </div>
+      </div>
+      <div class="telem-item">
+        <div class="telem-icon">🔥</div>
+        <div class="telem-data">
+          <div class="telem-label">Temp</div>
+          <div class="telem-value" id="telTemp">0.0</div>
+          <div class="telem-bar"><div class="telem-bar-fill" id="telTempBar" style="width:0%;background:var(--yellow)"></div></div>
+        </div>
+      </div>
+      <div class="telem-item">
+        <div class="telem-icon">📍</div>
+        <div class="telem-data">
+          <div class="telem-label">Position</div>
+          <div class="telem-value" id="telPos">GROUND</div>
+        </div>
+      </div>
+      <div class="telem-item">
+        <div class="telem-icon">🛰️</div>
+        <div class="telem-data">
+          <div class="telem-label">Payload</div>
+          <div class="telem-value" id="telPayload">0 calls</div>
+        </div>
+      </div>
+      <div class="telem-item">
+        <div class="telem-icon">⏱️</div>
+        <div class="telem-data">
+          <div class="telem-label">Mission Time</div>
+          <div class="telem-value" id="telTime">T+00:00</div>
+        </div>
+      </div>
+    </div>
+    <div style="flex:1;min-width:200px">
+      <div style="font-size:10px;color:var(--accent);margin-bottom:4px;letter-spacing:1px">◈ 로그</div>
+      <div class="log-console" id="logConsole"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// --- Stars ---
+(function(){
+  const c=document.getElementById('stars');
+  for(let i=0;i<150;i++){
+    const s=document.createElement('div');
+    s.className='star';
+    const sz=Math.random()*2+.5;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;opacity:${Math.random()*.7+.3};animation:twinkle ${Math.random()*3+2}s infinite alternate`;
+    c.appendChild(s);
+  }
+  const st=document.createElement('style');
+  st.textContent='@keyframes twinkle{0%{opacity:.2}100%{opacity:1}}';
+  document.head.appendChild(st);
+})();
+
+// --- State ---
+let running=false, aborted=false, missionTimer=null, stepTimer=null;
+let speed=5, currentStep=-1, missionSeconds=0, toolCalls=0;
+let starAnimFrame=null;
+
+const missions=[
+  {name:'단순 대화',desc:'사용자 메시지 수신 → 추론 → 응답. 기본 에이전트 루프.',steps:[0,1,2,3,6,7],toolSteps:false,compaction:false},
+  {name:'툴호출 포함',desc:'추론 중 tool_call 발생 → 실행 → 재추론 → 응답.',steps:[0,1,2,3,4,5,6,7],toolSteps:true,compaction:false},
+  {name:'멀티턴 + 압축',desc:'여러 턴 후 컨텍스트 가득 → 압축(Compaction) 발동 → 메모리 플러시.',steps:[0,1,2,3,4,5,3,4,5,6,7],toolSteps:true,compaction:true}
+];
+
+const stepData=[
+  {id:'tl-0',label:'메시지 수신',sub:'channel',ship:['shipNose'],lbls:['lbl-nose'],pos:'RECEIVING',log:'📨 메시지 수신 - Channel Adapter 가동',logType:'info'},
+  {id:'tl-1',label:'큐 대기',sub:'queue',ship:['shipQueue'],lbls:['lbl-queue'],pos:'QUEUED',log:'📋 메시지 큐 등록 - Exactly-once 보장',logType:''},
+  {id:'tl-2',label:'컨텍스트 조립',sub:'session',ship:['shipSession'],lbls:['lbl-session'],pos:'ASSEMBLING',log:'🧩 Context Assembly: System + Bootstrap + History',logType:''},
+  {id:'tl-3',label:'추론',sub:'runtime',ship:['shipEngine'],lbls:['lbl-engine'],pos:'INFERRING',log:'🧠 Agent Runtime - LLM 추론 시작',logType:'info'},
+  {id:'tl-4',label:'툴호출',sub:'tool',ship:['shipWingL','shipWingR'],lbls:['lbl-wing'],pos:'TOOL_EXEC',log:'🔧 Tool Execution - 정책 검증 후 실행',logType:'warn'},
+  {id:'tl-5',label:'재추론',sub:'runtime',ship:['shipEngine'],lbls:['lbl-engine'],pos:'RE-INFER',log:'🔄 툴 결과 주입 → 재추론',logType:'info'},
+  {id:'tl-6',label:'응답 전송',sub:'channel',ship:['shipNose'],lbls:['lbl-nose'],pos:'STREAMING',log:'📤 Streaming 응답 → 채널 전송',logType:'ok'},
+  {id:'tl-7',label:'임무 완료',sub:null,ship:[],lbls:[],pos:'COMPLETE',log:'✅ 임무 완료 - Persistence 저장',logType:'ok'}
+];
+
+const glowMap={channel:'glow-green',queue:'glow-yellow',session:'glow-yellow',runtime:'glow-blue',tool:'glow-orange'};
+
+// --- Clock ---
+setInterval(()=>{
+  const d=new Date();
+  document.getElementById('clock').textContent=
+    d.getHours().toString().padStart(2,'0')+':'+
+    d.getMinutes().toString().padStart(2,'0')+':'+
+    d.getSeconds().toString().padStart(2,'0');
+},1000);
+
+// --- Mission select ---
+document.getElementById('missionSelect').onchange=function(){
+  if(!running) document.getElementById('missionDesc').textContent=missions[this.value].desc;
+};
+
+// --- Speed ---
+function updateSpeed(){
+  speed=parseInt(document.getElementById('speedRange').value);
+  document.getElementById('speedVal').textContent=speed+'x';
+}
+
+// --- Log ---
+function addLog(msg,type){
+  const c=document.getElementById('logConsole');
+  const d=document.createElement('div');
+  d.className='log-line'+(type?' log-'+type:'');
+  const t=new Date();
+  d.innerHTML=`<span class="log-time">${t.getHours().toString().padStart(2,'0')}:${t.getMinutes().toString().padStart(2,'0')}:${t.getSeconds().toString().padStart(2,'0')}</span><span class="log-msg">${msg}</span>`;
+  c.appendChild(d);
+  c.scrollTop=c.scrollHeight;
+}
+
+// --- Subsystem control ---
+function setSubsystem(name,state,statusText){
+  const dot=document.getElementById('sub-'+name);
+  if(!dot)return;
+  dot.className='subsystem-dot '+state;
+  dot.parentElement.querySelector('.subsystem-status').textContent=statusText;
+}
+function resetSubsystems(){
+  ['channel','queue','session','runtime','tool'].forEach(s=>setSubsystem(s,'idle','IDLE'));
+}
+
+// --- Ship control ---
+function lightShip(parts,sub){
+  document.querySelectorAll('.ship-part').forEach(p=>{p.classList.remove('lit','glow-green','glow-blue','glow-yellow','glow-orange','glow-accent')});
+  parts.forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.classList.add('lit',glowMap[sub]||'glow-accent');}
+  });
+}
+function clearShip(){
+  document.querySelectorAll('.ship-part').forEach(p=>{p.classList.remove('lit','glow-green','glow-blue','glow-yellow','glow-orange','glow-accent')});
+  document.querySelectorAll('.ship-label').forEach(l=>l.classList.remove('active'));
+}
+
+// --- Telemetry ---
+function updateTelemetry(step,mission){
+  const sd=stepData[step];
+  document.getElementById('telPos').textContent=sd.pos;
+
+  // Signal
+  const sig=step<=1?30:step<=3?70:step>=6?95:85;
+  document.getElementById('telSignal').textContent=sig+'%';
+  document.getElementById('telSignalBar').style.width=sig+'%';
+  document.getElementById('telSignalBar').style.background=sig>60?'var(--green)':'var(--yellow)';
+
+  // Fuel
+  const base=200000;
+  const used=Math.floor(base*(currentStep/(mission.steps.length))*(.4+Math.random()*.2));
+  const fuel=Math.max(0,base-used);
+  document.getElementById('telFuel').textContent=fuel.toLocaleString();
+  document.getElementById('telFuelBar').style.width=(fuel/base*100)+'%';
+  document.getElementById('telFuelBar').style.background=fuel/base>.3?'var(--accent)':'var(--red)';
+
+  // Temp
+  const temp=step===3||step===5?0.7+Math.random()*.3:step===4?0.4:0.1;
+  document.getElementById('telTemp').textContent=temp.toFixed(2);
+  document.getElementById('telTempBar').style.width=(temp*100)+'%';
+  document.getElementById('telTempBar').style.background=temp>.6?'var(--orange)':'var(--yellow)';
+
+  // Payload
+  if(step===4) toolCalls++;
+  document.getElementById('telPayload').textContent=toolCalls+' calls';
+
+  // Context window
+  const histTok=Math.floor(2000+currentStep*3500+Math.random()*1000);
+  document.getElementById('ctxHist').textContent=histTok.toLocaleString()+' tok';
+  document.getElementById('ctxHistBar').style.width=Math.min(100,histTok/200000*100*3)+'%';
+  const total=9600+8000+histTok;
+  document.getElementById('ctxTotal').textContent='총: '+total.toLocaleString()+' / 200,000';
+
+  // Compaction warning
+  if(mission.compaction && currentStep>6){
+    document.getElementById('ctxHistBar').style.background='var(--orange)';
+    if(currentStep===7) addLog('⚠️ 컨텍스트 임계 → Compaction 발동!','warn');
+    if(currentStep===8) addLog('💾 메모리 플러시 → MEMORY.md 기록','info');
+  }
+}
+
+// --- Flame ---
+function setFlame(on){document.getElementById('engineFlame').classList.toggle('on',on)}
+
+// --- Particles ---
+function spawnParticles(count,color){
+  const center=document.getElementById('centerArea');
+  const rect=center.getBoundingClientRect();
+  for(let i=0;i<count;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    const sz=Math.random()*6+2;
+    const x=rect.width/2+Math.random()*200-100;
+    const y=rect.height/2+Math.random()*200-100;
+    const dx=(Math.random()-.5)*300;
+    const dy=(Math.random()-.5)*300;
+    p.style.cssText=`width:${sz}px;height:${sz}px;left:${x}px;top:${y}px;background:${color};box-shadow:0 0 ${sz*2}px ${color};transition:all 1.5s ease-out;opacity:1`;
+    center.appendChild(p);
+    requestAnimationFrame(()=>{
+      p.style.left=(x+dx)+'px';
+      p.style.top=(y+dy)+'px';
+      p.style.opacity='0';
+    });
+    setTimeout(()=>p.remove(),1500);
+  }
+}
+
+// --- Moving stars during flight ---
+let starsMoving=false;
+function startStarMovement(){
+  if(starsMoving)return;
+  starsMoving=true;
+  const stars=document.querySelectorAll('.star');
+  stars.forEach(s=>{s.style.transition='top 0.5s linear'});
+  function moveStars(){
+    if(!starsMoving)return;
+    stars.forEach(s=>{
+      let t=parseFloat(s.style.top);
+      t+=.5*speed;
+      if(t>100) t=-2;
+      s.style.top=t+'%';
+    });
+    starAnimFrame=requestAnimationFrame(moveStars);
+  }
+  moveStars();
+}
+function stopStarMovement(){
+  starsMoving=false;
+  if(starAnimFrame) cancelAnimationFrame(starAnimFrame);
+}
+
+// --- Mission timer ---
+function startMissionTimer(){
+  missionSeconds=0;
+  missionTimer=setInterval(()=>{
+    missionSeconds++;
+    const m=Math.floor(missionSeconds/60).toString().padStart(2,'0');
+    const s=(missionSeconds%60).toString().padStart(2,'0');
+    document.getElementById('telTime').textContent='T+'+m+':'+s;
+  },1000/speed);
+}
+
+// --- Reset ---
+function resetAll(){
+  running=false;aborted=false;currentStep=-1;toolCalls=0;
+  clearInterval(missionTimer);clearTimeout(stepTimer);
+  document.getElementById('btnLaunch').disabled=false;
+  document.getElementById('btnLaunch').classList.remove('active');
+  document.getElementById('btnAbort').disabled=true;
+  document.getElementById('missionSelect').disabled=false;
+  document.getElementById('missionStatus').textContent='대기 중';
+  document.getElementById('missionStatus').style.color='var(--dim)';
+  document.getElementById('telTime').textContent='T+00:00';
+  document.getElementById('telPos').textContent='GROUND';
+  document.getElementById('telSignal').textContent='0%';
+  document.getElementById('telSignalBar').style.width='0%';
+  document.getElementById('telFuel').textContent='200,000';
+  document.getElementById('telFuelBar').style.width='100%';
+  document.getElementById('telFuelBar').style.background='var(--accent)';
+  document.getElementById('telTemp').textContent='0.0';
+  document.getElementById('telTempBar').style.width='0%';
+  document.getElementById('telPayload').textContent='0 calls';
+  document.getElementById('ctxHist').textContent='0 tok';
+  document.getElementById('ctxHistBar').style.width='0%';
+  document.getElementById('ctxHistBar').style.background='var(--green)';
+  document.getElementById('ctxTotal').textContent='총: 17,600 / 200,000';
+  document.getElementById('missionComplete').classList.remove('show');
+  resetSubsystems();clearShip();setFlame(false);stopStarMovement();
+  // Reset timeline
+  for(let i=0;i<8;i++){
+    const el=document.getElementById('tl-'+i);
+    el.className='tl-item pending';
+    if(i===4||i===5) el.style.display='none';
+  }
+}
+
+// --- Launch ---
+function launchMission(){
+  if(running)return;
+  resetAll();
+  running=true;
+  const mi=parseInt(document.getElementById('missionSelect').value);
+  const mission=missions[mi];
+
+  document.getElementById('btnLaunch').disabled=true;
+  document.getElementById('btnLaunch').classList.add('active');
+  document.getElementById('btnAbort').disabled=false;
+  document.getElementById('missionSelect').disabled=true;
+  document.getElementById('missionStatus').textContent='미션 진행 중: '+mission.name;
+  document.getElementById('missionStatus').style.color='var(--accent)';
+  document.getElementById('logConsole').innerHTML='';
+
+  // Show tool steps if needed
+  if(mission.toolSteps){
+    document.getElementById('tl-4').style.display='';
+    document.getElementById('tl-5').style.display='';
+  }
+
+  addLog('🚀 미션 시작: '+mission.name,'ok');
+  addLog('📋 Plugin Hook: gateway_start → session_start','');
+  startMissionTimer();
+  startStarMovement();
+
+  currentStep=0;
+  runStep(mission);
+}
+
+function runStep(mission){
+  if(!running||aborted)return;
+  if(currentStep>=mission.steps.length){
+    missionDone(mission);
+    return;
+  }
+
+  const stepIdx=mission.steps[currentStep];
+  const sd=stepData[stepIdx];
+
+  // Timeline
+  for(let i=0;i<8;i++){
+    const el=document.getElementById('tl-'+i);
+    if(!el)continue;
+    if(i<stepIdx) el.className='tl-item done';
+    else if(i===stepIdx) el.className='tl-item active';
+    else el.className='tl-item pending';
+  }
+
+  // Subsystem
+  resetSubsystems();
+  if(sd.sub){
+    setSubsystem(sd.sub,'active','ACTIVE');
+  }
+
+  // Ship
+  lightShip(sd.ship,sd.sub);
+  sd.lbls.forEach(l=>{document.getElementById(l).classList.add('active')});
+
+  // Flame
+  setFlame(stepIdx===3||stepIdx===4||stepIdx===5);
+
+  // Telemetry
+  updateTelemetry(stepIdx,mission);
+
+  // Log
+  addLog(sd.log,sd.logType);
+
+  // Particles on tool call
+  if(stepIdx===4) spawnParticles(15,'#ff8c00');
+
+  const delay=Math.max(400,2000/speed);
+  stepTimer=setTimeout(()=>{
+    currentStep++;
+    runStep(mission);
+  },delay);
+}
+
+function missionDone(mission){
+  running=false;
+  clearInterval(missionTimer);
+  stopStarMovement();
+  setFlame(false);
+  resetSubsystems();
+
+  // All timeline done
+  for(let i=0;i<8;i++){
+    const el=document.getElementById('tl-'+i);
+    if(el.style.display!=='none') el.className='tl-item done';
+  }
+
+  // Light whole ship green
+  document.querySelectorAll('.ship-part').forEach(p=>{
+    p.classList.add('lit','glow-green');
+  });
+
+  document.getElementById('missionStatus').textContent='✅ 임무 완료: '+mission.name;
+  document.getElementById('missionStatus').style.color='var(--green)';
+  document.getElementById('btnLaunch').disabled=false;
+  document.getElementById('btnLaunch').classList.remove('active');
+  document.getElementById('btnAbort').disabled=true;
+  document.getElementById('missionSelect').disabled=false;
+
+  addLog('🎉 '+mission.name+' 임무 성공!','ok');
+  addLog('📋 Plugin Hook: agent_end → message_sent → session_end','');
+
+  // Completion overlay + particles
+  document.getElementById('missionComplete').classList.add('show');
+  spawnParticles(50,'#00ff88');
+  setTimeout(()=>spawnParticles(30,'#00d4ff'),300);
+  setTimeout(()=>spawnParticles(30,'#ffd600'),600);
+
+  setTimeout(()=>{
+    document.getElementById('missionComplete').classList.remove('show');
+  },4000);
+}
+
+// --- Abort ---
+function abortMission(){
+  if(!running)return;
+  aborted=true;running=false;
+  clearInterval(missionTimer);clearTimeout(stepTimer);
+  stopStarMovement();setFlame(false);
+
+  document.getElementById('missionStatus').textContent='⛔ 미션 중단';
+  document.getElementById('missionStatus').style.color='var(--red)';
+  document.getElementById('btnLaunch').disabled=false;
+  document.getElementById('btnLaunch').classList.remove('active');
+  document.getElementById('btnAbort').disabled=true;
+  document.getElementById('missionSelect').disabled=false;
+  resetSubsystems();
+
+  addLog('⛔ 미션 중단됨 - Agent Runtime 타임아웃 600초 초과','err');
+  spawnParticles(20,'#ff3355');
+}
+</script>
+</body>
+</html>

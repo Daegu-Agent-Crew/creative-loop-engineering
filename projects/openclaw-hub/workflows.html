@@ -1,0 +1,2184 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Hub - 워크플로우</title>
+<style>
+/* ══════════════════════════════════════════════════════════
+   CSS Variables - Neural Dark Theme
+   ══════════════════════════════════════════════════════════ */
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0d1117;
+  --bg-tertiary: #161b22;
+  --bg-card: rgba(22, 27, 34, 0.8);
+  --border-color: #30363d;
+  --border-muted: #21262d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #484f58;
+  --accent-blue: #58a6ff;
+  --accent-green: #3fb950;
+  --accent-purple: #d2a8ff;
+  --accent-orange: #f0883e;
+  --accent-yellow: #d29922;
+  --accent-red: #f85149;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --glass-bg: rgba(22, 27, 34, 0.6);
+  --glass-border: rgba(48, 54, 61, 0.5);
+  --glass-blur: blur(12px);
+}
+
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --bg-tertiary: #eaeef2;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --border-color: #d0d7de;
+  --border-muted: #d8dee4;
+  --text-primary: #1f2328;
+  --text-secondary: #656d76;
+  --text-muted: #8c959f;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(208, 215, 222, 0.5);
+}
+
+/* ══════════════════════════════════════════════════════════
+   Reset & Base
+   ══════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════════════════════
+   NavBar
+   ══════════════════════════════════════════════════════════ */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: var(--glass-bg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 1000;
+}
+
+.navbar__brand {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-blue);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navbar__brand-icon {
+  font-size: 22px;
+}
+
+.navbar__tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.navbar__tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+}
+
+.navbar__tab:hover {
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.navbar__tab--active {
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent-blue);
+}
+
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+/* ══════════════════════════════════════════════════════════
+   Main Content
+   ══════════════════════════════════════════════════════════ */
+.main {
+  padding-top: 72px;
+  padding-bottom: 40px;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.section-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.section-subtitle {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Buttons
+   ══════════════════════════════════════════════════════════ */
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.btn:hover {
+  border-color: var(--accent-blue);
+  background: rgba(88, 166, 255, 0.1);
+}
+
+.btn--primary {
+  background: var(--accent-blue);
+  border-color: var(--accent-blue);
+  color: #fff;
+}
+
+.btn--primary:hover {
+  background: #4a94e8;
+  border-color: #4a94e8;
+}
+
+.btn--danger {
+  background: transparent;
+  border-color: var(--accent-red);
+  color: var(--accent-red);
+}
+
+.btn--danger:hover {
+  background: rgba(248, 81, 73, 0.15);
+}
+
+.btn--sm {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Search & Filter Bar
+   ══════════════════════════════════════════════════════════ */
+.toolbar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.search-box {
+  flex: 1;
+  min-width: 200px;
+  max-width: 400px;
+  position: relative;
+}
+
+.search-box__icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.search-box__input {
+  width: 100%;
+  padding: 10px 14px 10px 36px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-box__input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-box__input:focus {
+  border-color: var(--accent-blue);
+}
+
+.category-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.category-btn {
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.category-btn:hover {
+  border-color: var(--text-muted);
+  color: var(--text-primary);
+}
+
+.category-btn--active {
+  border-color: var(--btn-active-color, var(--accent-blue));
+  background: rgba(88, 166, 255, 0.12);
+  color: var(--btn-active-color, var(--accent-blue));
+}
+
+.sort-select {
+  padding: 9px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+
+.sort-select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+/* ══════════════════════════════════════════════════════════
+   Schedule Timeline (24h)
+   ══════════════════════════════════════════════════════════ */
+.timeline-section {
+  margin-bottom: 28px;
+}
+
+.timeline-container {
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.timeline-title {
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.timeline-svg {
+  width: 100%;
+  min-width: 800px;
+  height: 120px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Workflow Card Grid
+   ══════════════════════════════════════════════════════════ */
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.workflow-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.workflow-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.workflow-card:hover {
+  border-color: var(--accent-blue);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.workflow-card--disabled {
+  opacity: 0.55;
+}
+
+.workflow-card--disabled.visible {
+  opacity: 0.55;
+}
+
+.card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.card__badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.card__icon {
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.card__name {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.card__desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 14px;
+  min-height: 39px;
+}
+
+.card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.card__schedule {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.card__last-run {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.card__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.card__status-dot--success { background: var(--accent-green); }
+.card__status-dot--fail { background: var(--accent-red); }
+.card__status-dot--pending { background: var(--accent-yellow); }
+.card__status-dot--none { background: var(--text-muted); }
+
+/* Toggle Switch */
+.toggle-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.toggle-switch input {
+  display: none;
+}
+
+.toggle-switch__slider {
+  position: absolute;
+  inset: 0;
+  background: var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.25s;
+}
+
+.toggle-switch__slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  top: 3px;
+  left: 3px;
+  transition: transform 0.25s;
+}
+
+.toggle-switch input:checked + .toggle-switch__slider {
+  background: var(--accent-green);
+}
+
+.toggle-switch input:checked + .toggle-switch__slider::before {
+  transform: translateX(18px);
+}
+
+/* ══════════════════════════════════════════════════════════
+   Category Badge Colors
+   ══════════════════════════════════════════════════════════ */
+.badge--smart-home {
+  background: rgba(240, 136, 62, 0.15);
+  color: var(--accent-orange);
+}
+.badge--productivity {
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent-blue);
+}
+.badge--health {
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--accent-green);
+}
+.badge--finance {
+  background: rgba(210, 153, 34, 0.15);
+  color: var(--accent-yellow);
+}
+.badge--lifestyle {
+  background: rgba(210, 168, 255, 0.15);
+  color: var(--accent-purple);
+}
+
+/* ══════════════════════════════════════════════════════════
+   Modal
+   ══════════════════════════════════════════════════════════ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  z-index: 2000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay--active {
+  display: flex;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  animation: modalIn 0.25s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.modal__title {
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.modal__close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.modal__close:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.modal__body {
+  padding: 24px;
+}
+
+.modal__footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Detail Modal Sections */
+.detail-section {
+  margin-bottom: 20px;
+}
+
+.detail-section__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.detail-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.detail-info-item {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.detail-info-item__label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+
+.detail-info-item__value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.step-list {
+  list-style: none;
+}
+
+.step-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.step-item:last-child {
+  border-bottom: none;
+}
+
+.step-item__number {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.step-item__action {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 2px;
+  display: inline-block;
+}
+
+.step-item__label {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+/* History Table */
+.history-list {
+  list-style: none;
+}
+
+.history-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-muted);
+  font-size: 13px;
+}
+
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-item__time {
+  color: var(--text-muted);
+  min-width: 120px;
+}
+
+.history-item__status {
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.history-item__status--success {
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--accent-green);
+}
+
+.history-item__status--fail {
+  background: rgba(248, 81, 73, 0.15);
+  color: var(--accent-red);
+}
+
+.history-item__duration {
+  color: var(--text-secondary);
+  margin-left: auto;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Form
+   ══════════════════════════════════════════════════════════ */
+.form-group {
+  margin-bottom: 18px;
+}
+
+.form-group__label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.form-group__input,
+.form-group__select,
+.form-group__textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  font-family: inherit;
+}
+
+.form-group__input:focus,
+.form-group__select:focus,
+.form-group__textarea:focus {
+  border-color: var(--accent-blue);
+}
+
+.form-group__textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-group__select option {
+  background: var(--bg-tertiary);
+}
+
+/* ══════════════════════════════════════════════════════════
+   Empty State
+   ══════════════════════════════════════════════════════════ */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state__icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-state__text {
+  font-size: 16px;
+  margin-bottom: 8px;
+}
+
+.empty-state__sub {
+  font-size: 13px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   Toast
+   ══════════════════════════════════════════════════════════ */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 3000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 12px 20px;
+  border-radius: 10px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 13px;
+  box-shadow: var(--shadow-md);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.7s forwards;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toast--success { border-left: 3px solid var(--accent-green); }
+.toast--error { border-left: 3px solid var(--accent-red); }
+.toast--info { border-left: 3px solid var(--accent-blue); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toastOut {
+  from { opacity: 1; }
+  to { opacity: 0; transform: translateY(10px); }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Stats Bar
+   ══════════════════════════════════════════════════════════ */
+.stats-bar {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 14px 20px;
+  flex: 1;
+  min-width: 140px;
+}
+
+.stat-card__label {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-card__value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.stat-card__value--blue { color: var(--accent-blue); }
+.stat-card__value--green { color: var(--accent-green); }
+.stat-card__value--orange { color: var(--accent-orange); }
+.stat-card__value--purple { color: var(--accent-purple); }
+
+/* ══════════════════════════════════════════════════════════
+   Scroll Fade-In Animation
+   ══════════════════════════════════════════════════════════ */
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.fade-in.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ══════════════════════════════════════════════════════════
+   Responsive
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 0 14px;
+  }
+
+  .navbar__brand-text {
+    display: none;
+  }
+
+  .navbar__tabs {
+    gap: 2px;
+  }
+
+  .navbar__tab {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+
+  .main {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .workflow-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .toolbar {
+    flex-direction: column;
+  }
+
+  .search-box {
+    max-width: 100%;
+  }
+
+  .category-filters {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 4px;
+  }
+
+  .stats-bar {
+    gap: 8px;
+  }
+
+  .stat-card {
+    min-width: 100px;
+    padding: 10px 14px;
+  }
+
+  .stat-card__value {
+    font-size: 20px;
+  }
+
+  .detail-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modal {
+    max-height: 90vh;
+    margin: 10px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   Scrollbar
+   ══════════════════════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════
+     NavBar
+     ═══════════════════════════════════════════════════════ -->
+<nav class="navbar">
+  <div class="navbar__brand">
+    <span class="navbar__brand-icon">&#x2699;</span>
+    <span class="navbar__brand-text">OpenClaw Hub</span>
+  </div>
+  <div class="navbar__tabs">
+    <a class="navbar__tab" href="index.html">Office</a>
+    <a class="navbar__tab navbar__tab--active" href="workflows.html">Workflows</a>
+    <a class="navbar__tab" href="communicate.html">Communicate</a>
+  </div>
+  <div class="navbar__actions">
+    <button class="theme-toggle" id="themeToggle" title="테마 전환">&#x1F319;</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════
+     Main Content
+     ═══════════════════════════════════════════════════════ -->
+<main class="main">
+  <!-- Section Header -->
+  <div class="section-header fade-in">
+    <div>
+      <h1 class="section-title">워크플로우 관리</h1>
+      <p class="section-subtitle">자동화 워크플로우를 관리하고 스케줄을 설정합니다</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn btn--primary" id="btnCreateWorkflow">+ 새 워크플로우</button>
+      <button class="btn" id="btnExportJSON">&#x1F4E5; JSON 내보내기</button>
+    </div>
+  </div>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar fade-in" id="statsBar">
+    <div class="stat-card">
+      <div class="stat-card__label">전체 워크플로우</div>
+      <div class="stat-card__value stat-card__value--blue" id="statTotal">15</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">활성화</div>
+      <div class="stat-card__value stat-card__value--green" id="statActive">15</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">비활성화</div>
+      <div class="stat-card__value stat-card__value--orange" id="statInactive">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">카테고리</div>
+      <div class="stat-card__value stat-card__value--purple" id="statCategories">5</div>
+    </div>
+  </div>
+
+  <!-- Schedule Timeline -->
+  <div class="timeline-section fade-in">
+    <div class="timeline-container">
+      <div class="timeline-title">&#x1F550; 24시간 스케줄 타임라인</div>
+      <svg class="timeline-svg" id="timelineSvg"></svg>
+    </div>
+  </div>
+
+  <!-- Toolbar: Search + Filters + Sort -->
+  <div class="toolbar fade-in">
+    <div class="search-box">
+      <span class="search-box__icon">&#x1F50D;</span>
+      <input type="text" class="search-box__input" id="searchInput" placeholder="워크플로우 검색...">
+    </div>
+    <div class="category-filters" id="categoryFilters"></div>
+    <select class="sort-select" id="sortSelect">
+      <option value="name">이름순</option>
+      <option value="category">카테고리순</option>
+      <option value="time">시간순</option>
+    </select>
+  </div>
+
+  <!-- Workflow Grid -->
+  <div class="workflow-grid" id="workflowGrid"></div>
+
+  <!-- Empty State -->
+  <div class="empty-state" id="emptyState" style="display:none;">
+    <div class="empty-state__icon">&#x1F50D;</div>
+    <div class="empty-state__text">검색 결과가 없습니다</div>
+    <div class="empty-state__sub">다른 키워드로 검색하거나 필터를 변경해 보세요</div>
+  </div>
+</main>
+
+<!-- ═══════════════════════════════════════════════════════
+     Detail Modal
+     ═══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal__header">
+      <div class="modal__title" id="detailTitle"></div>
+      <button class="modal__close" id="detailClose">&times;</button>
+    </div>
+    <div class="modal__body" id="detailBody"></div>
+    <div class="modal__footer">
+      <button class="btn btn--danger btn--sm" id="detailDelete">삭제</button>
+      <button class="btn btn--sm" id="detailCloseBtn">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════
+     Create/Edit Modal
+     ═══════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="formModal">
+  <div class="modal">
+    <div class="modal__header">
+      <div class="modal__title" id="formTitle">새 워크플로우 생성</div>
+      <button class="modal__close" id="formClose">&times;</button>
+    </div>
+    <div class="modal__body">
+      <form id="workflowForm">
+        <div class="form-group">
+          <label class="form-group__label">이름 *</label>
+          <input type="text" class="form-group__input" id="formName" required placeholder="워크플로우 이름">
+        </div>
+        <div class="form-group">
+          <label class="form-group__label">영문 이름</label>
+          <input type="text" class="form-group__input" id="formNameEn" placeholder="English Name">
+        </div>
+        <div class="form-group">
+          <label class="form-group__label">설명 *</label>
+          <textarea class="form-group__textarea" id="formDesc" required placeholder="워크플로우 설명"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-group__label">카테고리 *</label>
+          <select class="form-group__select" id="formCategory" required>
+            <option value="productivity">&#x26A1; 생산성</option>
+            <option value="health">&#x1F49A; 건강</option>
+            <option value="smart-home">&#x1F3E0; 스마트홈</option>
+            <option value="finance">&#x1F4B0; 재정</option>
+            <option value="lifestyle">&#x1F3AF; 라이프스타일</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-group__label">크론 표현식 *</label>
+          <input type="text" class="form-group__input" id="formCron" required placeholder="0 7 * * * (매일 오전 7시)">
+        </div>
+        <div class="form-group">
+          <label class="form-group__label">스케줄 설명</label>
+          <input type="text" class="form-group__input" id="formScheduleDesc" placeholder="매일 오전 7:00">
+        </div>
+        <div class="form-group">
+          <label class="form-group__label">아이콘 (이모지)</label>
+          <input type="text" class="form-group__input" id="formIcon" placeholder="&#x2615;">
+        </div>
+      </form>
+    </div>
+    <div class="modal__footer">
+      <button class="btn btn--sm" id="formCancel">취소</button>
+      <button class="btn btn--primary btn--sm" id="formSave">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════
+   PRESET WORKFLOWS DATA (15)
+   ══════════════════════════════════════════════════════════ */
+const PRESET_WORKFLOWS = [
+  {
+    id: 'morning-briefing',
+    name: '모닝 브리핑',
+    nameEn: 'Morning Briefing',
+    description: '매일 오전 7시에 날씨, 캘린더, 우선순위를 종합 브리핑합니다.',
+    category: 'productivity',
+    icon: '\u2600\uFE0F',
+    schedule: { cron: '0 7 * * *', humanReadable: '매일 오전 7:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'fetch', label: '날씨 API 조회', params: { source: 'weather-api' } },
+      { id: 2, action: 'fetch', label: '캘린더 이벤트 조회', params: { source: 'calendar-api' } },
+      { id: 3, action: 'analyze', label: '우선순위 분석', dependsOn: [1, 2] },
+      { id: 4, action: 'notify', label: '브리핑 알림 전송', dependsOn: [3] }
+    ],
+    assignedAgent: 'ops',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['daily', 'morning', 'briefing'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'check-calendar',
+    name: '캘린더 체크',
+    nameEn: 'Check Calendar',
+    description: '오전 8시와 오후 6시에 48시간 내 일정을 레이더 스캔합니다.',
+    category: 'productivity',
+    icon: '\uD83D\uDCC5',
+    schedule: { cron: '0 8,18 * * *', humanReadable: '매일 오전 8:00, 오후 6:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'fetch', label: '48시간 일정 조회', params: { range: '48h' } },
+      { id: 2, action: 'analyze', label: '충돌 감지 및 우선순위 판단', dependsOn: [1] },
+      { id: 3, action: 'notify', label: '일정 요약 알림', dependsOn: [2] }
+    ],
+    assignedAgent: 'ops',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['daily', 'calendar', 'schedule'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'email-processing',
+    name: '이메일 처리',
+    nameEn: 'Email Processing',
+    description: '하루 3번 이메일을 분류, 우선순위 지정, 자동 응답 처리합니다.',
+    category: 'productivity',
+    icon: '\uD83D\uDCE7',
+    schedule: { cron: '0 9,13,17 * * *', humanReadable: '매일 오전 9시, 오후 1시, 5시', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'fetch', label: '미읽은 이메일 조회', params: { source: 'email-api' } },
+      { id: 2, action: 'analyze', label: '이메일 분류 (긴급/일반/스팸)', dependsOn: [1] },
+      { id: 3, action: 'update', label: '라벨 및 폴더 정리', dependsOn: [2] },
+      { id: 4, action: 'notify', label: '긴급 메일 알림', dependsOn: [2] },
+      { id: 5, action: 'log', label: '처리 결과 로깅', dependsOn: [3, 4] }
+    ],
+    assignedAgent: 'comm',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['daily', 'email', 'automation'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'prep-meeting',
+    name: '회의 준비',
+    nameEn: 'Prep Meeting',
+    description: '30분마다 다가오는 회의를 감지하고 자료를 준비합니다.',
+    category: 'productivity',
+    icon: '\uD83C\uDFAF',
+    schedule: { cron: '*/30 * * * *', humanReadable: '30분마다', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'check', label: '30분 내 회의 확인', params: { lookahead: '30m' } },
+      { id: 2, action: 'fetch', label: '관련 문서 수집', dependsOn: [1] },
+      { id: 3, action: 'analyze', label: '참석자 정보 요약', dependsOn: [1] },
+      { id: 4, action: 'create', label: '브리핑 노트 생성', dependsOn: [2, 3] },
+      { id: 5, action: 'notify', label: '회의 준비 완료 알림', dependsOn: [4] }
+    ],
+    assignedAgent: 'ops',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['frequent', 'meeting', 'preparation'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'activate-sleep-mode',
+    name: '수면 모드 활성화',
+    nameEn: 'Activate Sleep Mode',
+    description: '밤 10시에 모든 기기를 끄고 수면 환경을 조성합니다.',
+    category: 'smart-home',
+    icon: '\uD83C\uDF19',
+    schedule: { cron: '0 22 * * *', humanReadable: '매일 밤 10:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'toggle', label: '거실 조명 끄기', params: { device: 'living-room-lights', state: 'off' } },
+      { id: 2, action: 'toggle', label: '스마트 TV 끄기', params: { device: 'smart-tv', state: 'off' } },
+      { id: 3, action: 'toggle', label: '에어컨 수면모드', params: { device: 'ac', mode: 'sleep' } },
+      { id: 4, action: 'toggle', label: '보안 시스템 활성화', params: { device: 'security', state: 'on' } },
+      { id: 5, action: 'notify', label: '수면 모드 완료 알림', dependsOn: [1, 2, 3, 4] }
+    ],
+    assignedAgent: 'flow',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['daily', 'night', 'smart-home', 'sleep'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'activate-focus-mode',
+    name: '집중 모드 활성화',
+    nameEn: 'Activate Focus Mode',
+    description: '오전 10시에 방해 요소를 차단하고 집중 환경을 만듭니다.',
+    category: 'smart-home',
+    icon: '\uD83D\uDD07',
+    schedule: { cron: '0 10 * * 1-5', humanReadable: '평일 오전 10:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'toggle', label: '알림 무음 모드', params: { device: 'phone', mode: 'dnd' } },
+      { id: 2, action: 'toggle', label: '스마트 조명 집중 색온도', params: { device: 'desk-light', temp: '5000K' } },
+      { id: 3, action: 'toggle', label: '소셜미디어 차단', params: { device: 'router', block: ['sns'] } },
+      { id: 4, action: 'notify', label: '집중 모드 시작 알림', dependsOn: [1, 2, 3] }
+    ],
+    assignedAgent: 'flow',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['weekday', 'focus', 'smart-home', 'productivity'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'track-habits',
+    name: '습관 추적',
+    nameEn: 'Track Habits',
+    description: '매일 밤 9시에 오늘의 습관 달성률을 체크합니다.',
+    category: 'health',
+    icon: '\u2705',
+    schedule: { cron: '0 21 * * *', humanReadable: '매일 밤 9:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'fetch', label: '오늘의 습관 목록 조회', params: { source: 'habit-tracker' } },
+      { id: 2, action: 'check', label: '완료된 습관 확인', dependsOn: [1] },
+      { id: 3, action: 'analyze', label: '주간 달성률 분석', dependsOn: [2] },
+      { id: 4, action: 'log', label: '습관 기록 저장', dependsOn: [3] },
+      { id: 5, action: 'notify', label: '습관 리포트 알림', dependsOn: [3] }
+    ],
+    assignedAgent: 'flow',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['daily', 'night', 'habits', 'tracking'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'track-sleep',
+    name: '수면 추적',
+    nameEn: 'Track Sleep',
+    description: '밤 9시에 수면 데이터를 수집하고 패턴을 분석합니다.',
+    category: 'health',
+    icon: '\uD83D\uDE34',
+    schedule: { cron: '0 21 * * *', humanReadable: '매일 밤 9:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'fetch', label: '수면 센서 데이터 조회', params: { source: 'sleep-tracker' } },
+      { id: 2, action: 'analyze', label: '수면 품질 분석 (깊은잠/렘수면)', dependsOn: [1] },
+      { id: 3, action: 'analyze', label: '주간 수면 패턴 비교', dependsOn: [2] },
+      { id: 4, action: 'log', label: '수면 기록 저장', dependsOn: [3] },
+      { id: 5, action: 'notify', label: '수면 리포트 알림', dependsOn: [3] }
+    ],
+    assignedAgent: 'flow',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['daily', 'night', 'sleep', 'health'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'stretch-reminder',
+    name: '스트레칭 알림',
+    nameEn: 'Stretch Reminder',
+    description: '오전 10시, 오후 2시, 4시에 스트레칭을 알려줍니다.',
+    category: 'health',
+    icon: '\uD83E\uDDD8',
+    schedule: { cron: '0 10,14,16 * * 1-5', humanReadable: '평일 오전 10시, 오후 2시, 4시', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'check', label: '현재 작업 상태 확인', params: { source: 'activity-monitor' } },
+      { id: 2, action: 'create', label: '스트레칭 루틴 선택', dependsOn: [1] },
+      { id: 3, action: 'notify', label: '스트레칭 알림 전송', dependsOn: [2] },
+      { id: 4, action: 'log', label: '스트레칭 완료 기록', dependsOn: [3] }
+    ],
+    assignedAgent: 'comm',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['weekday', 'health', 'reminder', 'stretch'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'plan-workouts',
+    name: '운동 계획',
+    nameEn: 'Plan Workouts',
+    description: '일요일 오후 7시에 다음 주 운동 계획을 세웁니다.',
+    category: 'health',
+    icon: '\uD83D\uDCAA',
+    schedule: { cron: '0 19 * * 0', humanReadable: '매주 일요일 오후 7:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'fetch', label: '이번 주 운동 기록 조회', params: { source: 'fitness-api' } },
+      { id: 2, action: 'fetch', label: '다음 주 일정 확인', params: { source: 'calendar-api' } },
+      { id: 3, action: 'analyze', label: '운동 밸런스 분석 (유산소/근력)', dependsOn: [1] },
+      { id: 4, action: 'create', label: '주간 운동 계획 생성', dependsOn: [2, 3] },
+      { id: 5, action: 'notify', label: '운동 계획 알림', dependsOn: [4] }
+    ],
+    assignedAgent: 'flow',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['weekly', 'sunday', 'workout', 'planning'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'mental-health-checkin',
+    name: '멘탈 건강 체크인',
+    nameEn: 'Mental Health Check-in',
+    description: '매일 오후 6시에 기분과 스트레스 수준을 체크합니다.',
+    category: 'health',
+    icon: '\uD83E\uDDE0',
+    schedule: { cron: '0 18 * * *', humanReadable: '매일 오후 6:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'check', label: '오늘의 활동량 확인', params: { source: 'activity-log' } },
+      { id: 2, action: 'create', label: '기분 체크 프롬프트 생성', dependsOn: [1] },
+      { id: 3, action: 'analyze', label: '주간 기분 트렌드 분석', dependsOn: [2] },
+      { id: 4, action: 'log', label: '멘탈 건강 기록 저장', dependsOn: [3] },
+      { id: 5, action: 'notify', label: '멘탈 건강 요약 알림', dependsOn: [3] }
+    ],
+    assignedAgent: 'comm',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['daily', 'mental-health', 'mood', 'wellness'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'check-bills',
+    name: '청구서 확인',
+    nameEn: 'Check Bills',
+    description: '매주 월요일 오전 8시에 미납 청구서를 확인합니다.',
+    category: 'finance',
+    icon: '\uD83D\uDCB3',
+    schedule: { cron: '0 8 * * 1', humanReadable: '매주 월요일 오전 8:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'fetch', label: '미납 청구서 조회', params: { source: 'billing-api' } },
+      { id: 2, action: 'fetch', label: '계좌 잔액 확인', params: { source: 'bank-api' } },
+      { id: 3, action: 'analyze', label: '결제 우선순위 판단', dependsOn: [1, 2] },
+      { id: 4, action: 'notify', label: '청구서 알림', dependsOn: [3] },
+      { id: 5, action: 'log', label: '청구서 체크 기록', dependsOn: [3] }
+    ],
+    assignedAgent: 'flow',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['weekly', 'monday', 'bills', 'finance'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'plan-meals',
+    name: '식단 계획',
+    nameEn: 'Plan Meals',
+    description: '일요일 오후 6시에 다음 주 식단을 계획합니다.',
+    category: 'lifestyle',
+    icon: '\uD83C\uDF7D\uFE0F',
+    schedule: { cron: '0 18 * * 0', humanReadable: '매주 일요일 오후 6:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'fetch', label: '냉장고 재고 확인', params: { source: 'inventory' } },
+      { id: 2, action: 'fetch', label: '다음 주 일정 확인', params: { source: 'calendar-api' } },
+      { id: 3, action: 'analyze', label: '영양 밸런스 분석', dependsOn: [1] },
+      { id: 4, action: 'create', label: '주간 식단 생성', dependsOn: [1, 2, 3] },
+      { id: 5, action: 'create', label: '장보기 목록 생성', dependsOn: [4] },
+      { id: 6, action: 'notify', label: '식단 계획 알림', dependsOn: [4, 5] }
+    ],
+    assignedAgent: 'comm',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['weekly', 'sunday', 'meals', 'planning'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'build-overnight',
+    name: '야간 빌드',
+    nameEn: 'Build Overnight',
+    description: '자정에 코드 빌드, 테스트, 배포 파이프라인을 실행합니다.',
+    category: 'productivity',
+    icon: '\uD83D\uDD28',
+    schedule: { cron: '0 0 * * *', humanReadable: '매일 자정 00:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'fetch', label: '최신 코드 Pull', params: { source: 'git-repo' } },
+      { id: 2, action: 'check', label: '의존성 검사', dependsOn: [1] },
+      { id: 3, action: 'create', label: '빌드 실행', dependsOn: [2] },
+      { id: 4, action: 'check', label: '테스트 실행', dependsOn: [3] },
+      { id: 5, action: 'analyze', label: '빌드 결과 분석', dependsOn: [3, 4] },
+      { id: 6, action: 'notify', label: '빌드 결과 알림', dependsOn: [5] },
+      { id: 7, action: 'log', label: '빌드 로그 저장', dependsOn: [5] }
+    ],
+    assignedAgent: 'ops',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['daily', 'midnight', 'build', 'ci-cd'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  },
+  {
+    id: 'send-daily-summary',
+    name: '일일 요약 전송',
+    nameEn: 'Send Daily Summary',
+    description: '밤 9시에 오늘 하루를 종합 요약합니다.',
+    category: 'lifestyle',
+    icon: '\uD83D\uDCCA',
+    schedule: { cron: '0 21 * * *', humanReadable: '매일 밤 9:00', timezone: 'Asia/Seoul' },
+    enabled: true,
+    steps: [
+      { id: 1, action: 'fetch', label: '오늘의 워크플로우 실행 결과 수집', params: { source: 'workflow-logs' } },
+      { id: 2, action: 'fetch', label: '에이전트 활동 로그 수집', params: { source: 'agent-logs' } },
+      { id: 3, action: 'fetch', label: '커뮤니케이션 로그 수집', params: { source: 'comm-logs' } },
+      { id: 4, action: 'analyze', label: '종합 분석 (성공률, 주요 이벤트)', dependsOn: [1, 2, 3] },
+      { id: 5, action: 'create', label: '일일 요약 리포트 생성', dependsOn: [4] },
+      { id: 6, action: 'notify', label: '일일 요약 알림', dependsOn: [5] },
+      { id: 7, action: 'log', label: '요약 기록 저장', dependsOn: [5] }
+    ],
+    assignedAgent: 'comm',
+    lastRun: null, runCount: 0, successRate: 100,
+    tags: ['daily', 'night', 'summary', 'report'],
+    createdAt: '2026-01-15T00:00:00+09:00'
+  }
+];
+
+/* ══════════════════════════════════════════════════════════
+   CATEGORY DEFINITIONS
+   ══════════════════════════════════════════════════════════ */
+const CATEGORIES = {
+  'all':          { icon: '\u2728', label: '전체',          color: '#58a6ff' },
+  'productivity': { icon: '\u26A1', label: '생산성',        color: '#58a6ff' },
+  'health':       { icon: '\uD83D\uDC9A', label: '건강',   color: '#3fb950' },
+  'smart-home':   { icon: '\uD83C\uDFE0', label: '스마트홈', color: '#f0883e' },
+  'finance':      { icon: '\uD83D\uDCB0', label: '재정',   color: '#d29922' },
+  'lifestyle':    { icon: '\uD83C\uDFAF', label: '라이프스타일', color: '#d2a8ff' }
+};
+
+/* ══════════════════════════════════════════════════════════
+   APP STATE
+   ══════════════════════════════════════════════════════════ */
+let workflows = [];
+let activeCategory = 'all';
+let searchQuery = '';
+let sortBy = 'name';
+let editingId = null;
+
+/* ══════════════════════════════════════════════════════════
+   INITIALIZATION
+   ══════════════════════════════════════════════════════════ */
+function init() {
+  loadWorkflows();
+  renderCategoryFilters();
+  renderTimeline();
+  renderWorkflows();
+  updateStats();
+  bindEvents();
+  initTheme();
+  initScrollAnimations();
+  startExecutionSimulation();
+}
+
+function loadWorkflows() {
+  const saved = localStorage.getItem('openclaw_workflows');
+  if (saved) {
+    try {
+      workflows = JSON.parse(saved);
+    } catch (e) {
+      workflows = JSON.parse(JSON.stringify(PRESET_WORKFLOWS));
+    }
+  } else {
+    workflows = JSON.parse(JSON.stringify(PRESET_WORKFLOWS));
+  }
+}
+
+function saveWorkflows() {
+  localStorage.setItem('openclaw_workflows', JSON.stringify(workflows));
+}
+
+/* ══════════════════════════════════════════════════════════
+   THEME
+   ══════════════════════════════════════════════════════════ */
+function initTheme() {
+  const saved = localStorage.getItem('openclaw_theme');
+  if (saved === 'light') {
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.getElementById('themeToggle').textContent = '\u2600\uFE0F';
+  }
+}
+
+function toggleTheme() {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'light' ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', next);
+  document.getElementById('themeToggle').textContent = next === 'light' ? '\u2600\uFE0F' : '\uD83C\uDF19';
+  localStorage.setItem('openclaw_theme', next);
+}
+
+/* ══════════════════════════════════════════════════════════
+   SCROLL FADE-IN
+   ══════════════════════════════════════════════════════════ */
+function initScrollAnimations() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+}
+
+function animateCards() {
+  const cards = document.querySelectorAll('.workflow-card');
+  cards.forEach((card, i) => {
+    setTimeout(() => card.classList.add('visible'), i * 50);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   CATEGORY FILTERS
+   ══════════════════════════════════════════════════════════ */
+function renderCategoryFilters() {
+  const container = document.getElementById('categoryFilters');
+  container.innerHTML = '';
+  Object.entries(CATEGORIES).forEach(([key, cat]) => {
+    const btn = document.createElement('button');
+    btn.className = 'category-btn' + (key === activeCategory ? ' category-btn--active' : '');
+    btn.style.setProperty('--btn-active-color', cat.color);
+    btn.innerHTML = cat.icon + ' ' + cat.label;
+    btn.addEventListener('click', () => {
+      activeCategory = key;
+      renderCategoryFilters();
+      renderWorkflows();
+    });
+    container.appendChild(btn);
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   FILTERING, SORTING, RENDERING
+   ══════════════════════════════════════════════════════════ */
+function getFilteredWorkflows() {
+  let filtered = workflows;
+  if (activeCategory !== 'all') {
+    filtered = filtered.filter(w => w.category === activeCategory);
+  }
+  if (searchQuery.trim()) {
+    const q = searchQuery.toLowerCase();
+    filtered = filtered.filter(w =>
+      w.name.toLowerCase().includes(q) ||
+      w.nameEn.toLowerCase().includes(q) ||
+      w.description.toLowerCase().includes(q)
+    );
+  }
+  filtered = sortWorkflows(filtered);
+  return filtered;
+}
+
+function sortWorkflows(list) {
+  const copy = [...list];
+  switch (sortBy) {
+    case 'name':
+      copy.sort((a, b) => a.name.localeCompare(b.name, 'ko'));
+      break;
+    case 'category':
+      copy.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name, 'ko'));
+      break;
+    case 'time':
+      copy.sort((a, b) => {
+        const ha = getFirstHour(a.schedule.cron);
+        const hb = getFirstHour(b.schedule.cron);
+        return ha - hb;
+      });
+      break;
+  }
+  return copy;
+}
+
+function getFirstHour(cron) {
+  const parts = cron.split(' ');
+  if (parts.length < 2) return 0;
+  const hourPart = parts[1];
+  if (hourPart === '*') return 0;
+  const first = hourPart.split(',')[0].split('/')[0];
+  return parseInt(first, 10) || 0;
+}
+
+function renderWorkflows() {
+  const grid = document.getElementById('workflowGrid');
+  const empty = document.getElementById('emptyState');
+  const filtered = getFilteredWorkflows();
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+
+  empty.style.display = 'none';
+  grid.innerHTML = filtered.map(w => createCardHTML(w)).join('');
+
+  // Bind card events
+  grid.querySelectorAll('.workflow-card').forEach(card => {
+    const id = card.dataset.id;
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.toggle-switch')) return;
+      openDetail(id);
+    });
+  });
+
+  grid.querySelectorAll('.toggle-switch input').forEach(toggle => {
+    toggle.addEventListener('change', (e) => {
+      e.stopPropagation();
+      const id = e.target.closest('.workflow-card').dataset.id;
+      toggleWorkflow(id, e.target.checked);
+    });
+  });
+
+  animateCards();
+  updateStats();
+}
+
+function createCardHTML(w) {
+  const cat = CATEGORIES[w.category] || CATEGORIES['lifestyle'];
+  const statusInfo = getStatusInfo(w);
+  return `
+    <div class="workflow-card ${w.enabled ? '' : 'workflow-card--disabled'}" data-id="${w.id}">
+      <div class="card__header">
+        <span class="card__badge badge--${w.category}">${cat.icon} ${cat.label}</span>
+        <span class="card__icon">${w.icon}</span>
+      </div>
+      <div class="card__name">${w.name}</div>
+      <div class="card__desc">${w.description}</div>
+      <div class="card__footer">
+        <div class="card__schedule">\u23F0 ${w.schedule.humanReadable}</div>
+        <label class="toggle-switch">
+          <input type="checkbox" ${w.enabled ? 'checked' : ''}>
+          <span class="toggle-switch__slider"></span>
+        </label>
+      </div>
+      <div class="card__last-run">
+        <span class="card__status-dot card__status-dot--${statusInfo.status}"></span>
+        ${statusInfo.text}
+      </div>
+    </div>`;
+}
+
+function getStatusInfo(w) {
+  if (!w.lastRun) return { status: 'none', text: '아직 실행되지 않음' };
+  const elapsed = Date.now() - new Date(w.lastRun).getTime();
+  const mins = Math.floor(elapsed / 60000);
+  let timeText;
+  if (mins < 1) timeText = '방금 전';
+  else if (mins < 60) timeText = mins + '분 전';
+  else if (mins < 1440) timeText = Math.floor(mins / 60) + '시간 전';
+  else timeText = Math.floor(mins / 1440) + '일 전';
+
+  const status = w.successRate >= 90 ? 'success' : w.successRate >= 50 ? 'pending' : 'fail';
+  return { status, text: '마지막 실행: ' + timeText };
+}
+
+/* ══════════════════════════════════════════════════════════
+   TOGGLE WORKFLOW
+   ══════════════════════════════════════════════════════════ */
+function toggleWorkflow(id, enabled) {
+  const wf = workflows.find(w => w.id === id);
+  if (wf) {
+    wf.enabled = enabled;
+    saveWorkflows();
+    renderWorkflows();
+    renderTimeline();
+    showToast(wf.name + (enabled ? ' 활성화됨' : ' 비활성화됨'), enabled ? 'success' : 'info');
+  }
+}
+
+/* ══════════════════════════════════════════════════════════
+   DETAIL MODAL
+   ══════════════════════════════════════════════════════════ */
+function openDetail(id) {
+  const w = workflows.find(wf => wf.id === id);
+  if (!w) return;
+
+  const cat = CATEGORIES[w.category] || CATEGORIES['lifestyle'];
+  document.getElementById('detailTitle').innerHTML = w.icon + ' ' + w.name;
+
+  const history = generateMockHistory(w);
+  const stepsHtml = w.steps.map(s => `
+    <li class="step-item">
+      <span class="step-item__number">${s.id}</span>
+      <div>
+        <span class="step-item__action">${s.action}</span>
+        <div class="step-item__label">${s.label}</div>
+      </div>
+    </li>`).join('');
+
+  const historyHtml = history.map(h => `
+    <li class="history-item">
+      <span class="history-item__time">${h.time}</span>
+      <span class="history-item__status history-item__status--${h.status}">${h.status === 'success' ? '\u2713 성공' : '\u2717 실패'}</span>
+      <span class="history-item__duration">${h.duration}</span>
+    </li>`).join('');
+
+  document.getElementById('detailBody').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section__title">\uD83D\uDCCB 정보</div>
+      <div class="detail-info-grid">
+        <div class="detail-info-item">
+          <div class="detail-info-item__label">카테고리</div>
+          <div class="detail-info-item__value">${cat.icon} ${cat.label}</div>
+        </div>
+        <div class="detail-info-item">
+          <div class="detail-info-item__label">담당 에이전트</div>
+          <div class="detail-info-item__value">${w.assignedAgent.toUpperCase()}</div>
+        </div>
+        <div class="detail-info-item">
+          <div class="detail-info-item__label">스케줄</div>
+          <div class="detail-info-item__value">${w.schedule.humanReadable}</div>
+        </div>
+        <div class="detail-info-item">
+          <div class="detail-info-item__label">크론</div>
+          <div class="detail-info-item__value" style="font-family:monospace">${w.schedule.cron}</div>
+        </div>
+        <div class="detail-info-item">
+          <div class="detail-info-item__label">실행 횟수</div>
+          <div class="detail-info-item__value">${w.runCount}</div>
+        </div>
+        <div class="detail-info-item">
+          <div class="detail-info-item__label">성공률</div>
+          <div class="detail-info-item__value">${w.successRate}%</div>
+        </div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section__title">\u2699\uFE0F 실행 단계 (${w.steps.length}단계)</div>
+      <ul class="step-list">${stepsHtml}</ul>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section__title">\uD83D\uDCC6 실행 히스토리</div>
+      ${history.length > 0 ? '<ul class="history-list">' + historyHtml + '</ul>' : '<p style="color:var(--text-muted);font-size:13px">아직 실행 기록이 없습니다</p>'}
+    </div>
+    <div class="detail-section">
+      <div class="detail-section__title">\uD83C\uDFF7\uFE0F 태그</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${w.tags.map(t => '<span style="padding:3px 10px;border-radius:12px;background:var(--bg-tertiary);border:1px solid var(--border-color);font-size:12px;color:var(--text-secondary)">' + t + '</span>').join('')}
+      </div>
+    </div>`;
+
+  // Set delete handler
+  document.getElementById('detailDelete').onclick = () => deleteWorkflow(id);
+
+  showModal('detailModal');
+}
+
+function generateMockHistory(w) {
+  if (w.runCount === 0) return [];
+  const history = [];
+  const now = Date.now();
+  const count = Math.min(w.runCount, 7);
+  for (let i = 0; i < count; i++) {
+    const time = new Date(now - (i * 3600000 * (4 + Math.random() * 20)));
+    const success = Math.random() < (w.successRate / 100);
+    history.push({
+      time: time.toLocaleString('ko-KR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+      status: success ? 'success' : 'fail',
+      duration: (1 + Math.random() * 4).toFixed(1) + '초'
+    });
+  }
+  return history;
+}
+
+/* ══════════════════════════════════════════════════════════
+   CREATE / EDIT FORM
+   ══════════════════════════════════════════════════════════ */
+function openCreateForm() {
+  editingId = null;
+  document.getElementById('formTitle').textContent = '\u2795 새 워크플로우 생성';
+  document.getElementById('formName').value = '';
+  document.getElementById('formNameEn').value = '';
+  document.getElementById('formDesc').value = '';
+  document.getElementById('formCategory').value = 'productivity';
+  document.getElementById('formCron').value = '';
+  document.getElementById('formScheduleDesc').value = '';
+  document.getElementById('formIcon').value = '';
+  showModal('formModal');
+}
+
+function saveWorkflowForm() {
+  const name = document.getElementById('formName').value.trim();
+  const nameEn = document.getElementById('formNameEn').value.trim();
+  const desc = document.getElementById('formDesc').value.trim();
+  const category = document.getElementById('formCategory').value;
+  const cron = document.getElementById('formCron').value.trim();
+  const scheduleDesc = document.getElementById('formScheduleDesc').value.trim();
+  const icon = document.getElementById('formIcon').value.trim() || '\u2699\uFE0F';
+
+  if (!name || !desc || !cron) {
+    showToast('필수 항목을 모두 입력해주세요', 'error');
+    return;
+  }
+
+  if (editingId) {
+    const wf = workflows.find(w => w.id === editingId);
+    if (wf) {
+      wf.name = name;
+      wf.nameEn = nameEn || name;
+      wf.description = desc;
+      wf.category = category;
+      wf.schedule.cron = cron;
+      wf.schedule.humanReadable = scheduleDesc || cron;
+      wf.icon = icon;
+      showToast(name + ' 수정됨', 'success');
+    }
+  } else {
+    const id = name.toLowerCase().replace(/[^a-z0-9가-힣]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || 'custom-' + Date.now();
+    const newWf = {
+      id: id,
+      name: name,
+      nameEn: nameEn || name,
+      description: desc,
+      category: category,
+      icon: icon,
+      schedule: { cron: cron, humanReadable: scheduleDesc || cron, timezone: 'Asia/Seoul' },
+      enabled: true,
+      steps: [
+        { id: 1, action: 'fetch', label: '데이터 수집' },
+        { id: 2, action: 'analyze', label: '분석 실행', dependsOn: [1] },
+        { id: 3, action: 'notify', label: '결과 알림', dependsOn: [2] }
+      ],
+      assignedAgent: 'flow',
+      lastRun: null,
+      runCount: 0,
+      successRate: 100,
+      tags: [category],
+      createdAt: new Date().toISOString()
+    };
+    workflows.push(newWf);
+    showToast(name + ' 생성됨', 'success');
+  }
+
+  saveWorkflows();
+  closeAllModals();
+  renderWorkflows();
+  renderTimeline();
+  updateStats();
+}
+
+/* ══════════════════════════════════════════════════════════
+   DELETE WORKFLOW
+   ══════════════════════════════════════════════════════════ */
+function deleteWorkflow(id) {
+  const wf = workflows.find(w => w.id === id);
+  if (!wf) return;
+  if (!confirm(wf.name + ' 워크플로우를 삭제하시겠습니까?')) return;
+
+  workflows = workflows.filter(w => w.id !== id);
+  saveWorkflows();
+  closeAllModals();
+  renderWorkflows();
+  renderTimeline();
+  updateStats();
+  showToast(wf.name + ' 삭제됨', 'info');
+}
+
+/* ══════════════════════════════════════════════════════════
+   STATS
+   ══════════════════════════════════════════════════════════ */
+function updateStats() {
+  const total = workflows.length;
+  const active = workflows.filter(w => w.enabled).length;
+  const inactive = total - active;
+  const cats = new Set(workflows.map(w => w.category)).size;
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statActive').textContent = active;
+  document.getElementById('statInactive').textContent = inactive;
+  document.getElementById('statCategories').textContent = cats;
+}
+
+/* ══════════════════════════════════════════════════════════
+   24-HOUR SCHEDULE TIMELINE (SVG)
+   ══════════════════════════════════════════════════════════ */
+function renderTimeline() {
+  const svg = document.getElementById('timelineSvg');
+  const width = 800;
+  const height = 120;
+  const padding = { left: 40, right: 20, top: 20, bottom: 30 };
+  const trackH = height - padding.top - padding.bottom;
+  const trackW = width - padding.left - padding.right;
+
+  let svgContent = '';
+  const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
+  const textColor = isDark ? '#8b949e' : '#656d76';
+  const lineColor = isDark ? '#30363d' : '#d0d7de';
+  const bgColor = isDark ? '#0d1117' : '#f6f8fa';
+
+  // Background
+  svgContent += `<rect x="${padding.left}" y="${padding.top}" width="${trackW}" height="${trackH}" rx="6" fill="${bgColor}" stroke="${lineColor}" stroke-width="0.5"/>`;
+
+  // Hour markers
+  for (let h = 0; h <= 24; h++) {
+    const x = padding.left + (h / 24) * trackW;
+    const isMajor = h % 6 === 0;
+    svgContent += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${padding.top + trackH}" stroke="${lineColor}" stroke-width="${isMajor ? 1 : 0.3}" stroke-dasharray="${isMajor ? '' : '2,4'}"/>`;
+    if (h < 24 && h % 3 === 0) {
+      svgContent += `<text x="${x}" y="${height - 6}" text-anchor="middle" font-size="10" fill="${textColor}">${h.toString().padStart(2, '0')}:00</text>`;
+    }
+  }
+
+  // Current time marker
+  const now = new Date();
+  const currentHourFrac = now.getHours() + now.getMinutes() / 60;
+  const nowX = padding.left + (currentHourFrac / 24) * trackW;
+  svgContent += `<line x1="${nowX}" y1="${padding.top - 4}" x2="${nowX}" y2="${padding.top + trackH + 4}" stroke="#f85149" stroke-width="2"/>`;
+  svgContent += `<circle cx="${nowX}" cy="${padding.top - 4}" r="3" fill="#f85149"/>`;
+
+  // Workflow markers
+  const enabledWfs = workflows.filter(w => w.enabled);
+  enabledWfs.forEach((w) => {
+    const hours = parseCronHours(w.schedule.cron);
+    const cat = CATEGORIES[w.category] || CATEGORIES['lifestyle'];
+    hours.forEach(h => {
+      const x = padding.left + (h / 24) * trackW;
+      const y = padding.top + 8 + (Math.random() * (trackH - 24));
+      svgContent += `<circle cx="${x}" cy="${y}" r="6" fill="${cat.color}" opacity="0.8" stroke="${cat.color}" stroke-width="1"/>`;
+      svgContent += `<title>${w.name} - ${h.toString().padStart(2, '0')}:00</title>`;
+    });
+  });
+
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.innerHTML = svgContent;
+}
+
+function parseCronHours(cron) {
+  const parts = cron.split(' ');
+  if (parts.length < 2) return [0];
+  const hourPart = parts[1];
+
+  if (hourPart === '*') {
+    // For */30 in minute field, show every hour
+    if (parts[0].includes('/')) return Array.from({ length: 24 }, (_, i) => i);
+    return [0];
+  }
+
+  if (hourPart.includes(',')) {
+    return hourPart.split(',').map(h => parseInt(h, 10)).filter(h => !isNaN(h));
+  }
+
+  if (hourPart.includes('/')) {
+    const interval = parseInt(hourPart.split('/')[1], 10);
+    const hours = [];
+    for (let h = 0; h < 24; h += interval) hours.push(h);
+    return hours;
+  }
+
+  const h = parseInt(hourPart, 10);
+  return isNaN(h) ? [0] : [h];
+}
+
+/* ══════════════════════════════════════════════════════════
+   EXECUTION STATUS SIMULATION
+   ══════════════════════════════════════════════════════════ */
+function startExecutionSimulation() {
+  setInterval(() => {
+    const enabledWfs = workflows.filter(w => w.enabled);
+    if (enabledWfs.length === 0) return;
+
+    // Randomly pick a workflow to "execute"
+    if (Math.random() < 0.3) {
+      const wf = enabledWfs[Math.floor(Math.random() * enabledWfs.length)];
+      const success = Math.random() < 0.92;
+      wf.lastRun = new Date().toISOString();
+      wf.runCount++;
+      if (!success) {
+        wf.successRate = Math.max(0, wf.successRate - Math.floor(Math.random() * 10 + 5));
+      } else {
+        wf.successRate = Math.min(100, wf.successRate + 1);
+      }
+      saveWorkflows();
+
+      // Refresh only if cards are visible
+      const card = document.querySelector(`.workflow-card[data-id="${wf.id}"]`);
+      if (card) {
+        const statusInfo = getStatusInfo(wf);
+        const lastRunEl = card.querySelector('.card__last-run');
+        if (lastRunEl) {
+          lastRunEl.innerHTML = `<span class="card__status-dot card__status-dot--${statusInfo.status}"></span>${statusInfo.text}`;
+        }
+      }
+    }
+  }, 8000);
+}
+
+/* ══════════════════════════════════════════════════════════
+   JSON EXPORT
+   ══════════════════════════════════════════════════════════ */
+function exportJSON() {
+  const data = JSON.stringify(workflows, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'openclaw-workflows.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('워크플로우 JSON 내보내기 완료', 'success');
+}
+
+/* ══════════════════════════════════════════════════════════
+   MODAL HELPERS
+   ══════════════════════════════════════════════════════════ */
+function showModal(id) {
+  document.getElementById(id).classList.add('modal-overlay--active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeAllModals() {
+  document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('modal-overlay--active'));
+  document.body.style.overflow = '';
+}
+
+/* ══════════════════════════════════════════════════════════
+   TOAST
+   ══════════════════════════════════════════════════════════ */
+function showToast(message, type) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast toast--' + (type || 'info');
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3200);
+}
+
+/* ══════════════════════════════════════════════════════════
+   EVENT BINDINGS
+   ══════════════════════════════════════════════════════════ */
+function bindEvents() {
+  // Theme toggle
+  document.getElementById('themeToggle').addEventListener('click', () => {
+    toggleTheme();
+    renderTimeline();
+  });
+
+  // Search
+  document.getElementById('searchInput').addEventListener('input', (e) => {
+    searchQuery = e.target.value;
+    renderWorkflows();
+  });
+
+  // Sort
+  document.getElementById('sortSelect').addEventListener('change', (e) => {
+    sortBy = e.target.value;
+    renderWorkflows();
+  });
+
+  // Create button
+  document.getElementById('btnCreateWorkflow').addEventListener('click', openCreateForm);
+
+  // Export button
+  document.getElementById('btnExportJSON').addEventListener('click', exportJSON);
+
+  // Form modal buttons
+  document.getElementById('formClose').addEventListener('click', closeAllModals);
+  document.getElementById('formCancel').addEventListener('click', closeAllModals);
+  document.getElementById('formSave').addEventListener('click', saveWorkflowForm);
+
+  // Detail modal buttons
+  document.getElementById('detailClose').addEventListener('click', closeAllModals);
+  document.getElementById('detailCloseBtn').addEventListener('click', closeAllModals);
+
+  // Close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) closeAllModals();
+    });
+  });
+
+  // Keyboard
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeAllModals();
+  });
+}
+
+/* ══════════════════════════════════════════════════════════
+   BOOT
+   ══════════════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

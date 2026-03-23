@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ralphton"
+version = "0.1.0"
+dependencies = ["openai<1.0", "pydantic<2.0", "rich", "typer"]
+
+[project.scripts]
+ralphton = "ralphton.cli:app"
+
+[tool.setuptools.packages.find]
+where = ["src"]

@@ -1,0 +1,833 @@
+<!-- EVOLVE-B: Workflows Zone Enhancements + Scroll-to-Top Fix -->
+<style>
+/* [B1] Workflow Grid 3-Column + Card Enhancements */
+.workflow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.wf-card-icon {
+  width: 48px !important;
+  height: 48px !important;
+  border-radius: var(--radius-lg) !important;
+  font-size: 1.5rem !important;
+  transition: transform var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+/* Category-colored icon backgrounds */
+.wf-card[data-category="productivity"] .wf-card-icon {
+  background: rgba(63, 185, 80, 0.15) !important;
+  box-shadow: 0 0 0 1px rgba(63, 185, 80, 0.2);
+}
+.wf-card[data-category="health"] .wf-card-icon {
+  background: rgba(210, 168, 255, 0.15) !important;
+  box-shadow: 0 0 0 1px rgba(210, 168, 255, 0.2);
+}
+.wf-card[data-category="smart-home"] .wf-card-icon {
+  background: rgba(88, 166, 255, 0.15) !important;
+  box-shadow: 0 0 0 1px rgba(88, 166, 255, 0.2);
+}
+.wf-card[data-category="finance"] .wf-card-icon {
+  background: rgba(210, 153, 34, 0.15) !important;
+  box-shadow: 0 0 0 1px rgba(210, 153, 34, 0.2);
+}
+.wf-card[data-category="lifestyle"] .wf-card-icon {
+  background: rgba(248, 81, 73, 0.15) !important;
+  box-shadow: 0 0 0 1px rgba(248, 81, 73, 0.2);
+}
+
+/* Enhanced category badge colors */
+.wf-card-badge.cat-productivity {
+  background: rgba(63, 185, 80, 0.15) !important;
+  color: var(--accent-green) !important;
+  border: 1px solid rgba(63, 185, 80, 0.3);
+}
+.wf-card-badge.cat-health {
+  background: rgba(210, 168, 255, 0.15) !important;
+  color: var(--accent-purple) !important;
+  border: 1px solid rgba(210, 168, 255, 0.3);
+}
+.wf-card-badge.cat-smart-home {
+  background: rgba(88, 166, 255, 0.15) !important;
+  color: var(--accent-blue) !important;
+  border: 1px solid rgba(88, 166, 255, 0.3);
+}
+.wf-card-badge.cat-finance {
+  background: rgba(210, 153, 34, 0.15) !important;
+  color: var(--accent-orange) !important;
+  border: 1px solid rgba(210, 153, 34, 0.3);
+}
+.wf-card-badge.cat-lifestyle {
+  background: rgba(248, 81, 73, 0.15) !important;
+  color: var(--accent-red) !important;
+  border: 1px solid rgba(248, 81, 73, 0.3);
+}
+
+/* Card hover: scale instead of translateY */
+.wf-card:hover {
+  transform: scale(1.02) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--border-hover) !important;
+}
+
+/* Highlighted card (from timeline click) */
+.wf-card.highlighted {
+  border-color: var(--accent-blue) !important;
+  box-shadow: var(--shadow-glow-blue) !important;
+  animation: cardHighlightPulse 1.5s ease-out;
+}
+
+@keyframes cardHighlightPulse {
+  0% { box-shadow: 0 0 0 0 rgba(88, 166, 255, 0.6); }
+  50% { box-shadow: 0 0 20px 4px rgba(88, 166, 255, 0.4); }
+  100% { box-shadow: var(--shadow-glow-blue); }
+}
+
+/* [B2] Timeline Enhancement */
+.timeline-block-emoji {
+  font-size: 8px;
+  fill: #fff;
+  pointer-events: none;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.timeline-tooltip {
+  position: absolute;
+  background: var(--bg-tooltip);
+  color: var(--text-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: var(--z-tooltip);
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.timeline-tooltip.visible {
+  opacity: 1;
+}
+
+/* [B3] Category Filter Enhancement */
+.category-btn {
+  padding: 6px 14px !important;
+  border-radius: var(--radius-full) !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary) !important;
+  border: 1px solid var(--border-primary) !important;
+  background: var(--bg-card) !important;
+  transition: all var(--transition-fast) !important;
+  cursor: pointer;
+}
+
+.category-btn:hover {
+  border-color: var(--border-hover) !important;
+  color: var(--text-primary) !important;
+  background: var(--bg-card-hover) !important;
+}
+
+/* Category-specific active states */
+.category-btn.active[data-category="all"] {
+  background: var(--accent-blue) !important;
+  color: #fff !important;
+  border-color: var(--accent-blue) !important;
+}
+.category-btn.active[data-category="productivity"] {
+  background: var(--accent-green) !important;
+  color: #fff !important;
+  border-color: var(--accent-green) !important;
+}
+.category-btn.active[data-category="health"] {
+  background: var(--accent-purple) !important;
+  color: #fff !important;
+  border-color: var(--accent-purple) !important;
+}
+.category-btn.active[data-category="smart-home"] {
+  background: var(--accent-blue) !important;
+  color: #fff !important;
+  border-color: var(--accent-blue) !important;
+}
+.category-btn.active[data-category="finance"] {
+  background: var(--accent-orange) !important;
+  color: #fff !important;
+  border-color: var(--accent-orange) !important;
+}
+.category-btn.active[data-category="lifestyle"] {
+  background: var(--accent-red) !important;
+  color: #fff !important;
+  border-color: var(--accent-red) !important;
+}
+
+.category-btn .cat-count {
+  display: inline-block;
+  margin-left: 4px;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+/* [B4] Form Enhancement */
+.form-input.invalid,
+.form-select.invalid,
+.form-textarea.invalid {
+  border-color: var(--accent-red) !important;
+  box-shadow: 0 0 0 3px rgba(248, 81, 73, 0.15) !important;
+}
+
+.form-error {
+  color: var(--accent-red);
+  font-size: 0.72rem;
+  margin-top: 4px;
+  display: none;
+}
+
+.form-error.visible {
+  display: block;
+}
+
+/* Cron Builder UI */
+.cron-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  margin-top: 8px;
+}
+
+.cron-builder-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.cron-builder-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  min-width: 50px;
+}
+
+.cron-builder select {
+  padding: 6px 10px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.cron-builder select:focus {
+  border-color: var(--accent-blue);
+}
+
+.cron-day-checks {
+  display: flex;
+  gap: 4px;
+}
+
+.cron-day-check {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.cron-day-check input[type="checkbox"] {
+  accent-color: var(--accent-blue);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.cron-day-check label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.cron-preview {
+  background: var(--bg-input);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 0.78rem;
+  color: var(--accent-cyan);
+  font-family: var(--font-mono);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cron-preview-label {
+  color: var(--text-tertiary);
+  font-family: var(--font-sans);
+  font-size: 0.72rem;
+}
+
+.cron-readable {
+  margin-top: 4px;
+  font-size: 0.78rem;
+  color: var(--accent-green);
+  padding: 6px 10px;
+  background: rgba(63, 185, 80, 0.08);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(63, 185, 80, 0.15);
+}
+
+/* [B5] Scroll-to-Top Fix - Move to RIGHT side + smooth fade */
+.scroll-top-btn {
+  left: auto !important;
+  right: 32px !important;
+  width: 48px !important;
+  height: 48px !important;
+  font-size: 1.3rem !important;
+  border-radius: 50% !important;
+  background: var(--accent-blue) !important;
+  box-shadow: var(--shadow-lg), 0 0 12px rgba(88, 166, 255, 0.2) !important;
+}
+
+.scroll-top-btn.visible {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transform: translateY(0) !important;
+  animation: scrollBtnFadeIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+@keyframes scrollBtnFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.scroll-top-btn:hover {
+  background: #4a94e8 !important;
+  transform: translateY(-3px) scale(1.05) !important;
+  box-shadow: var(--shadow-glow-blue), 0 8px 24px rgba(88, 166, 255, 0.3) !important;
+}
+
+/* Shake animation for form validation */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(6px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+/* Responsive: on smaller screens make workflow grid 2 columns, then 1 */
+@media (max-width: 960px) {
+  .workflow-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .workflow-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .scroll-top-btn {
+    right: 16px !important;
+    bottom: 16px !important;
+  }
+}
+</style>
+
+<!-- ===== HTML MODIFICATIONS ===== -->
+<!--
+  1. In renderWorkflows(), add data-category attribute to each .wf-card element
+  2. Replace the Cron input section in #workflowForm with a cron builder UI
+  3. Category filter buttons get count badges dynamically
+  4. Timeline blocks get emoji + workflow name tooltip + click handler
+  5. Scroll-to-top button already has correct HTML, CSS above fixes positioning
+-->
+
+<script>
+/* [B1-B5] All JS modifications for Workflows Zone Enhancements */
+(function() {
+  'use strict';
+
+  // Wait for the main app to initialize, then apply enhancements
+  var checkReady = setInterval(function() {
+    // Check if the main app's state and functions are available
+    if (!document.getElementById('workflowGrid')) return;
+    if (!document.getElementById('categoryFilters')) return;
+    clearInterval(checkReady);
+    setTimeout(applyEnhancements, 500);
+  }, 200);
+
+  function applyEnhancements() {
+    console.log('[Evolve-B] Applying Workflows Zone Enhancements...');
+
+    enhanceWorkflowRendering();
+    enhanceCategoryFilters();
+    enhanceTimeline();
+    enhanceFormModal();
+    enhanceScrollToTop();
+
+    console.log('[Evolve-B] All enhancements applied.');
+  }
+
+  // ============================================================
+  // [B1] Enhanced Workflow Card Rendering
+  // ============================================================
+
+  function enhanceWorkflowRendering() {
+    // Monkey-patch: observe the workflow grid for changes and add data-category
+    var grid = document.getElementById('workflowGrid');
+    if (!grid) return;
+
+    var observer = new MutationObserver(function() {
+      var cards = grid.querySelectorAll('.wf-card');
+      cards.forEach(function(card) {
+        if (card.hasAttribute('data-category')) return;
+        // Detect category from badge class
+        var badge = card.querySelector('.wf-card-badge');
+        if (badge) {
+          var classes = badge.className;
+          var cats = ['productivity', 'health', 'smart-home', 'finance', 'lifestyle'];
+          for (var i = 0; i < cats.length; i++) {
+            if (classes.indexOf('cat-' + cats[i]) !== -1) {
+              card.setAttribute('data-category', cats[i]);
+              break;
+            }
+          }
+        }
+      });
+    });
+
+    observer.observe(grid, { childList: true, subtree: false });
+
+    // Also apply to existing cards
+    setTimeout(function() {
+      var cards = grid.querySelectorAll('.wf-card');
+      cards.forEach(function(card) {
+        var badge = card.querySelector('.wf-card-badge');
+        if (badge) {
+          var classes = badge.className;
+          var cats = ['productivity', 'health', 'smart-home', 'finance', 'lifestyle'];
+          for (var i = 0; i < cats.length; i++) {
+            if (classes.indexOf('cat-' + cats[i]) !== -1) {
+              card.setAttribute('data-category', cats[i]);
+              break;
+            }
+          }
+        }
+      });
+    }, 100);
+  }
+
+  // ============================================================
+  // [B2] Timeline Enhancement - Real-time line + Click-to-highlight
+  // ============================================================
+
+  function enhanceTimeline() {
+    // Real-time update: refresh the timeline now-line every 60 seconds
+    setInterval(function() {
+      updateTimelineNowLine();
+    }, 60000);
+
+    // Add click handler for timeline blocks
+    var svgWrapper = document.querySelector('.timeline-svg-wrapper');
+    if (svgWrapper) {
+      // Create tooltip element
+      var tooltip = document.createElement('div');
+      tooltip.className = 'timeline-tooltip';
+      svgWrapper.style.position = 'relative';
+      svgWrapper.appendChild(tooltip);
+
+      // Delegate events on SVG
+      var svg = document.getElementById('timelineSvg');
+      if (svg) {
+        svg.addEventListener('mouseover', function(e) {
+          var block = e.target.closest('.timeline-block');
+          if (!block) return;
+          var title = block.querySelector('title');
+          if (title) {
+            tooltip.textContent = title.textContent;
+            tooltip.classList.add('visible');
+          }
+        });
+
+        svg.addEventListener('mousemove', function(e) {
+          var rect = svgWrapper.getBoundingClientRect();
+          tooltip.style.left = (e.clientX - rect.left + 10) + 'px';
+          tooltip.style.top = (e.clientY - rect.top - 30) + 'px';
+        });
+
+        svg.addEventListener('mouseout', function(e) {
+          if (e.target.closest('.timeline-block')) {
+            tooltip.classList.remove('visible');
+          }
+        });
+
+        // Click on timeline block -> highlight corresponding card
+        svg.addEventListener('click', function(e) {
+          var block = e.target.closest('.timeline-block');
+          if (!block) return;
+          var title = block.querySelector('title');
+          if (!title) return;
+
+          // Extract workflow name from title text (format: "Name @ HH:MM")
+          var titleText = title.textContent;
+          var wfName = titleText.split(' @ ')[0];
+
+          // Find matching card in grid
+          var grid = document.getElementById('workflowGrid');
+          if (!grid) return;
+
+          // Remove previous highlights
+          grid.querySelectorAll('.wf-card.highlighted').forEach(function(c) {
+            c.classList.remove('highlighted');
+          });
+
+          var cards = grid.querySelectorAll('.wf-card');
+          cards.forEach(function(card) {
+            var cardTitle = card.querySelector('.wf-card-title');
+            if (cardTitle && cardTitle.textContent.trim() === wfName) {
+              card.classList.add('highlighted');
+              card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              // Remove highlight after 3 seconds
+              setTimeout(function() {
+                card.classList.remove('highlighted');
+              }, 3000);
+            }
+          });
+        });
+      }
+    }
+  }
+
+  function updateTimelineNowLine() {
+    var svg = document.getElementById('timelineSvg');
+    if (!svg) return;
+
+    var now = new Date();
+    var currentHour = now.getHours() + now.getMinutes() / 60;
+    var width = 800;
+    var paddingLeft = 40;
+    var paddingRight = 10;
+    var usableW = width - paddingLeft - paddingRight;
+    var nowX = paddingLeft + (currentHour / 24) * usableW;
+
+    // Update existing now-line position
+    var nowLine = svg.querySelector('.timeline-now-line');
+    if (nowLine) {
+      nowLine.setAttribute('x1', nowX);
+      nowLine.setAttribute('x2', nowX);
+    }
+
+    var nowLabel = svg.querySelector('.timeline-now-label');
+    if (nowLabel) {
+      nowLabel.setAttribute('x', nowX);
+    }
+  }
+
+  // ============================================================
+  // [B3] Category Filter Enhancement - Counts + Category Colors
+  // ============================================================
+
+  function enhanceCategoryFilters() {
+    var filtersContainer = document.getElementById('categoryFilters');
+    if (!filtersContainer) return;
+
+    function updateFilterCounts() {
+      // Read workflows from localStorage or from grid
+      var workflows = [];
+      try {
+        var saved = localStorage.getItem('openclaw-workflows');
+        if (saved) workflows = JSON.parse(saved);
+      } catch(e) {}
+
+      var counts = { all: workflows.length };
+      var categories = ['productivity', 'health', 'smart-home', 'finance', 'lifestyle'];
+      categories.forEach(function(cat) {
+        counts[cat] = workflows.filter(function(w) { return w.category === cat; }).length;
+      });
+
+      var buttons = filtersContainer.querySelectorAll('.category-btn');
+      buttons.forEach(function(btn) {
+        var cat = btn.getAttribute('data-category');
+        var count = counts[cat] || 0;
+
+        // Update or add count span
+        var countSpan = btn.querySelector('.cat-count');
+        if (!countSpan) {
+          countSpan = document.createElement('span');
+          countSpan.className = 'cat-count';
+          btn.appendChild(countSpan);
+        }
+        countSpan.textContent = '(' + count + ')';
+      });
+    }
+
+    // Initial update
+    updateFilterCounts();
+
+    // Update counts when workflows change (observe grid mutations)
+    var grid = document.getElementById('workflowGrid');
+    if (grid) {
+      var observer = new MutationObserver(function() {
+        updateFilterCounts();
+      });
+      observer.observe(grid, { childList: true });
+    }
+
+    // Also update periodically (in case of toggles/deletes)
+    setInterval(updateFilterCounts, 5000);
+  }
+
+  // ============================================================
+  // [B4] Form Enhancement - Validation + Cron Builder
+  // ============================================================
+
+  function enhanceFormModal() {
+    var form = document.getElementById('workflowForm');
+    if (!form) return;
+
+    // Replace the Cron input with a builder
+    var cronGroup = document.getElementById('formCron');
+    if (!cronGroup) return;
+    var cronParent = cronGroup.closest('.form-group');
+    if (!cronParent) return;
+
+    // Hide original cron input (keep it for value storage)
+    cronGroup.style.display = 'none';
+    var hintEl = cronParent.querySelector('.form-hint');
+    if (hintEl) hintEl.style.display = 'none';
+
+    // Build the cron builder UI
+    var builder = document.createElement('div');
+    builder.className = 'cron-builder';
+    builder.innerHTML =
+      '<div class="cron-builder-row">' +
+        '<span class="cron-builder-label">시간</span>' +
+        '<select id="cronHour">' +
+          buildOptions(24, '시') +
+        '</select>' +
+        '<span class="cron-builder-label">분</span>' +
+        '<select id="cronMinute">' +
+          '<option value="0">00분</option>' +
+          '<option value="15">15분</option>' +
+          '<option value="30">30분</option>' +
+          '<option value="45">45분</option>' +
+        '</select>' +
+      '</div>' +
+      '<div class="cron-builder-row">' +
+        '<span class="cron-builder-label">요일</span>' +
+        '<div class="cron-day-checks">' +
+          buildDayCheckboxes() +
+        '</div>' +
+      '</div>' +
+      '<div class="cron-preview" id="cronPreviewExpr">' +
+        '<span class="cron-preview-label">Cron:</span> <span id="cronExprText">0 9 * * *</span>' +
+      '</div>' +
+      '<div class="cron-readable" id="cronReadable">매일 오전 9:00</div>';
+
+    cronParent.appendChild(builder);
+
+    // Also hide the schedule description input (auto-generate it)
+    var schedDescInput = document.getElementById('formScheduleDesc');
+    if (schedDescInput) {
+      var schedDescGroup = schedDescInput.closest('.form-group');
+      if (schedDescGroup) schedDescGroup.style.display = 'none';
+    }
+
+    // Event listeners for cron builder
+    var cronHour = document.getElementById('cronHour');
+    var cronMinute = document.getElementById('cronMinute');
+
+    function updateCronExpression() {
+      var h = cronHour ? cronHour.value : '9';
+      var m = cronMinute ? cronMinute.value : '0';
+
+      // Collect selected days
+      var dayChecks = builder.querySelectorAll('.cron-day-cb:checked');
+      var days = [];
+      dayChecks.forEach(function(cb) { days.push(cb.value); });
+
+      var dayPart = days.length === 0 || days.length === 7 ? '*' : days.join(',');
+      var cronExpr = m + ' ' + h + ' * * ' + dayPart;
+
+      // Update hidden cron input
+      cronGroup.value = cronExpr;
+
+      // Update preview
+      var exprText = document.getElementById('cronExprText');
+      if (exprText) exprText.textContent = cronExpr;
+
+      // Generate human-readable description
+      var readable = generateReadableSchedule(parseInt(h), parseInt(m), days);
+      var readableEl = document.getElementById('cronReadable');
+      if (readableEl) readableEl.textContent = readable;
+
+      // Also update schedule description
+      if (schedDescInput) schedDescInput.value = readable;
+    }
+
+    if (cronHour) cronHour.addEventListener('change', updateCronExpression);
+    if (cronMinute) cronMinute.addEventListener('change', updateCronExpression);
+    builder.querySelectorAll('.cron-day-cb').forEach(function(cb) {
+      cb.addEventListener('change', updateCronExpression);
+    });
+
+    // Initial value
+    updateCronExpression();
+
+    // Form validation enhancement
+    enhanceFormValidation(form);
+  }
+
+  function buildOptions(count, suffix) {
+    var html = '';
+    for (var i = 0; i < count; i++) {
+      var selected = i === 9 ? ' selected' : '';
+      html += '<option value="' + i + '"' + selected + '>' + String(i).padStart(2, '0') + suffix + '</option>';
+    }
+    return html;
+  }
+
+  function buildDayCheckboxes() {
+    var days = [
+      { val: '1', label: '월' },
+      { val: '2', label: '화' },
+      { val: '3', label: '수' },
+      { val: '4', label: '목' },
+      { val: '5', label: '금' },
+      { val: '6', label: '토' },
+      { val: '0', label: '일' }
+    ];
+    return days.map(function(d) {
+      return '<div class="cron-day-check">' +
+        '<input type="checkbox" class="cron-day-cb" id="cronDay' + d.val + '" value="' + d.val + '">' +
+        '<label for="cronDay' + d.val + '">' + d.label + '</label>' +
+      '</div>';
+    }).join('');
+  }
+
+  function generateReadableSchedule(hour, minute, days) {
+    var timeStr = (hour < 12 ? '오전' : '오후') + ' ' +
+      (hour === 0 ? 12 : hour > 12 ? hour - 12 : hour) + ':' +
+      String(minute).padStart(2, '0');
+
+    var dayNames = { '0': '일', '1': '월', '2': '화', '3': '수', '4': '목', '5': '금', '6': '토' };
+
+    if (days.length === 0 || days.length === 7) {
+      return '매일 ' + timeStr;
+    }
+
+    // Check if weekdays only (1-5)
+    var sorted = days.slice().sort();
+    if (sorted.join(',') === '1,2,3,4,5') {
+      return '평일 ' + timeStr;
+    }
+    if (sorted.join(',') === '0,6') {
+      return '주말 ' + timeStr;
+    }
+
+    var dayLabels = days.map(function(d) { return dayNames[d] || d; });
+    return '매주 ' + dayLabels.join(', ') + '요일 ' + timeStr;
+  }
+
+  function enhanceFormValidation(form) {
+    var saveBtn = document.getElementById('formSave');
+    if (!saveBtn) return;
+
+    // Add error message elements to required fields
+    var nameInput = document.getElementById('formName');
+    var categorySelect = document.getElementById('formCategory');
+
+    addErrorMessage(nameInput, '워크플로우 이름을 입력해주세요.');
+    addErrorMessage(categorySelect, '카테고리를 선택해주세요.');
+
+    // Listen for input to clear validation errors
+    if (nameInput) {
+      nameInput.addEventListener('input', function() {
+        clearFieldError(this);
+      });
+    }
+    if (categorySelect) {
+      categorySelect.addEventListener('change', function() {
+        clearFieldError(this);
+      });
+    }
+
+    // Intercept the save click to add visual validation
+    saveBtn.addEventListener('click', function(e) {
+      var isValid = true;
+
+      if (nameInput && !nameInput.value.trim()) {
+        showFieldError(nameInput);
+        isValid = false;
+      }
+      if (categorySelect && !categorySelect.value) {
+        showFieldError(categorySelect);
+        isValid = false;
+      }
+
+      if (!isValid) {
+        e.stopImmediatePropagation();
+        e.preventDefault();
+      }
+    }, true); // Use capture phase to run before the main handler
+  }
+
+  function addErrorMessage(el, message) {
+    if (!el) return;
+    var errorEl = document.createElement('div');
+    errorEl.className = 'form-error';
+    errorEl.textContent = message;
+    el.parentNode.appendChild(errorEl);
+  }
+
+  function showFieldError(el) {
+    el.classList.add('invalid');
+    var errorEl = el.parentNode.querySelector('.form-error');
+    if (errorEl) errorEl.classList.add('visible');
+    // Shake animation
+    el.style.animation = 'none';
+    el.offsetHeight; // reflow
+    el.style.animation = 'shake 0.4s ease';
+  }
+
+  function clearFieldError(el) {
+    el.classList.remove('invalid');
+    var errorEl = el.parentNode.querySelector('.form-error');
+    if (errorEl) errorEl.classList.remove('visible');
+  }
+
+  // ============================================================
+  // [B5] Scroll-to-Top Enhancement
+  // ============================================================
+
+  function enhanceScrollToTop() {
+    var btn = document.getElementById('scrollTopBtn');
+    if (!btn) return;
+
+    // Ensure button content is the up arrow
+    btn.textContent = '▲';
+    btn.setAttribute('aria-label', '맨 위로 스크롤');
+    btn.setAttribute('title', '맨 위로');
+
+    // The CSS above handles positioning (right: 32px) and fade animation.
+    // The existing JS at line 6518-6531 already handles show/hide on scroll > 300px.
+    // No additional JS needed for scroll-to-top.
+  }
+
+})();
+</script>

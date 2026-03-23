@@ -1,0 +1,151 @@
+<!-- ===== MAIN MENU / LOBBY ===== -->
+<div id="main-menu">
+  <div id="lobby">
+    <h2>🎴 맞고 고스톱 v7</h2>
+
+    <div class="lobby-section">
+      <h3>🎮 싱글플레이어</h3>
+      <button class="btn btn-primary" onclick="startSinglePlayer()">CPU 대전</button>
+      <div class="difficulty-selector" style="margin-top:8px;">
+        <label class="diff-option active" data-diff="easy"><input type="radio" name="ai-diff" value="easy"> Easy</label>
+        <label class="diff-option" data-diff="medium"><input type="radio" name="ai-diff" value="medium" checked> Medium</label>
+        <label class="diff-option" data-diff="hard"><input type="radio" name="ai-diff" value="hard"> Hard</label>
+      </div>
+      <button class="btn btn-info btn-small" onclick="startTutorial()">📖 튜토리얼</button>
+    </div>
+
+    <div class="lobby-section">
+      <h3>🌐 멀티플레이어</h3>
+      <input id="player-name-input" placeholder="닉네임" value="Player">
+      <br>
+      <input id="server-url-input" placeholder="서버 주소 (ws://localhost:8080)">
+      <br>
+      <button class="btn btn-success" onclick="connectAndCreate()">방 만들기</button>
+      <br>
+      <input id="room-code-input" placeholder="방 코드 입력">
+      <button class="btn btn-secondary" onclick="connectAndJoin()">방 참가</button>
+      <div id="room-list"></div>
+    </div>
+
+    <div class="lobby-section">
+      <h3>📊 기록</h3>
+      <button class="btn btn-secondary btn-small" onclick="showStats()">통계 보기</button>
+      <button class="btn btn-warning btn-small" onclick="loadSavedGame()">저장된 게임 불러오기</button>
+    </div>
+
+    <div style="margin-top:12px;">
+      <button class="btn btn-secondary btn-small" onclick="toggleThemeGlobal()">🌙 테마</button>
+      <button class="btn btn-secondary btn-small" id="sound-toggle-btn" onclick="toggleSoundGlobal()">🔊 소리 ON</button>
+      <div style="margin-top:8px;">
+        <span style="font-size:0.8em;opacity:0.7;">카드 테마: </span>
+        <select id="card-theme-select" onchange="setCardTheme(this.value)" style="padding:4px 8px;border-radius:4px;background:var(--panel-bg);color:var(--text-color);border:1px solid var(--panel-border);">
+          <option value="classic">Classic</option>
+          <option value="simple">Simple</option>
+          <option value="emoji" selected>Emoji</option>
+        </select>
+        <span style="font-size:0.8em;opacity:0.7;margin-left:8px;">효과음: </span>
+        <select id="sound-theme-select" onchange="setSoundTheme(this.value)" style="padding:4px 8px;border-radius:4px;background:var(--panel-bg);color:var(--text-color);border:1px solid var(--panel-border);">
+          <option value="casual" selected>Casual</option>
+          <option value="traditional">Traditional</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GAME SCREEN ===== -->
+<div id="game-screen" class="hidden">
+<div id="game-container">
+  <div class="header">
+    <h1>🎴 맞고 v7</h1>
+    <div class="header-buttons">
+      <button class="btn btn-secondary btn-small" onclick="game.toggleTheme()">🌙</button>
+      <button class="btn btn-secondary btn-small" id="game-sound-btn" onclick="soundManager.toggle(); updateSoundBtn()">🔊</button>
+      <button class="btn btn-secondary btn-small" onclick="saveCurrentGame()">💾</button>
+      <button class="btn btn-secondary btn-small" onclick="showStats()">📊</button>
+      <button class="btn btn-primary btn-small" onclick="game.newGame()">새 게임</button>
+      <button class="btn btn-warning btn-small" onclick="backToMenu()">나가기</button>
+      <span id="ai-diff-display" class="btn-small" style="font-size:0.7em;opacity:0.8;"></span>
+    </div>
+  </div>
+
+  <!-- Opponent -->
+  <div id="cpu-area" class="player-area">
+    <div class="player-header">
+      <span class="player-name" id="opponent-name-display">🤖 상대방 (CPU)</span>
+      <div class="player-stats">
+        <span class="stat"><span class="stat-label">점수</span><span class="stat-value" id="cpu-score">0</span></span>
+        <span class="stat"><span class="stat-label">고</span><span class="stat-value" id="cpu-go">0</span></span>
+      </div>
+    </div>
+    <div class="cards-row" id="cpu-hand"></div>
+    <div class="captured-area" id="cpu-captured">
+      <div class="captured-section"><div class="captured-label">광</div><div class="captured-cards" id="cpu-gwang"></div></div>
+      <div class="captured-section"><div class="captured-label">띠</div><div class="captured-cards" id="cpu-tti"></div></div>
+      <div class="captured-section"><div class="captured-label">동물</div><div class="captured-cards" id="cpu-dan"></div></div>
+      <div class="captured-section"><div class="captured-label">피</div><div class="captured-cards" id="cpu-pi"></div></div>
+    </div>
+  </div>
+
+  <!-- Game Info -->
+  <div class="game-info">
+    <span>🃏 덱: <span id="deck-count">0</span>장</span>
+    <span class="turn-indicator"><span class="turn-dot"></span> <span id="turn-info">게임 시작!</span></span>
+    <span>턴: <span id="turn-count">0</span></span>
+  </div>
+
+  <!-- Floor -->
+  <div class="floor-area">
+    <div class="floor-label">바닥</div>
+    <div class="floor-cards" id="floor-cards"></div>
+  </div>
+
+  <!-- Player -->
+  <div id="player-area" class="player-area">
+    <div class="player-header">
+      <span class="player-name">👤 나 <span id="player-heundeulgi-badge"></span></span>
+      <div class="player-stats">
+        <span class="stat"><span class="stat-label">점수</span><span class="stat-value" id="player-score">0</span></span>
+        <span class="stat"><span class="stat-label">고</span><span class="stat-value" id="player-go">0</span></span>
+      </div>
+    </div>
+    <div class="cards-row" id="player-hand"></div>
+    <div class="action-buttons" id="action-buttons"></div>
+    <div class="captured-area" id="player-captured">
+      <div class="captured-section"><div class="captured-label">광</div><div class="captured-cards" id="player-gwang"></div></div>
+      <div class="captured-section"><div class="captured-label">띠</div><div class="captured-cards" id="player-tti"></div></div>
+      <div class="captured-section"><div class="captured-label">동물</div><div class="captured-cards" id="player-dan"></div></div>
+      <div class="captured-section"><div class="captured-label">피</div><div class="captured-cards" id="player-pi"></div></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- Notification -->
+<div class="notification-overlay" id="notification">
+  <div class="notification-box" id="notification-box">
+    <div class="notification-text" id="notification-text"></div>
+    <div class="notification-sub" id="notification-sub"></div>
+  </div>
+</div>
+
+<!-- Modal container -->
+<div id="modal-container"></div>
+
+<!-- Tutorial container -->
+<div id="tutorial-container"></div>
+
+<!-- Chat Panel (multiplayer only) -->
+<div id="chat-panel" class="hidden minimized">
+  <div id="chat-header" onclick="toggleChat()">
+    <span>💬 채팅</span>
+    <span id="chat-toggle-icon">▲</span>
+  </div>
+  <div id="chat-messages"></div>
+  <div id="chat-input-row">
+    <input id="chat-input" placeholder="메시지 입력" onkeydown="if(event.key==='Enter')sendChat()">
+    <button class="btn btn-primary btn-small" onclick="sendChat()">전송</button>
+  </div>
+</div>
+
+<div class="confetti-container" id="confetti-container"></div>

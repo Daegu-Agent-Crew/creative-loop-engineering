@@ -1,0 +1,619 @@
+<!-- EVOLVE-A: Office Zone Enhancements -->
+<!-- Teammate A - CSS & JS for Office zone only -->
+<!-- Target: /index.html - inject these blocks into the existing file -->
+
+<!-- ===== NEW CSS ===== -->
+<style>
+
+/* ============================================================
+   [A1] Tab Enhancement - 3탭 명확한 표시
+   Replaces existing .navbar-tabs / .nav-tab styles (lines 313-360)
+   ============================================================ */
+
+/* Override: navbar-tabs container - remove pill shape, add room for indicator */
+.navbar-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  position: relative;
+  height: 100%;
+}
+
+/* Override: nav-tab - larger, always show icon+text, no pill background */
+.nav-tab {
+  padding: 10px 24px;
+  border-radius: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: color var(--transition-fast), background var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  position: relative;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+
+.nav-tab .tab-icon {
+  font-size: 1.15rem;
+}
+
+.nav-tab .tab-label {
+  /* Always visible - override any mobile hide */
+  display: inline !important;
+  font-size: 0.95rem;
+}
+
+.nav-tab:hover {
+  color: var(--text-primary);
+  background: rgba(88, 166, 255, 0.06);
+}
+
+/* Override: active tab - text glow + bottom border, no filled pill */
+.nav-tab.active {
+  color: var(--accent-blue);
+  background: rgba(88, 166, 255, 0.08);
+  box-shadow: none;
+}
+
+/* Active tab bottom highlight bar */
+.nav-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 10%;
+  width: 80%;
+  height: 3px;
+  background: var(--accent-blue);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 0 10px rgba(88, 166, 255, 0.5), 0 0 20px rgba(88, 166, 255, 0.2);
+}
+
+/* Animated sliding indicator bar beneath tabs */
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  height: 3px;
+  background: var(--accent-blue);
+  border-radius: 3px 3px 0 0;
+  box-shadow: 0 0 12px rgba(88, 166, 255, 0.6), 0 0 24px rgba(88, 166, 255, 0.2);
+  transition: left 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Mobile: ensure labels stay visible, slightly smaller */
+@media (max-width: 600px) {
+  .nav-tab {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    gap: 5px;
+  }
+  .nav-tab .tab-label {
+    display: inline !important;
+    font-size: 0.8rem;
+  }
+  .nav-tab .tab-icon {
+    font-size: 1rem;
+  }
+}
+
+
+/* ============================================================
+   [A2] Avatar State Animations Enhanced
+   Overrides existing agent--idle/working/error (lines 3607-3663)
+   ============================================================ */
+
+/* --- IDLE: breathing + grayscale + floating dust particles --- */
+.iso-avatar.agent--idle {
+  animation: avatarIdleBreatheV2 3.5s ease-in-out infinite;
+  filter: saturate(0.25) brightness(0.75);
+  box-shadow: 0 4px 12px rgba(139, 148, 158, 0.35);
+}
+
+@keyframes avatarIdleBreatheV2 {
+  0%, 100% { transform: scale(0.97) translateY(0); }
+  50%      { transform: scale(1.03) translateY(-1px); }
+}
+
+/* Dust particles ring around idle avatar */
+.iso-avatar.agent--idle::before {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  background:
+    radial-gradient(1px 1px at 20% 30%, rgba(139,148,158,0.6) 50%, transparent 100%),
+    radial-gradient(1px 1px at 75% 15%, rgba(139,148,158,0.5) 50%, transparent 100%),
+    radial-gradient(1px 1px at 45% 80%, rgba(139,148,158,0.4) 50%, transparent 100%),
+    radial-gradient(1px 1px at 85% 70%, rgba(139,148,158,0.5) 50%, transparent 100%),
+    radial-gradient(1px 1px at 10% 65%, rgba(139,148,158,0.3) 50%, transparent 100%);
+  animation: idleDustDrift 6s ease-in-out infinite alternate;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes idleDustDrift {
+  0%   { transform: rotate(0deg) scale(1); opacity: 0.4; }
+  50%  { transform: rotate(8deg) scale(1.05); opacity: 0.7; }
+  100% { transform: rotate(-5deg) scale(0.98); opacity: 0.5; }
+}
+
+/* --- WORKING: energetic bounce + blue glow pulse + rotating ring --- */
+.iso-avatar.agent--working {
+  animation: avatarWorkingV2 0.6s ease-in-out infinite;
+  filter: brightness(1.2);
+  box-shadow: 0 0 18px rgba(88, 166, 255, 0.6);
+}
+
+@keyframes avatarWorkingV2 {
+  0%, 100% { transform: translateY(0) scale(1); }
+  25%      { transform: translateY(-3px) scale(1.04); }
+  50%      { transform: translateY(0) scale(1); }
+  75%      { transform: translateY(-2px) scale(1.02); }
+}
+
+/* Blue glow pulse behind working avatar */
+.iso-avatar.agent--working::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: 0 0 12px rgba(88, 166, 255, 0.5);
+  animation: workingGlowPulse 1.5s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes workingGlowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(88, 166, 255, 0.3); opacity: 0.6; }
+  50%      { box-shadow: 0 0 22px rgba(88, 166, 255, 0.7); opacity: 1; }
+}
+
+/* Rotating ring around working avatar */
+.iso-avatar.agent--working::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--accent-blue);
+  border-right-color: rgba(88, 166, 255, 0.3);
+  animation: workingRingSpin 1.2s linear infinite;
+  pointer-events: none;
+  z-index: 20;
+}
+
+@keyframes workingRingSpin {
+  0%   { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* --- ERROR: shake + red pulse + screen flash --- */
+.iso-avatar.agent--error {
+  animation: avatarErrorV2 0.3s ease-in-out infinite alternate;
+  box-shadow: 0 0 24px rgba(248, 81, 73, 0.7);
+  background: linear-gradient(135deg, var(--accent-red), #c0392b) !important;
+}
+
+@keyframes avatarErrorV2 {
+  0%   { transform: translateX(-3px) rotate(-3deg); }
+  25%  { transform: translateX(3px) rotate(2deg); }
+  50%  { transform: translateX(-2px) rotate(-1deg); }
+  75%  { transform: translateX(2px) rotate(3deg); }
+  100% { transform: translateX(-1px) rotate(-2deg); }
+}
+
+/* Red flash pulse behind error avatar */
+.iso-avatar.agent--error::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(248, 81, 73, 0.3), transparent 70%);
+  animation: errorScreenFlash 0.8s ease-in-out infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes errorScreenFlash {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50%      { opacity: 0.8; transform: scale(1.2); }
+}
+
+/* Exclamation badge (keep existing, enhance pulse) */
+.iso-avatar.agent--error::after {
+  content: '!';
+  position: absolute;
+  top: -14px;
+  right: -8px;
+  width: 18px;
+  height: 18px;
+  background: var(--accent-red);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 900;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 25;
+  animation: errorBadgePulseV2 0.6s infinite;
+  box-shadow: 0 0 8px rgba(248, 81, 73, 0.6);
+}
+
+@keyframes errorBadgePulseV2 {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 4px rgba(248, 81, 73, 0.5); }
+  50%      { transform: scale(1.25); box-shadow: 0 0 12px rgba(248, 81, 73, 0.7); }
+}
+
+
+/* ============================================================
+   [A3] Room Transition Fade
+   Enhance existing .iso-room transitions for focus/dim
+   ============================================================ */
+
+.iso-room {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, filter 0.4s ease;
+}
+
+/* When a room is focused: brightness boost + slight scale */
+.iso-room.focused {
+  filter: brightness(1.25) saturate(1.1);
+  z-index: 10;
+}
+
+.iso-room.focused .iso-room-floor {
+  box-shadow: 0 0 40px rgba(88, 166, 255, 0.35);
+}
+
+/* Other rooms dim when one is focused */
+.iso-room.dimmed {
+  filter: brightness(0.55) saturate(0.5);
+  opacity: 0.6;
+}
+
+
+/* ============================================================
+   [A4] Ambient Particles Canvas
+   Overlay canvas inside .iso-container
+   ============================================================ */
+
+.ambient-particles-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  opacity: 0.6;
+}
+
+
+/* ============================================================
+   [A5] Desk Hover Glow Effect
+   ============================================================ */
+
+.iso-desk {
+  transition: transform 0.3s ease;
+}
+
+.iso-desk:hover {
+  transform: translateY(-2px);
+}
+
+.iso-desk:hover .iso-desk-top {
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 0 16px rgba(88, 166, 255, 0.35),
+    0 0 32px rgba(88, 166, 255, 0.15);
+  border-color: rgba(88, 166, 255, 0.4);
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+.iso-desk-top {
+  transition: box-shadow 0.3s ease, border-color 0.3s ease;
+}
+
+/* Agent-specific desk glow colors on hover */
+.room-mission-control .iso-desk:hover .iso-desk-top {
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 0 16px rgba(88, 166, 255, 0.4),
+    0 0 32px rgba(88, 166, 255, 0.15);
+}
+
+.room-workflow-lab .iso-desk:hover .iso-desk-top {
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 0 16px rgba(63, 185, 80, 0.4),
+    0 0 32px rgba(63, 185, 80, 0.15);
+  border-color: rgba(63, 185, 80, 0.4);
+}
+
+.room-comm-hub .iso-desk:hover .iso-desk-top {
+  box-shadow:
+    0 4px 8px rgba(0, 0, 0, 0.2),
+    0 0 16px rgba(210, 168, 255, 0.4),
+    0 0 32px rgba(210, 168, 255, 0.15);
+  border-color: rgba(210, 168, 255, 0.4);
+}
+
+
+/* ============================================================
+   [A6] Desk Monitor "Screen" Display - Animated Code Lines
+   Overrides/enhances .desk-screen (line 1027)
+   ============================================================ */
+
+.desk-screen {
+  overflow: hidden;
+}
+
+/* Animated scrolling "code" lines inside the desk screen */
+.desk-screen::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  right: 3px;
+  height: 14px;
+  background:
+    /* Simulated code lines - thin horizontal bars */
+    linear-gradient(to right, currentColor 60%, transparent 60%) 0 0 / 100% 2px no-repeat,
+    linear-gradient(to right, currentColor 40%, transparent 40%) 0 3px / 100% 2px no-repeat,
+    linear-gradient(to right, currentColor 75%, transparent 75%) 0 6px / 100% 2px no-repeat,
+    linear-gradient(to right, currentColor 30%, transparent 30%) 0 9px / 100% 2px no-repeat,
+    linear-gradient(to right, currentColor 55%, transparent 55%) 0 12px / 100% 2px no-repeat;
+  opacity: 0.3;
+  animation: deskScreenScroll 4s linear infinite;
+  z-index: 4;
+}
+
+@keyframes deskScreenScroll {
+  0%   { transform: translateY(0); opacity: 0.3; }
+  50%  { transform: translateY(-4px); opacity: 0.5; }
+  100% { transform: translateY(0); opacity: 0.3; }
+}
+
+/* Per-agent screen color */
+.room-mission-control .desk-screen::after {
+  color: var(--accent-blue);
+}
+.room-mission-control .desk-screen::before {
+  background: rgba(88, 166, 255, 0.12);
+}
+
+.room-workflow-lab .desk-screen::after {
+  color: var(--accent-green);
+}
+.room-workflow-lab .desk-screen::before {
+  background: rgba(63, 185, 80, 0.12);
+}
+
+.room-comm-hub .desk-screen::after {
+  color: var(--accent-purple);
+}
+.room-comm-hub .desk-screen::before {
+  background: rgba(210, 168, 255, 0.12);
+}
+
+/* Scanline sweep effect on desk screen */
+.desk-screen::before {
+  animation: screenGlow 4s infinite alternate, screenScanline 3s linear infinite;
+}
+
+@keyframes screenScanline {
+  0%   { background-position: 0 0; }
+  100% { background-position: 0 20px; }
+}
+
+</style>
+
+
+<!-- ===== NEW HTML ADDITIONS ===== -->
+<!--
+  [A1] Tab Indicator:
+  INSERT inside .navbar-tabs (after the last .nav-tab button, before closing </div>):
+    <div class="tab-indicator" id="tabIndicator"></div>
+
+  [A4] Ambient Particles Canvas:
+  INSERT as first child of .iso-container (line 3953, after <div class="iso-container">):
+    <canvas class="ambient-particles-canvas" id="ambientParticles"></canvas>
+-->
+
+
+<!-- ===== NEW/MODIFIED JS ===== -->
+<script>
+
+/* ============================================================
+   [A1] Tab Indicator - Animated sliding bar
+   Call initTabIndicator() after DOMContentLoaded
+   ============================================================ */
+function initTabIndicator() {
+  var tabsContainer = document.querySelector('.navbar-tabs');
+  if (!tabsContainer) return;
+
+  // Create indicator element if not present
+  var indicator = document.getElementById('tabIndicator');
+  if (!indicator) {
+    indicator = document.createElement('div');
+    indicator.className = 'tab-indicator';
+    indicator.id = 'tabIndicator';
+    tabsContainer.style.position = 'relative';
+    tabsContainer.appendChild(indicator);
+  }
+
+  function moveIndicator(tab) {
+    if (!tab) return;
+    var rect = tab.getBoundingClientRect();
+    var parentRect = tabsContainer.getBoundingClientRect();
+    indicator.style.left = (rect.left - parentRect.left) + 'px';
+    indicator.style.width = rect.width + 'px';
+  }
+
+  // Position on active tab
+  var activeTab = tabsContainer.querySelector('.nav-tab.active');
+  moveIndicator(activeTab);
+
+  // Observe tab clicks to animate
+  tabsContainer.querySelectorAll('.nav-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      moveIndicator(this);
+    });
+  });
+
+  // Reposition on resize
+  window.addEventListener('resize', function() {
+    var active = tabsContainer.querySelector('.nav-tab.active');
+    moveIndicator(active);
+  });
+}
+
+
+/* ============================================================
+   [A3] Room Transition - Focus/Dim classes
+   Wraps existing focusRoom() with focus/dim logic
+   ============================================================ */
+var _originalFocusRoom = typeof focusRoom === 'function' ? focusRoom : null;
+
+function enhancedFocusRoom(roomName) {
+  // Apply dim/focus classes
+  var rooms = document.querySelectorAll('.iso-room');
+  rooms.forEach(function(room) {
+    room.classList.remove('focused', 'dimmed');
+    if (room.classList.contains('room-' + roomName)) {
+      room.classList.add('focused');
+    } else {
+      room.classList.add('dimmed');
+    }
+  });
+
+  // Call original focusRoom for camera transform
+  if (_originalFocusRoom) {
+    _originalFocusRoom(roomName);
+  }
+}
+
+function initRoomFocusEnhancement() {
+  // Override room tab clicks to use enhanced version
+  document.querySelectorAll('.room-tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      var room = this.getAttribute('data-room');
+      enhancedFocusRoom(room);
+    });
+  });
+
+  // Double-click iso-container to reset (unfocus all)
+  var isoContainer = document.querySelector('.iso-container');
+  if (isoContainer) {
+    isoContainer.addEventListener('dblclick', function(e) {
+      if (e.target === isoContainer || e.target.classList.contains('iso-scene')) {
+        document.querySelectorAll('.iso-room').forEach(function(room) {
+          room.classList.remove('focused', 'dimmed');
+        });
+      }
+    });
+  }
+}
+
+
+/* ============================================================
+   [A4] Ambient Particles - Canvas overlay
+   Creates 40 subtle floating particles in the iso-container
+   ============================================================ */
+function initAmbientParticles() {
+  var container = document.querySelector('.iso-container');
+  if (!container) return;
+
+  // Create canvas if not present
+  var canvas = document.getElementById('ambientParticles');
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.className = 'ambient-particles-canvas';
+    canvas.id = 'ambientParticles';
+    container.insertBefore(canvas, container.firstChild);
+  }
+
+  var ctx = canvas.getContext('2d');
+  var particles = [];
+  var PARTICLE_COUNT = 40;
+
+  function resize() {
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Initialize particles
+  for (var i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      size: Math.random() * 1.8 + 0.4,         // 0.4 - 2.2px
+      opacity: Math.random() * 0.25 + 0.05,     // 0.05 - 0.30
+      dx: (Math.random() - 0.5) * 0.3,          // slow horizontal drift
+      dy: (Math.random() - 0.5) * 0.15 - 0.1,   // slight upward bias
+      flickerSpeed: Math.random() * 0.02 + 0.005,
+      flickerPhase: Math.random() * Math.PI * 2
+    });
+  }
+
+  var frame = 0;
+  function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    frame++;
+
+    for (var i = 0; i < particles.length; i++) {
+      var p = particles[i];
+
+      // Move
+      p.x += p.dx;
+      p.y += p.dy;
+
+      // Wrap around
+      if (p.x < -5) p.x = canvas.width + 5;
+      if (p.x > canvas.width + 5) p.x = -5;
+      if (p.y < -5) p.y = canvas.height + 5;
+      if (p.y > canvas.height + 5) p.y = -5;
+
+      // Flicker opacity
+      var flicker = Math.sin(frame * p.flickerSpeed + p.flickerPhase) * 0.5 + 0.5;
+      var alpha = p.opacity * (0.5 + flicker * 0.5);
+
+      // Draw particle as a soft dot
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(200, 210, 225, ' + alpha + ')';
+      ctx.fill();
+    }
+
+    requestAnimationFrame(animate);
+  }
+
+  animate();
+}
+
+
+/* ============================================================
+   Initialization - call after DOMContentLoaded
+   Insert these calls into the existing init chain
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', function() {
+  // Small delay to ensure existing scripts have initialized
+  setTimeout(function() {
+    initTabIndicator();
+    initRoomFocusEnhancement();
+    initAmbientParticles();
+  }, 100);
+});
+
+</script>

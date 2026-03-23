@@ -1,0 +1,4549 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧠 OpenClaw Neural Map v9</title>
+<style>
+/* ═══════════════════════════════════════════
+   Neural Dark Theme - CSS Custom Properties
+   ═══════════════════════════════════════════ */
+:root {
+  --bg-deep: #0a0e1a;
+  --bg-surface: #0f1629;
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --bg-card-hover: rgba(255, 255, 255, 0.08);
+  --synapse-start: #00d4ff;
+  --synapse-end: #7c3aed;
+  --glow-cyan: rgba(0, 212, 255, 0.4);
+  --glow-purple: rgba(124, 58, 237, 0.4);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --status-idle: #22c55e;
+  --status-thinking: #eab308;
+  --status-tool: #3b82f6;
+  --status-speaking: #8b5cf6;
+  --status-error: #ef4444;
+  --line-request: #3b82f6;
+  --line-response: #22c55e;
+  --line-error: #ef4444;
+  --border-glass: rgba(255, 255, 255, 0.1);
+  --backdrop-blur: 12px;
+  --anim-step-entry: 600ms;
+  --anim-synapse-draw: 400ms;
+  --anim-particle-flow: 2000ms;
+  --anim-typing-speed: 30ms;
+  --anim-pulse-period: 2000ms;
+  --anim-bubble-expand: 300ms;
+}
+
+/* ═══════════════════════════════════════════
+   Reset & Base
+   ═══════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  height: 100%; width: 100%;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: linear-gradient(180deg, var(--bg-deep) 0%, var(--bg-surface) 100%);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════
+   Run 3: Accessibility - Focus Visible
+   ═══════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--synapse-start);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════
+   Run 3: prefers-reduced-motion
+   ═══════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ═══════════════════════════════════════════
+   3-Zone Layout (P1-01)
+   ═══════════════════════════════════════════ */
+#app {
+  display: grid;
+  grid-template-columns: 240px 1fr 280px;
+  grid-template-rows: 48px 1fr 180px;
+  grid-template-areas:
+    "header header header"
+    "brain  theater stats"
+    "chat   chat    chat";
+  height: 100vh;
+  gap: 1px;
+}
+
+#header {
+  grid-area: header;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border-glass);
+  z-index: 10;
+}
+#header h1 { font-size: 16px; font-weight: 600; letter-spacing: 0.5px; }
+#header .controls { display: flex; align-items: center; gap: 12px; }
+
+#brain-panel {
+  grid-area: brain;
+  padding: 12px;
+  overflow-y: auto;
+  border-right: 1px solid var(--border-glass);
+  background: rgba(10, 14, 26, 0.6);
+}
+
+#theater {
+  grid-area: theater;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  overflow-y: auto;
+  position: relative;
+}
+
+#stats-panel {
+  grid-area: stats;
+  padding: 12px;
+  overflow-y: auto;
+  border-left: 1px solid var(--border-glass);
+  background: rgba(10, 14, 26, 0.6);
+}
+
+#chat-panel {
+  grid-area: chat;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-glass);
+  background: var(--bg-surface);
+}
+
+/* ═══════════════════════════════════════════
+   Glass Card (P1-02)
+   ═══════════════════════════════════════════ */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(var(--backdrop-blur));
+  -webkit-backdrop-filter: blur(var(--backdrop-blur));
+  border: 1px solid var(--border-glass);
+  border-radius: 12px;
+  transition: background 200ms, border-color 200ms, box-shadow 200ms;
+}
+.glass-card:hover {
+  background: var(--bg-card-hover);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+}
+.glass-card.active {
+  border-color: var(--synapse-start);
+  box-shadow: 0 0 30px var(--glow-cyan);
+}
+
+/* ═══════════════════════════════════════════
+   Scenario Selector (P1-03)
+   ═══════════════════════════════════════════ */
+.scenario-select {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+.scenario-select:focus { border-color: var(--synapse-start); }
+.scenario-select option { background: var(--bg-surface); color: var(--text-primary); }
+
+.mode-toggle {
+  display: flex;
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.mode-toggle button {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  padding: 4px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 200ms;
+}
+.mode-toggle button.active {
+  background: var(--synapse-start);
+  color: var(--bg-deep);
+  font-weight: 600;
+}
+
+.play-controls { display: flex; gap: 4px; }
+.play-controls button {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  width: 32px; height: 28px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 200ms;
+}
+.play-controls button:hover { background: var(--bg-card-hover); border-color: var(--synapse-start); }
+.play-controls button.active-play { background: var(--synapse-start); color: var(--bg-deep); }
+
+/* ═══════════════════════════════════════════
+   Run 2: Speed Controls
+   ═══════════════════════════════════════════ */
+.speed-controls {
+  display: flex;
+  gap: 2px;
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.speed-controls button {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 200ms;
+}
+.speed-controls button:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+.speed-controls button.active-speed {
+  background: var(--synapse-start);
+  color: var(--bg-deep);
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════
+   Thought Cascade Cards (P1-04) + Run1 3D Effect
+   ═══════════════════════════════════════════ */
+#cascade-container {
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  position: relative;
+  perspective: 1000px;
+}
+
+.thought-card {
+  padding: 14px 16px;
+  margin: 4px 0;
+  opacity: 0;
+  transform: translateY(20px);
+  pointer-events: none;
+  position: relative;
+  z-index: 2;
+  transform-style: preserve-3d;
+}
+.thought-card.visible {
+  opacity: 1;
+  transform: translateZ(-15px) scale(0.97);
+  pointer-events: auto;
+  opacity: 0.6;
+}
+.thought-card.visible.active {
+  transform: translateZ(30px) scale(1.03);
+  opacity: 1;
+  border-color: var(--synapse-start);
+  box-shadow: 0 0 25px var(--glow-cyan), 0 0 50px rgba(0, 212, 255, 0.15);
+}
+.thought-card .card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.thought-card .step-icon { font-size: 20px; }
+.thought-card .step-label { font-size: 14px; font-weight: 600; }
+.thought-card .step-duration {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.thought-card .step-detail {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  padding-left: 28px;
+}
+.thought-card .step-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding-left: 28px;
+  margin-top: 4px;
+}
+
+/* Error/Safety styling */
+.thought-card.safety-alert {
+  border-color: var(--status-error) !important;
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+.thought-card.safety-alert .step-detail { color: var(--status-error); }
+.thought-card.step-blocked {
+  opacity: 0.5 !important;
+  border-style: dashed !important;
+}
+
+/* Step entry animations (P1-04) */
+@keyframes stepEntryRotate {
+  0% { transform: perspective(600px) rotateY(-90deg) scale(0.5); opacity: 0; }
+  60% { transform: perspective(600px) rotateY(10deg) scale(1.05); opacity: 1; }
+  100% { transform: perspective(600px) rotateY(0deg) scale(1); opacity: 1; }
+}
+@keyframes stepEntryBook {
+  0% { transform: scaleX(0); transform-origin: left; opacity: 0; }
+  50% { transform: scaleX(1.05); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 1; }
+}
+@keyframes stepEntrySlide {
+  0% { transform: translateX(100px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
+}
+@keyframes stepEntrySpark {
+  0% { transform: scale(0); opacity: 0; filter: brightness(3); }
+  30% { transform: scale(1.2); opacity: 1; filter: brightness(2); }
+  60% { transform: scale(0.95); filter: brightness(1.5); }
+  100% { transform: scale(1); opacity: 1; filter: brightness(1); }
+}
+@keyframes stepEntryBounce {
+  0% { transform: translateY(-30px) scale(0.8); opacity: 0; }
+  50% { transform: translateY(5px) scale(1.05); opacity: 1; }
+  100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+@keyframes stepEntryExpand {
+  0% { transform: scale(0); border-radius: 50%; opacity: 0; }
+  60% { transform: scale(1.1); border-radius: 16px; opacity: 1; }
+  100% { transform: scale(1); border-radius: 12px; opacity: 1; }
+}
+
+.step-intent.visible    { animation: stepEntryRotate var(--anim-step-entry) cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.step-context.visible   { animation: stepEntryBook var(--anim-step-entry) ease-out forwards; }
+.step-memory.visible    { animation: stepEntrySlide var(--anim-step-entry) ease-out forwards; }
+.step-inference.visible { animation: stepEntrySpark var(--anim-step-entry) ease-out forwards; }
+.step-tool_call.visible { animation: stepEntryBounce var(--anim-step-entry) cubic-bezier(0.34,1.56,0.64,1) forwards; }
+.step-response.visible  { animation: stepEntryExpand var(--anim-step-entry) ease-out forwards; }
+
+/* ═══════════════════════════════════════════
+   Synapse Lines (P1-05)
+   ═══════════════════════════════════════════ */
+#synapse-svg {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  overflow: visible;
+}
+
+@keyframes synapseGrow {
+  0% { stroke-dashoffset: 200; opacity: 0.3; }
+  100% { stroke-dashoffset: 0; opacity: 1; }
+}
+
+.synapse-line {
+  stroke-width: 2;
+  stroke-dasharray: 200;
+  fill: none;
+  animation: synapseGrow var(--anim-synapse-draw) ease-out forwards;
+  filter: drop-shadow(0 0 4px var(--glow-cyan));
+}
+
+@keyframes particleMove {
+  0%   { opacity: 0; }
+  10%  { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.synapse-particle {
+  fill: var(--synapse-start);
+  filter: drop-shadow(0 0 4px var(--glow-cyan));
+}
+
+/* ═══════════════════════════════════════════
+   Avatar (P1-06, P1-07)
+   ═══════════════════════════════════════════ */
+#avatar-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+  position: relative;
+}
+#avatar-container {
+  width: 80px; height: 80px;
+  border-radius: 50%;
+  overflow: visible;
+  position: relative;
+}
+#avatar-container svg { width: 80px; height: 80px; }
+
+#avatar-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-top: 8px;
+  text-align: center;
+}
+#avatar-status-badge {
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* Avatar state animations */
+@keyframes avatarIdle {
+  0%, 100% { transform: translateY(0); }
+  25% { transform: translateY(-3px); }
+  50% { transform: translateY(-1px); }
+  75% { transform: translateY(-4px); }
+}
+@keyframes eyeBlink {
+  0%, 90%, 100% { transform: scaleY(1); }
+  95% { transform: scaleY(0.1); }
+}
+@keyframes avatarThinking {
+  0%, 100% { box-shadow: 0 0 0 0 var(--glow-purple); }
+  50% { box-shadow: 0 0 20px 10px var(--glow-purple); }
+}
+@keyframes avatarToolUse {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-10deg); }
+  75% { transform: rotate(10deg); }
+}
+@keyframes speechPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+@keyframes avatarError {
+  0%, 100% { transform: translateX(0); box-shadow: 0 0 10px var(--status-error); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-2px); }
+  80% { transform: translateX(2px); }
+}
+
+.avatar-idle        { animation: avatarIdle 3s ease-in-out infinite; }
+.avatar-idle .eye   { animation: eyeBlink 4s ease-in-out infinite; }
+.avatar-thinking    { animation: avatarThinking var(--anim-pulse-period) ease-in-out infinite; }
+.avatar-tool_calling { animation: avatarToolUse 500ms ease-in-out infinite; }
+.avatar-speaking    { animation: speechPulse 1s ease-in-out infinite; }
+.avatar-error       { animation: avatarError 500ms ease-in-out; }
+
+/* Run1: Avatar mini-animation elements */
+/* Thinking bubble (?) */
+#avatar-think-bubble {
+  position: absolute;
+  top: -18px;
+  right: -14px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(234, 179, 8, 0.25);
+  border: 1px solid rgba(234, 179, 8, 0.5);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #eab308;
+  z-index: 10;
+  animation: thinkBubblePop 1.2s ease-in-out infinite;
+}
+@keyframes thinkBubblePop {
+  0%, 100% { transform: scale(1); opacity: 0.7; }
+  50% { transform: scale(1.15); opacity: 1; }
+}
+.avatar-thinking #avatar-think-bubble { display: flex; }
+
+/* Tool calling sparkles */
+#avatar-sparkles {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  display: none;
+  z-index: 10;
+}
+.avatar-tool_calling #avatar-sparkles { display: block; }
+.avatar-sparkle-dot {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #3b82f6;
+  box-shadow: 0 0 6px #3b82f6;
+}
+.avatar-sparkle-dot:nth-child(1) { top: 55%; right: -6px; animation: sparkleBlink 0.6s 0s infinite; }
+.avatar-sparkle-dot:nth-child(2) { top: 65%; right: -2px; animation: sparkleBlink 0.6s 0.15s infinite; }
+.avatar-sparkle-dot:nth-child(3) { top: 50%; right: -10px; animation: sparkleBlink 0.6s 0.3s infinite; }
+.avatar-sparkle-dot:nth-child(4) { top: 60%; right: 2px; animation: sparkleBlink 0.6s 0.45s infinite; }
+@keyframes sparkleBlink {
+  0%, 100% { opacity: 0; transform: scale(0.5); }
+  50% { opacity: 1; transform: scale(1.3); }
+}
+
+/* Error pulsing ring */
+#avatar-error-ring {
+  position: absolute;
+  top: -6px; left: -6px;
+  width: 92px; height: 92px;
+  border-radius: 50%;
+  border: 2px solid rgba(239, 68, 68, 0.6);
+  display: none;
+  animation: errorRingPulse 0.8s ease-out infinite;
+  pointer-events: none;
+  z-index: 9;
+}
+@keyframes errorRingPulse {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.avatar-error #avatar-error-ring { display: block; }
+
+/* Speaking: speech bubble breathing */
+#speech-bubble.show.speaking-active {
+  animation: bubbleAppear var(--anim-bubble-expand) ease-out, speechBubbleBreathe 2s ease-in-out 0.3s infinite;
+}
+@keyframes speechBubbleBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.015); }
+}
+
+/* ═══════════════════════════════════════════
+   Speech Bubble (P1-08)
+   ═══════════════════════════════════════════ */
+@keyframes bubbleAppear {
+  0% { transform: scale(0); opacity: 0; transform-origin: bottom center; }
+  60% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+#speech-bubble {
+  max-width: 420px;
+  width: 100%;
+  padding: 12px 16px;
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  display: none;
+  position: relative;
+  max-height: 150px;
+  overflow-y: auto;
+}
+#speech-bubble.show {
+  display: block;
+  animation: bubbleAppear var(--anim-bubble-expand) ease-out;
+}
+#speech-bubble::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 50%;
+  transform: translateX(-50%) rotate(45deg);
+  width: 12px; height: 12px;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border-glass);
+  border-top: 1px solid var(--border-glass);
+}
+#speech-text { display: inline; }
+.typing-cursor {
+  display: inline-block;
+  width: 2px; height: 1em;
+  background: var(--text-primary);
+  animation: cursorBlink 800ms step-end infinite;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+}
+
+/* Run 2: Speech Bubble Markdown Styles */
+.speech-md-bold { font-weight: 700; }
+.speech-md-code {
+  background: rgba(255,255,255,0.1);
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+  font-size: 12px;
+}
+.speech-md-link {
+  color: var(--synapse-start);
+  text-decoration: underline;
+}
+.speech-tool-card {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(59,130,246,0.1);
+  border: 1px solid rgba(59,130,246,0.25);
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.speech-tool-card .stc-title {
+  font-weight: 600;
+  color: var(--status-tool);
+  margin-bottom: 4px;
+}
+
+/* ═══════════════════════════════════════════
+   Collab Lines (Sub-agents)
+   ═══════════════════════════════════════════ */
+#collab-area {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 12px;
+  min-height: 0;
+}
+.sub-agent-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.sub-agent-node .sa-avatar {
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  border: 2px solid var(--border-glass);
+}
+.sub-agent-node .sa-name { font-size: 10px; color: var(--text-muted); }
+.sub-agent-node .sa-purpose { font-size: 10px; color: var(--text-secondary); }
+
+#collab-svg {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  overflow: visible;
+}
+
+@keyframes collabPulse {
+  0%, 100% { stroke-width: 2; }
+  50% { stroke-width: 3; }
+}
+.collab-line-request { stroke: var(--line-request); animation: collabPulse 1.5s infinite; }
+.collab-line-response { stroke: var(--line-response); animation: collabPulse 1.5s infinite; }
+
+/* ═══════════════════════════════════════════
+   Collab Lines Enhancement - Fiber Optic (Phase 2)
+   ═══════════════════════════════════════════ */
+@keyframes fiberGlow {
+  0%, 100% { filter: drop-shadow(0 0 3px var(--synapse-start)) drop-shadow(0 0 6px var(--glow-cyan)); opacity: 0.8; }
+  50% { filter: drop-shadow(0 0 6px var(--synapse-start)) drop-shadow(0 0 12px var(--glow-cyan)); opacity: 1; }
+}
+.fiber-line {
+  stroke-dasharray: 8 4;
+  stroke-linecap: round;
+  fill: none;
+  animation: fiberGlow 2s ease-in-out infinite;
+}
+.fiber-line-request { stroke: var(--line-request); stroke-width: 2; }
+.fiber-line-response { stroke: var(--line-response); stroke-width: 2; }
+
+@keyframes packetMove {
+  0% { offset-distance: 0%; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+.fiber-packet {
+  fill: var(--synapse-start);
+  filter: drop-shadow(0 0 4px var(--synapse-start));
+}
+.collab-data-label {
+  font-size: 9px;
+  fill: var(--text-muted);
+  text-anchor: middle;
+}
+
+/* Run 2: Collab Lines Animation Improvements */
+@keyframes collabDotMove {
+  0% { offset-distance: 0%; opacity: 0; }
+  5% { opacity: 1; }
+  95% { opacity: 1; }
+  100% { offset-distance: 100%; opacity: 0; }
+}
+.collab-error-line {
+  stroke: var(--status-error) !important;
+  stroke-width: 2;
+  animation: collabErrorBlink 1s ease-in-out infinite !important;
+}
+@keyframes collabErrorBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.collab-pending-line {
+  stroke-dasharray: 6 6 !important;
+  opacity: 0.7;
+}
+@keyframes pendingParticle {
+  0% { opacity: 0; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-4px); }
+  100% { opacity: 0; transform: translateY(-8px); }
+}
+
+/* ═══════════════════════════════════════════
+   Skill Hologram
+   ═══════════════════════════════════════════ */
+@keyframes hologramFloat {
+  0%, 100% { transform: translateY(0) rotateX(5deg); }
+  50% { transform: translateY(-8px) rotateX(-5deg); }
+}
+@keyframes hologramGlow {
+  0%, 100% { box-shadow: 0 0 15px var(--glow-cyan), inset 0 0 15px rgba(0,212,255,0.05); }
+  50% { box-shadow: 0 0 30px var(--glow-purple), inset 0 0 30px rgba(124,58,237,0.1); }
+}
+.skill-hologram {
+  animation: hologramFloat 4s ease-in-out infinite, hologramGlow 3s ease-in-out infinite;
+  background: linear-gradient(135deg, rgba(0,212,255,0.1), rgba(124,58,237,0.1));
+  border: 1px solid rgba(0,212,255,0.3);
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin-top: 8px;
+  font-size: 12px;
+  display: none;
+  position: relative;
+  overflow: hidden;
+}
+.skill-hologram.show { display: block; }
+.skill-hologram .sk-name { font-weight: 600; color: var(--synapse-start); }
+.skill-hologram .sk-detail { color: var(--text-secondary); margin-top: 4px; }
+
+/* ═══════════════════════════════════════════
+   Skill Hologram Enhancement - Scan Line (Phase 2)
+   ═══════════════════════════════════════════ */
+@keyframes holoScanLine {
+  0% { top: -2px; }
+  100% { top: 100%; }
+}
+.skill-hologram .holo-scanline {
+  position: absolute;
+  left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--synapse-start), transparent);
+  opacity: 0.6;
+  animation: holoScanLine 2.5s linear infinite;
+  pointer-events: none;
+}
+.skill-hologram .sk-stats {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+.skill-hologram .sk-stats .sk-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0,212,255,0.05);
+  border: 1px solid rgba(0,212,255,0.15);
+}
+.skill-hologram .sk-stats .sk-stat-val {
+  font-weight: 600;
+  color: var(--synapse-start);
+  font-size: 11px;
+}
+.skill-hologram .sk-stats .sk-stat-label {
+  font-size: 9px;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════
+   Brain Map Panel
+   ═══════════════════════════════════════════ */
+.panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-glass);
+}
+.placeholder-content {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: center;
+  padding: 24px 8px;
+  line-height: 1.6;
+}
+
+/* Brain Map mini-info */
+.brain-info-item {
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  font-size: 11px;
+}
+.brain-info-item .bi-label { color: var(--text-muted); font-size: 10px; }
+.brain-info-item .bi-value { color: var(--text-secondary); margin-top: 2px; }
+
+/* ═══════════════════════════════════════════
+   Brain Panel Tab System (Phase 2)
+   ═══════════════════════════════════════════ */
+.brain-tabs {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--border-glass);
+  padding-bottom: 6px;
+  flex-wrap: wrap;
+}
+.brain-tab {
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid transparent;
+  border-radius: 6px 6px 0 0;
+  padding: 4px 8px;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 200ms;
+  white-space: nowrap;
+}
+.brain-tab:hover { color: var(--text-secondary); }
+.brain-tab.active {
+  background: var(--bg-card);
+  color: var(--synapse-start);
+  border-color: var(--border-glass);
+  border-bottom-color: transparent;
+}
+.brain-tab-content { display: none; }
+.brain-tab-content.active { display: block; }
+
+/* Decision Tree SVG (Phase 2) + Run1 hover interaction */
+.decision-tree-svg {
+  width: 100%;
+  min-height: 200px;
+}
+.dt-node-selected text { fill: var(--synapse-start); font-weight: 600; }
+.dt-node-unselected text { fill: var(--text-muted); }
+.dt-edge-selected { stroke: var(--synapse-start); stroke-width: 3; filter: drop-shadow(0 0 6px var(--glow-cyan)); }
+.dt-edge-unselected { stroke: var(--text-muted); stroke-width: 1; opacity: 0.25; }
+.dt-node-circle-selected {
+  fill: rgba(0, 212, 255, 0.2);
+  stroke: var(--synapse-start);
+  stroke-width: 2;
+  filter: drop-shadow(0 0 6px var(--glow-cyan));
+}
+.dt-node-circle-unselected {
+  fill: rgba(255,255,255,0.03);
+  stroke: var(--text-muted);
+  stroke-width: 1;
+  opacity: 0.5;
+}
+.dt-prob { font-size: 9px; fill: var(--text-muted); }
+.dt-detail { font-size: 8px; fill: var(--synapse-end); }
+
+/* Decision tree hover styles */
+.dt-node-group { cursor: pointer; transition: opacity 200ms, filter 200ms; }
+.dt-node-group:hover circle { filter: drop-shadow(0 0 8px var(--glow-cyan)) brightness(1.3); }
+.dt-node-group.dt-hover-connected circle { filter: brightness(1.3); }
+.dt-node-group.dt-hover-connected text { fill: var(--text-primary) !important; }
+.dt-node-group.dt-hover-dimmed { opacity: 0.25; }
+.dt-edge-hover-highlight { stroke: var(--synapse-start) !important; stroke-width: 3 !important; opacity: 1 !important; filter: drop-shadow(0 0 6px var(--glow-cyan)); }
+
+/* Memory Graph (Phase 2) + Run1 node sizing and pulse */
+.memory-graph-svg {
+  width: 100%;
+  min-height: 200px;
+}
+.mg-node { cursor: default; }
+.mg-node-circle-index { fill: rgba(0,212,255,0.3); stroke: var(--synapse-start); stroke-width: 2; }
+.mg-node-circle-project { fill: rgba(59,130,246,0.3); stroke: #3b82f6; stroke-width: 1.5; }
+.mg-node-circle-preference { fill: rgba(139,92,246,0.3); stroke: #8b5cf6; stroke-width: 1.5; }
+.mg-node-circle-lesson { fill: rgba(34,197,94,0.3); stroke: #22c55e; stroke-width: 1.5; }
+.mg-edge { stroke: var(--border-glass); stroke-width: 1; opacity: 0.6; }
+.mg-label { font-size: 9px; fill: var(--text-primary); text-anchor: middle; }
+.mg-file-label { font-size: 7px; fill: var(--text-muted); text-anchor: middle; }
+
+@keyframes mgNodePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; filter: drop-shadow(0 0 8px var(--glow-cyan)); }
+}
+.mg-node-pulse { animation: mgNodePulse 2s ease-in-out infinite; }
+
+/* ═══════════════════════════════════════════
+   Deep Stats Panel
+   ═══════════════════════════════════════════ */
+.stat-section { margin-bottom: 16px; }
+.stat-section .ss-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  font-size: 11px;
+}
+.stat-row .sr-label { color: var(--text-secondary); }
+.stat-row .sr-value { color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+@keyframes barGrow {
+  0% { width: 0; }
+  100% { width: var(--bar-width); }
+}
+.token-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 10px;
+}
+.token-bar-label { width: 52px; color: var(--text-muted); text-align: right; flex-shrink: 0; }
+.token-bar {
+  height: 16px;
+  background: linear-gradient(90deg, var(--synapse-start), var(--synapse-end));
+  border-radius: 3px;
+  animation: barGrow 800ms ease-out forwards;
+  animation-delay: var(--bar-delay, 0ms);
+  width: 0;
+}
+.token-bar-count { color: var(--text-secondary); font-variant-numeric: tabular-nums; min-width: 36px; }
+
+.cost-display {
+  display: flex;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.cost-display .cd-label { color: var(--text-muted); font-size: 10px; }
+.cost-display .cd-value { color: var(--synapse-start); font-weight: 600; font-size: 14px; }
+
+/* Latency mini chart */
+.latency-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 3px;
+}
+.latency-icon { font-size: 12px; width: 18px; text-align: center; }
+.latency-bar {
+  height: 12px;
+  background: linear-gradient(90deg, var(--synapse-start), var(--synapse-end));
+  border-radius: 2px;
+  transition: width 600ms ease-out;
+}
+.latency-ms { font-size: 10px; color: var(--text-muted); min-width: 40px; font-variant-numeric: tabular-nums; }
+
+/* ═══════════════════════════════════════════
+   Token Lifecycle Waterfall (Phase 2) + Run1 drop animation
+   ═══════════════════════════════════════════ */
+@keyframes waterfallDrop {
+  0% { transform: translateY(-20px); opacity: 0; }
+  60% { transform: translateY(2px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.waterfall-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 3px;
+  font-size: 10px;
+  height: 18px;
+  opacity: 0;
+  transform: translateY(-20px);
+}
+.waterfall-row.wf-visible {
+  animation: waterfallDrop 0.5s ease-out forwards;
+}
+.waterfall-label {
+  width: 64px;
+  color: var(--text-muted);
+  text-align: right;
+  flex-shrink: 0;
+  font-size: 9px;
+}
+.waterfall-track {
+  flex: 1;
+  height: 14px;
+  position: relative;
+  background: rgba(255,255,255,0.02);
+  border-radius: 2px;
+}
+.waterfall-bar {
+  position: absolute;
+  height: 100%;
+  border-radius: 2px;
+  transition: width 600ms ease-out, left 600ms ease-out;
+}
+/* Run1: Inference bar electric spark */
+.waterfall-bar.wf-inference-bar {
+  overflow: visible;
+}
+.waterfall-bar.wf-inference-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: -2px;
+  width: 6px;
+  height: 100%;
+  background: #fff;
+  border-radius: 2px;
+  opacity: 0;
+  animation: electricSpark 0.8s ease-in-out infinite;
+}
+@keyframes electricSpark {
+  0%, 100% { opacity: 0; transform: scaleY(0.5) translateX(0); box-shadow: none; }
+  30% { opacity: 0.9; transform: scaleY(1.2) translateX(2px); box-shadow: 0 0 8px #eab308, 0 0 16px #eab308; }
+  50% { opacity: 0.3; transform: scaleY(0.8) translateX(-1px); }
+  70% { opacity: 0.8; transform: scaleY(1.1) translateX(3px); box-shadow: 0 0 6px #fff, 0 0 12px #eab308; }
+}
+.waterfall-ms {
+  font-size: 9px;
+  color: var(--text-muted);
+  min-width: 36px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ═══════════════════════════════════════════
+   Context Influence Score (Phase 2)
+   ═══════════════════════════════════════════ */
+.influence-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 10px;
+  position: relative;
+}
+.influence-name {
+  width: 72px;
+  color: var(--text-secondary);
+  text-align: right;
+  flex-shrink: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+}
+.influence-bar-track {
+  flex: 1;
+  height: 12px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.influence-bar {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 800ms ease-out;
+}
+.influence-score {
+  font-size: 10px;
+  color: var(--synapse-start);
+  min-width: 28px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* Run 2: Context Influence Heatmap + Pulse */
+@keyframes influencePulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(239,68,68,0.3); }
+  50% { box-shadow: 0 0 12px rgba(239,68,68,0.6); }
+}
+.influence-pulse .influence-bar {
+  animation: influencePulse 1.5s ease-in-out infinite;
+}
+.influence-row .influence-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 10px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  pointer-events: none;
+}
+.influence-row:hover .influence-tooltip {
+  display: block;
+}
+
+/* ═══════════════════════════════════════════
+   Chat Stream (P1-10)
+   ═══════════════════════════════════════════ */
+#chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.chat-msg {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 13px;
+  line-height: 1.5;
+  max-width: 80%;
+}
+.chat-msg.user { align-self: flex-end; flex-direction: row-reverse; }
+.chat-msg.agent { align-self: flex-start; }
+.chat-msg.system { align-self: center; max-width: 100%; }
+
+.chat-msg .msg-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+}
+.chat-msg .msg-content {
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+}
+.chat-msg.user .msg-content {
+  background: rgba(0, 212, 255, 0.1);
+  border-color: rgba(0, 212, 255, 0.2);
+}
+.chat-msg.system .msg-content {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+.chat-msg .step-icons {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+  font-size: 12px;
+}
+.chat-msg .step-icons span {
+  opacity: 0.3;
+  transition: opacity 300ms;
+}
+.chat-msg .step-icons span.lit { opacity: 1; }
+
+#chat-input-area {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border-glass);
+  align-items: center;
+}
+#chat-input {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 200ms;
+}
+#chat-input:focus { border-color: var(--synapse-start); }
+#chat-input::placeholder { color: var(--text-muted); }
+
+#chat-send {
+  background: var(--synapse-start);
+  color: var(--bg-deep);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 200ms;
+}
+#chat-send:hover { opacity: 0.85; }
+
+/* ═══════════════════════════════════════════
+   Safety Overlay
+   ═══════════════════════════════════════════ */
+.safety-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(239,68,68,0.08) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 20;
+  opacity: 0;
+  transition: opacity 600ms;
+}
+.safety-overlay.show { opacity: 1; }
+
+/* ═══════════════════════════════════════════
+   Run 2: Safety Live Badge
+   ═══════════════════════════════════════════ */
+#safety-live-badge {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 25;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 14px;
+  border-radius: 12px;
+  display: none;
+  white-space: nowrap;
+  pointer-events: none;
+}
+#safety-live-badge.safety-badge-free {
+  display: block;
+  background: rgba(34,197,94,0.2);
+  color: #22c55e;
+  border: 1px solid rgba(34,197,94,0.3);
+}
+#safety-live-badge.safety-badge-caution {
+  display: block;
+  background: rgba(234,179,8,0.2);
+  color: #eab308;
+  border: 1px solid rgba(234,179,8,0.3);
+}
+#safety-live-badge.safety-badge-forbidden {
+  display: block;
+  background: rgba(239,68,68,0.2);
+  color: #ef4444;
+  border: 1px solid rgba(239,68,68,0.3);
+}
+
+/* ═══════════════════════════════════════════
+   Paused indicator
+   ═══════════════════════════════════════════ */
+.paused-indicator {
+  position: absolute;
+  top: 8px; right: 8px;
+  background: rgba(234, 179, 8, 0.2);
+  color: var(--status-thinking);
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 10px;
+  display: none;
+  z-index: 10;
+}
+.paused-indicator.show { display: block; }
+
+/* ═══════════════════════════════════════════
+   Animation pause state (TC-006)
+   ═══════════════════════════════════════════ */
+.sim-paused .thought-card,
+.sim-paused #avatar-container,
+.sim-paused .synapse-line,
+.sim-paused .synapse-particle,
+.sim-paused .skill-hologram,
+.sim-paused .collab-line-request,
+.sim-paused .collab-line-response {
+  animation-play-state: paused !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-glass); border-radius: 2px; }
+
+/* ═══════════════════════════════════════════
+   Phase 3: Safety Boundary Color Coding (P3-02)
+   ═══════════════════════════════════════════ */
+.safety-badge {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+.safety-free { background: rgba(34,197,94,0.2); color: #22c55e; }
+.safety-caution { background: rgba(234,179,8,0.2); color: #eab308; }
+.safety-forbidden { background: rgba(239,68,68,0.2); color: #ef4444; }
+.thought-card.safety-free-border { border-left: 3px solid #22c55e; }
+.thought-card.safety-caution-border { border-left: 3px solid #eab308; }
+.thought-card.safety-forbidden-border { border-left: 3px solid #ef4444; }
+
+/* ═══════════════════════════════════════════
+   Phase 3: Compaction Visualization (P3-01)
+   ═══════════════════════════════════════════ */
+.compaction-section { margin-top: 8px; }
+.compaction-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+.compaction-label { color: var(--text-muted); font-size: 9px; width: 44px; text-align: right; flex-shrink: 0; }
+.compaction-bar-track {
+  flex: 1;
+  height: 18px;
+  background: rgba(255,255,255,0.02);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+.compaction-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1.2s cubic-bezier(0.34,1.56,0.64,1);
+  position: relative;
+}
+.compaction-bar-before {
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+}
+.compaction-bar-after {
+  background: linear-gradient(90deg, #22c55e, #00d4ff);
+}
+.compaction-val { color: var(--text-secondary); font-size: 9px; min-width: 40px; font-variant-numeric: tabular-nums; }
+.compaction-arrow {
+  text-align: center;
+  color: var(--synapse-start);
+  font-size: 14px;
+  padding: 2px 0;
+  animation: compactPulse 1.5s ease-in-out infinite;
+}
+@keyframes compactPulse {
+  0%, 100% { opacity: 0.5; transform: scaleY(1); }
+  50% { opacity: 1; transform: scaleY(1.2); }
+}
+.compaction-ratio {
+  text-align: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--synapse-start);
+  margin-top: 2px;
+}
+
+/* Run 2: Compaction Slider + Particles + Big Number */
+.compaction-slider-container {
+  position: relative;
+  height: 40px;
+  margin: 8px 0;
+  display: flex;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid var(--border-glass);
+}
+.compaction-before-half {
+  background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  height: 100%;
+  transition: width 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.compaction-after-half {
+  background: linear-gradient(90deg, #22c55e, #00d4ff);
+  height: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #fff;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.compaction-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+  outline: none;
+  margin: 6px 0;
+}
+.compaction-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--synapse-start);
+  cursor: pointer;
+  box-shadow: 0 0 6px var(--glow-cyan);
+}
+@keyframes tokenParticleFly {
+  0% { opacity: 1; transform: translate(0, 0) scale(1); }
+  100% { opacity: 0; transform: translate(var(--fly-x, 20px), var(--fly-y, -30px)) scale(0.2); }
+}
+.compaction-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #8b5cf6;
+  pointer-events: none;
+  animation: tokenParticleFly 0.8s ease-out forwards;
+}
+.compaction-big-number {
+  text-align: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--synapse-start);
+  margin: 4px 0;
+  text-shadow: 0 0 20px var(--glow-cyan);
+  letter-spacing: -1px;
+}
+
+/* ═══════════════════════════════════════════
+   Phase 3: Export Buttons (P3-03, P3-04)
+   ═══════════════════════════════════════════ */
+.export-btn {
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 200ms;
+  white-space: nowrap;
+}
+.export-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--synapse-start);
+  border-color: var(--synapse-start);
+}
+
+/* ═══════════════════════════════════════════
+   Phase 3: Keyboard Shortcut Modal (P3-07)
+   ═══════════════════════════════════════════ */
+#shortcut-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  align-items: center;
+  justify-content: center;
+}
+#shortcut-modal.show { display: flex; }
+.shortcut-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  border-radius: 16px;
+  padding: 24px 32px;
+  max-width: 420px;
+  width: 90%;
+  box-shadow: 0 0 60px rgba(0,212,255,0.15);
+}
+.shortcut-box h2 {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--synapse-start);
+}
+.shortcut-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 0;
+  font-size: 13px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.shortcut-key {
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--synapse-start);
+  min-width: 40px;
+  text-align: center;
+}
+.shortcut-desc { color: var(--text-secondary); }
+.shortcut-close {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════
+   Phase 3: WebSocket UI (P3-08)
+   ═══════════════════════════════════════════ */
+#ws-panel {
+  display: none;
+  padding: 12px;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border-glass);
+}
+#ws-panel.show { display: block; }
+.ws-form-group {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.ws-form-group label {
+  font-size: 11px;
+  color: var(--text-muted);
+  min-width: 36px;
+}
+.ws-form-group input {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  padding: 4px 8px;
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+}
+.ws-form-group input:focus { border-color: var(--synapse-start); }
+.ws-connect-btn {
+  background: var(--synapse-start);
+  color: var(--bg-deep);
+  border: none;
+  border-radius: 6px;
+  padding: 4px 14px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 200ms;
+}
+.ws-connect-btn:hover { opacity: 0.85; }
+.ws-connect-btn.connected { background: #22c55e; }
+.ws-status {
+  font-size: 10px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.ws-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+.ws-status-dot.online { background: #22c55e; animation: wsDotPulse 2s infinite; }
+.ws-status-dot.connecting { background: #eab308; animation: wsDotPulse 1s infinite; }
+@keyframes wsDotPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ═══════════════════════════════════════════
+   Phase 3: Enhanced Synapse Particles (P3-06)
+   ═══════════════════════════════════════════ */
+@keyframes particleGlow {
+  0%, 100% { filter: drop-shadow(0 0 2px var(--synapse-start)); r: 3; }
+  50% { filter: drop-shadow(0 0 8px var(--synapse-start)) drop-shadow(0 0 12px var(--glow-cyan)); r: 4; }
+}
+.synapse-particle-enhanced {
+  fill: var(--synapse-start);
+  animation: particleGlow 1.5s ease-in-out infinite;
+}
+.thought-card {
+  transition: transform 300ms cubic-bezier(0.34,1.56,0.64,1), opacity 300ms ease, box-shadow 300ms ease;
+}
+
+/* ═══════════════════════════════════════════
+   Phase 3: View Transition (1/2/3 keys) (P3-06)
+   ═══════════════════════════════════════════ */
+#brain-panel, #theater, #stats-panel {
+  transition: opacity 300ms ease, transform 300ms ease;
+}
+.panel-hidden {
+  opacity: 0 !important;
+  transform: scale(0.95) !important;
+  pointer-events: none !important;
+  overflow: hidden !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  border: none !important;
+}
+
+/* ═══════════════════════════════════════════
+   Run 3: Agent Info Dashboard (Live tab)
+   ═══════════════════════════════════════════ */
+.live-dashboard { padding: 4px 0; }
+.live-dash-item {
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  border-radius: 6px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  font-size: 10px;
+}
+.live-dash-item .ld-label { color: var(--text-muted); font-size: 9px; }
+.live-dash-item .ld-value { color: var(--text-primary); font-weight: 600; margin-top: 1px; }
+.live-mini-timeline { margin-top: 8px; }
+.live-mini-timeline .lmt-title { font-size: 9px; color: var(--text-muted); margin-bottom: 4px; text-transform: uppercase; }
+.live-turn-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  margin-bottom: 2px;
+  border-radius: 4px;
+  font-size: 9px;
+  color: var(--text-secondary);
+  background: rgba(255,255,255,0.02);
+  border-left: 2px solid var(--synapse-start);
+}
+.live-turn-item .lti-num { color: var(--text-muted); min-width: 14px; }
+.live-turn-item .lti-summary { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.live-turn-item .lti-tools { color: var(--status-tool); }
+.live-turn-item .lti-dur { color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* ═══════════════════════════════════════════
+   Run 3: Tool Call Detail Log (Explorer tab)
+   ═══════════════════════════════════════════ */
+.explorer-filters {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.explorer-filters select,
+.explorer-filters input {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-glass);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 10px;
+  outline: none;
+}
+.explorer-filters select:focus,
+.explorer-filters input:focus { border-color: var(--synapse-start); }
+.explorer-table {
+  width: 100%;
+  font-size: 9px;
+  border-collapse: collapse;
+}
+.explorer-table th {
+  text-align: left;
+  padding: 3px 4px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border-glass);
+  font-weight: 600;
+  font-size: 8px;
+  text-transform: uppercase;
+}
+.explorer-table td {
+  padding: 3px 4px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  vertical-align: top;
+}
+.explorer-table tr { cursor: pointer; transition: background 150ms; }
+.explorer-table tr:hover { background: var(--bg-card-hover); }
+.explorer-table .status-ok { color: #22c55e; }
+.explorer-table .status-err { color: #ef4444; }
+.explorer-table .status-blocked { color: #eab308; }
+.explorer-detail-panel {
+  display: none;
+  padding: 8px;
+  margin-top: 4px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-glass);
+  border-radius: 6px;
+  font-size: 9px;
+  color: var(--text-secondary);
+  max-height: 150px;
+  overflow-y: auto;
+  word-break: break-all;
+}
+.explorer-detail-panel.show { display: block; }
+.explorer-detail-panel .edp-title { font-weight: 600; color: var(--synapse-start); margin-bottom: 4px; }
+
+/* ═══════════════════════════════════════════
+   Run 3: Full Simulation Timeline (Analytics)
+   ═══════════════════════════════════════════ */
+.analytics-timeline {
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  scrollbar-width: thin;
+}
+.analytics-timeline::-webkit-scrollbar { height: 4px; }
+.analytics-timeline::-webkit-scrollbar-thumb { background: var(--border-glass); border-radius: 2px; }
+.timeline-track {
+  display: inline-flex;
+  gap: 4px;
+  align-items: flex-end;
+  min-height: 60px;
+  padding: 4px;
+}
+.timeline-block {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 44px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 150ms;
+  border: 1px solid transparent;
+  font-size: 8px;
+  color: var(--text-secondary);
+  text-align: center;
+  white-space: normal;
+  word-break: break-all;
+  vertical-align: bottom;
+}
+.timeline-block:hover {
+  border-color: var(--synapse-start);
+  transform: translateY(-2px);
+}
+.timeline-block.active-block {
+  border-color: var(--synapse-start);
+  box-shadow: 0 0 8px var(--glow-cyan);
+}
+.timeline-block .tb-icon { font-size: 14px; margin-bottom: 2px; }
+.timeline-block .tb-label { font-size: 7px; color: var(--text-muted); }
+.timeline-block .tb-dur { font-size: 7px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+.timeline-block.status-free { background: rgba(34,197,94,0.15); }
+.timeline-block.status-caution { background: rgba(234,179,8,0.15); }
+.timeline-block.status-forbidden { background: rgba(239,68,68,0.15); }
+
+.timeline-compaction-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 48px;
+  border-radius: 4px;
+  background: rgba(124,58,237,0.2);
+  border: 1px dashed rgba(124,58,237,0.5);
+  font-size: 12px;
+  cursor: default;
+  vertical-align: bottom;
+}
+
+/* ═══════════════════════════════════════════
+   Run 3: Error Handling Visualization
+   ═══════════════════════════════════════════ */
+@keyframes errorFlash {
+  0% { background-color: rgba(239,68,68,0.15); }
+  50% { background-color: rgba(239,68,68,0.0); }
+  100% { background-color: rgba(239,68,68,0.15); }
+}
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  10% { transform: translateX(-6px); }
+  20% { transform: translateX(6px); }
+  30% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  50% { transform: translateX(-2px); }
+  60% { transform: translateX(2px); }
+  70% { transform: translateX(0); }
+}
+.theater-error-flash {
+  animation: errorFlash 0.3s ease-in-out 3, errorShake 0.6s ease-in-out;
+}
+.error-card {
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border-radius: 8px;
+  border: 1px solid rgba(239,68,68,0.3);
+  background: rgba(239,68,68,0.08);
+  font-size: 10px;
+}
+.error-card .ec-type { color: #ef4444; font-weight: 600; font-size: 11px; }
+.error-card .ec-msg { color: var(--text-secondary); margin-top: 2px; }
+.error-card .ec-stage { color: var(--text-muted); margin-top: 2px; font-size: 9px; }
+.error-card .ec-retry { color: var(--status-thinking); margin-top: 2px; font-size: 9px; }
+.error-log-section { margin-top: 8px; }
+.error-log-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 6px;
+  margin-bottom: 2px;
+  border-radius: 4px;
+  font-size: 9px;
+  color: var(--text-secondary);
+  background: rgba(239,68,68,0.05);
+  border-left: 2px solid #ef4444;
+}
+.error-log-item .eli-time { color: var(--text-muted); min-width: 36px; font-variant-numeric: tabular-nums; }
+.error-log-item .eli-msg { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ═══════════════════════════════════════════
+   Run 3: Minimap
+   ═══════════════════════════════════════════ */
+#minimap {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  width: 120px;
+  height: 80px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-glass);
+  border-radius: 8px;
+  z-index: 500;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+  opacity: 0.85;
+  transition: opacity 200ms;
+}
+#minimap:hover { opacity: 1; }
+#minimap-content {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+.minimap-zone {
+  position: absolute;
+  border-radius: 2px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.minimap-zone.mm-brain { background: rgba(0,212,255,0.15); }
+.minimap-zone.mm-theater { background: rgba(124,58,237,0.15); }
+.minimap-zone.mm-stats { background: rgba(34,197,94,0.15); }
+.minimap-zone.mm-chat { background: rgba(234,179,8,0.15); }
+.minimap-zone.mm-header { background: rgba(255,255,255,0.08); }
+#minimap-viewport {
+  position: absolute;
+  border: 1.5px solid var(--synapse-start);
+  border-radius: 2px;
+  background: rgba(0,212,255,0.08);
+  pointer-events: none;
+  transition: top 100ms ease, left 100ms ease;
+}
+.minimap-label {
+  position: absolute;
+  font-size: 6px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════
+   Run 3: Color-blind Accessibility (patterns/icons)
+   ═══════════════════════════════════════════ */
+.a11y-status-icon {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: 2px;
+  vertical-align: middle;
+  font-size: 9px;
+  text-align: center;
+  line-height: 10px;
+}
+
+/* ═══════════════════════════════════════════
+   Phase 3: Mobile Responsive (P3-05)
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  #app {
+    grid-template-columns: 1fr;
+    grid-template-rows: 48px auto auto auto auto;
+    grid-template-areas:
+      "header"
+      "theater"
+      "brain"
+      "stats"
+      "chat";
+    height: auto;
+    min-height: 100vh;
+  }
+  html, body { overflow: auto; }
+  #brain-panel {
+    border-right: none;
+    border-bottom: 1px solid var(--border-glass);
+    max-height: 300px;
+  }
+  #stats-panel {
+    border-left: none;
+    border-bottom: 1px solid var(--border-glass);
+    max-height: 400px;
+  }
+  #theater {
+    min-height: 400px;
+  }
+  #chat-panel {
+    min-height: 150px;
+  }
+  #header {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 48px;
+    padding: 6px 10px;
+    gap: 6px;
+  }
+  #header h1 { font-size: 14px; }
+  #header .controls { flex-wrap: wrap; gap: 6px; }
+  #cascade-container { max-width: 100%; }
+  #speech-bubble { max-width: 100%; }
+  .export-btn { padding: 3px 6px; font-size: 10px; }
+  .shortcut-box { padding: 16px 20px; }
+  #ws-panel { padding: 8px; }
+  .ws-form-group { flex-wrap: wrap; }
+  .speed-controls button { padding: 3px 5px; font-size: 10px; }
+  #minimap { display: none; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+  <!-- Header -->
+  <header id="header" role="banner">
+    <h1>🧠 OpenClaw Neural Map v9</h1>
+    <div class="controls">
+      <select id="scenario-select" class="scenario-select" aria-label="시나리오 선택">
+        <option value="">-- 시나리오 선택 --</option>
+        <option value="s-001">S-001: 날씨 정보 요청</option>
+        <option value="s-002">S-002: 코드 수정 요청</option>
+        <option value="s-003">S-003: 멀티 에이전트 협업</option>
+        <option value="s-004">S-004: 안전 경계 트리거</option>
+      </select>
+      <div class="mode-toggle" role="group" aria-label="모드 전환">
+        <button class="active" id="mode-sim" aria-label="시뮬레이션 모드">시뮬</button>
+        <button id="mode-live" aria-label="실시간 모드">실시간</button>
+      </div>
+      <div class="play-controls" role="group" aria-label="재생 제어">
+        <button id="btn-prev" title="이전 단계 (J)" aria-label="이전 단계">⏮</button>
+        <button id="btn-play" title="재생/일시정지 (Space)" aria-label="재생 또는 일시정지">▶</button>
+        <button id="btn-next" title="다음 단계 (K)" aria-label="다음 단계">⏭</button>
+      </div>
+      <div class="speed-controls" role="group" aria-label="재생 속도 제어">
+        <button data-speed="0.5" aria-label="0.5배속">0.5x</button>
+        <button class="active-speed" data-speed="1" aria-label="1배속">1x</button>
+        <button data-speed="2" aria-label="2배속">2x</button>
+        <button data-speed="4" aria-label="4배속">4x</button>
+      </div>
+      <button class="export-btn" id="btn-export-csv" title="CSV 내보내기" aria-label="CSV 내보내기">📄 CSV</button>
+      <button class="export-btn" id="btn-export-json" title="JSON 내보내기" aria-label="JSON 내보내기">📋 JSON</button>
+      <button class="export-btn" id="btn-shortcut-help" title="단축키 안내 (?)" aria-label="단축키 안내">⌨ ?</button>
+    </div>
+  </header>
+
+  <!-- Brain Map (좌측) -->
+  <div id="brain-panel" role="complementary" aria-label="Brain Map 패널">
+    <div class="panel-title">🧠 Brain Map</div>
+    <div id="brain-content">
+      <div class="placeholder-content">
+        시나리오를 선택하면<br>에이전트 정보가 표시됩니다
+      </div>
+    </div>
+  </div>
+
+  <!-- Cortex Theater (중앙) -->
+  <div id="theater" role="main" aria-label="Cortex Theater">
+    <div class="safety-overlay" id="safety-overlay" aria-hidden="true"></div>
+    <div id="safety-live-badge" aria-live="polite"></div>
+    <div class="paused-indicator" id="paused-indicator" aria-live="polite">⏸ 일시정지</div>
+
+    <div id="avatar-area">
+      <div id="avatar-container" class="avatar-idle" role="img" aria-label="에이전트 아바타">
+        <div id="avatar-think-bubble">?</div>
+        <div id="avatar-sparkles">
+          <div class="avatar-sparkle-dot"></div>
+          <div class="avatar-sparkle-dot"></div>
+          <div class="avatar-sparkle-dot"></div>
+          <div class="avatar-sparkle-dot"></div>
+        </div>
+        <div id="avatar-error-ring"></div>
+      </div>
+      <div id="avatar-name"></div>
+      <div id="avatar-status-badge" aria-live="polite"></div>
+    </div>
+
+    <div id="collab-area" aria-label="서브에이전트 협업 영역"></div>
+
+    <div id="cascade-container" aria-label="사고 단계 카스케이드">
+      <svg id="synapse-svg" aria-hidden="true"></svg>
+    </div>
+
+    <div id="speech-bubble" class="glass-card" role="log" aria-label="에이전트 응답">
+      <span id="speech-text"></span><span class="typing-cursor" id="typing-cursor" aria-hidden="true"></span>
+    </div>
+    <div id="speech-tool-card-area" aria-label="도구 결과"></div>
+
+    <div class="skill-hologram" id="skill-hologram" role="status" aria-label="스킬 홀로그램">
+      <div class="holo-scanline" aria-hidden="true"></div>
+      <div class="sk-name" id="sk-name"></div>
+      <div class="sk-detail" id="sk-detail"></div>
+      <div class="sk-stats" id="sk-stats"></div>
+    </div>
+  </div>
+
+  <!-- Deep Stats (우측) -->
+  <div id="stats-panel" role="complementary" aria-label="Deep Stats 패널">
+    <div class="panel-title">📊 Deep Stats</div>
+    <div id="stats-content">
+      <div class="placeholder-content">
+        시뮬레이션 실행 시<br>통계가 표시됩니다
+      </div>
+    </div>
+  </div>
+
+  <!-- Chat Stream (하단) -->
+  <div id="chat-panel" role="region" aria-label="채팅 패널">
+    <div id="chat-messages" role="log" aria-label="채팅 메시지 목록"></div>
+    <!-- Phase 3: WebSocket Connection UI (P3-08) -->
+    <div id="ws-panel" role="region" aria-label="WebSocket 연결">
+      <div class="ws-form-group">
+        <label for="ws-url">URL</label>
+        <input type="text" id="ws-url" placeholder="ws://localhost:8080/neural" value="ws://localhost:8080/neural" aria-label="WebSocket URL">
+        <button class="ws-connect-btn" id="ws-connect-btn" aria-label="WebSocket 연결">연결</button>
+      </div>
+      <div class="ws-form-group">
+        <label for="ws-token">토큰</label>
+        <input type="text" id="ws-token" placeholder="Bearer token (선택)" aria-label="인증 토큰">
+      </div>
+      <div class="ws-status" id="ws-status" aria-live="polite">
+        <span class="ws-status-dot" id="ws-dot" aria-hidden="true"></span>
+        <span id="ws-status-text">연결 안 됨</span>
+      </div>
+    </div>
+    <div id="chat-input-area">
+      <input type="text" id="chat-input" placeholder="메시지를 입력하세요... (시뮬레이션 모드)" aria-label="메시지 입력">
+      <button id="chat-send" aria-label="메시지 전송">전송</button>
+    </div>
+  </div>
+</div>
+
+<!-- Phase 3: Keyboard Shortcut Modal (P3-07) -->
+<div id="shortcut-modal" role="dialog" aria-label="키보드 단축키 안내" aria-modal="true">
+  <div class="shortcut-box glass-card">
+    <h2>⌨ 키보드 단축키</h2>
+    <div class="shortcut-row"><span class="shortcut-key">Space</span><span class="shortcut-desc">재생 / 일시정지</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">J</span><span class="shortcut-desc">이전 단계</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">K</span><span class="shortcut-desc">다음 단계</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">Esc</span><span class="shortcut-desc">시뮬레이션 중지 / 모달 닫기</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">Enter</span><span class="shortcut-desc">현재 단계 상세 토글</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">1</span><span class="shortcut-desc">Brain Map 패널 토글</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">2</span><span class="shortcut-desc">Cortex Theater 포커스</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">3</span><span class="shortcut-desc">Deep Stats 패널 토글</span></div>
+    <div class="shortcut-row"><span class="shortcut-key">?</span><span class="shortcut-desc">이 도움말 표시</span></div>
+    <div class="shortcut-close">아무 키나 눌러 닫기</div>
+  </div>
+</div>
+
+<!-- Run 3: Minimap -->
+<div id="minimap" role="navigation" aria-label="페이지 미니맵">
+  <div id="minimap-content">
+    <div class="minimap-zone mm-header" style="top:0;left:0;width:100%;height:12%"></div>
+    <div class="minimap-zone mm-brain" style="top:12%;left:0;width:24%;height:60%"><span class="minimap-label" style="top:2px;left:2px">B</span></div>
+    <div class="minimap-zone mm-theater" style="top:12%;left:24%;width:52%;height:60%"><span class="minimap-label" style="top:2px;left:2px">T</span></div>
+    <div class="minimap-zone mm-stats" style="top:12%;left:76%;width:24%;height:60%"><span class="minimap-label" style="top:2px;left:2px">S</span></div>
+    <div class="minimap-zone mm-chat" style="top:72%;left:0;width:100%;height:28%"><span class="minimap-label" style="top:2px;left:2px">C</span></div>
+    <div id="minimap-viewport"></div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   OpenClaw Neural Map v9 - Phase 1 Engine + Phase 2 Features + Run 3
+   ═══════════════════════════════════════════════════════════════ */
+
+// ── Phase 2 Data: Decision Trees ──
+
+var DECISION_TREES = {
+  's-001': { id:'root', label:'날씨 알려줘', isSelected:true, children:[
+    { id:'d1', label:'정보요청', probability:0.95, isSelected:true, children:[
+      { id:'d1a', label:'날씨 조회', probability:0.85, isSelected:true, detail:'wttr.in API', children:[] },
+      { id:'d1b', label:'위치 확인', probability:0.15, isSelected:false, children:[] }
+    ]},
+    { id:'d2', label:'일반 대화', probability:0.05, isSelected:false, children:[] }
+  ]},
+  's-002': { id:'root', label:'이거 고쳐줘', isSelected:true, children:[
+    { id:'d1', label:'코드 수정', probability:0.75, isSelected:true, children:[
+      { id:'d1a', label:'자동 수정', probability:0.80, isSelected:true, detail:'edit tool', children:[] },
+      { id:'d1b', label:'수정 제안', probability:0.20, isSelected:false, children:[] }
+    ]},
+    { id:'d2', label:'코드 설명', probability:0.20, isSelected:false, children:[] },
+    { id:'d3', label:'거절', probability:0.05, isSelected:false, children:[] }
+  ]},
+  's-003': { id:'root', label:'로그인 API 만들어줘', isSelected:true, children:[
+    { id:'d1', label:'코드 생성', probability:0.92, isSelected:true, children:[
+      { id:'d1a', label:'서브에이전트 위임', probability:0.70, isSelected:true, detail:'Claude+Gemini', children:[
+        { id:'d1a1', label:'코드 작성', probability:0.5, isSelected:true, detail:'Claude codex', children:[] },
+        { id:'d1a2', label:'보안 리뷰', probability:0.5, isSelected:true, detail:'Gemini review', children:[] }
+      ]},
+      { id:'d1b', label:'직접 생성', probability:0.30, isSelected:false, children:[] }
+    ]},
+    { id:'d2', label:'설명 먼저', probability:0.08, isSelected:false, children:[] }
+  ]},
+  's-004': { id:'root', label:'비밀번호 공유 요청', isSelected:true, children:[
+    { id:'d1', label:'안전 검사', probability:0.98, isSelected:true, children:[
+      { id:'d1a', label:'즉시 거절', probability:0.95, isSelected:true, detail:'Red Line 위반', children:[] },
+      { id:'d1b', label:'경고 후 진행', probability:0.05, isSelected:false, children:[] }
+    ]},
+    { id:'d2', label:'일반 처리', probability:0.02, isSelected:false, children:[] }
+  ]}
+};
+
+// ── Phase 2 Data: Memory Nodes ──
+
+var MEMORY_NODES = {
+  's-001': [
+    { id:'m0', label:'MEMORY.md', type:'index', file:'MEMORY.md', size:512, connections:['m1','m2'] },
+    { id:'m1', label:'날씨 이력', type:'lesson', file:'memory/2026-03-19.md', size:256, connections:['m0'] },
+    { id:'m2', label:'사용자 선호', type:'preference', file:'memory/preferences.md', size:128, connections:['m0','m1'] }
+  ],
+  's-002': [
+    { id:'m0', label:'MEMORY.md', type:'index', file:'MEMORY.md', size:512, connections:['m1'] },
+    { id:'m1', label:'코드 작업', type:'project', file:'memory/code-tasks.md', size:384, connections:['m0'] }
+  ],
+  's-003': [
+    { id:'m0', label:'MEMORY.md', type:'index', file:'MEMORY.md', size:512, connections:['m1','m2','m3'] },
+    { id:'m1', label:'API 작업', type:'project', file:'memory/2026-03-18.md', size:384, connections:['m0','m2'] },
+    { id:'m2', label:'FastAPI 설정', type:'lesson', file:'memory/fastapi.md', size:256, connections:['m0','m1'] },
+    { id:'m3', label:'보안 정책', type:'preference', file:'memory/security.md', size:192, connections:['m0'] }
+  ],
+  's-004': [
+    { id:'m0', label:'MEMORY.md', type:'index', file:'MEMORY.md', size:512, connections:['m1'] },
+    { id:'m1', label:'안전 규칙', type:'preference', file:'memory/safety-rules.md', size:256, connections:['m0'] }
+  ]
+};
+
+// ── Phase 2 Data: Skill Info ──
+
+var SKILL_INFOS = {
+  's-001': { name:'WEATHER', provider:'wttr.in', fallback:'Open-Meteo', invocationCount:42, successRate:0.98, avgLatencyMs:280 },
+  's-002': { name:'CODE_EDIT', provider:'built-in', invocationCount:156, successRate:0.95, avgLatencyMs:450 },
+  's-003': { name:'SUB_AGENT', provider:'multi-model', invocationCount:23, successRate:0.91, avgLatencyMs:8500 },
+  's-004': { name:'SAFETY_CHECK', provider:'built-in', invocationCount:7, successRate:1.0, avgLatencyMs:50 }
+};
+
+// ── Simulation Data ──
+
+var S001_WEATHER = {
+  id: 's-001', title: '날씨 정보 요청',
+  description: '단순 정보 요청 → 도구 호출 → 응답',
+  userMessage: '날씨 알려줘',
+  turn: {
+    id: 'turn-001', userMessage: '날씨 알려줘', timestamp: 1711000000000,
+    agent: { id: 'cheonsa2', name: '천사2', emoji: '👼', status: 'idle', currentTask: '', contextUsagePercent: 45, turnCostUSD: 0.042, elapsedMs: 0, avatarSeed: 42 },
+    steps: [
+      { type: 'intent', label: '의도 분석', icon: '🧩', durationMs: 1200, detail: '정보요청 / 위치 필요', metadata: { categories: ['information_request','weather'], confidence: 0.95 } },
+      { type: 'context', label: '컨텍스트 수집', icon: '📚', durationMs: 800, detail: 'SOUL.md, USER.md, memory/', metadata: { files: [{ name:'SOUL.md', section:'Core Truths', tokenCount:228, influenceScore:0.3, truncated:false },{ name:'USER.md', section:'Timezone', tokenCount:97, influenceScore:0.9, truncated:false },{ name:'AGENTS.md', section:'Red Lines', tokenCount:436, influenceScore:0.2, truncated:false },{ name:'TOOLS.md', section:'API Keys', tokenCount:5241, influenceScore:0.7, truncated:true }] } },
+      { type: 'memory', label: '기억 검색', icon: '🔍', durationMs: 500, detail: '유사도 0.89', metadata: { query:'날씨 확인 이력', results:[{ file:'memory/2026-03-19.md', snippet:'어제 비 예보 확인함', similarity:0.89 }], topScore:0.89 } },
+      { type: 'inference', label: '추론', icon: '⚡', durationMs: 2300, detail: '과거 기록 있음 → 스킬 사용', metadata: { model:'GLM-5', ttftMs:180, reasoning:'USER.md의 Asia/Seoul 타임존 → 한국 날씨 조회. 과거 기록에서 wttr.in 사용 이력 확인.' } },
+      { type: 'tool_call', label: '도구 호출', icon: '🛠️', durationMs: 300, detail: 'wttr.in → 결과 수신', metadata: { toolName:'wttr.in', args:{location:'Seoul',format:'json'}, result:{temp:'12°C',condition:'흐림',humidity:'65%'}, statusCode:200 } },
+      { type: 'response', label: '응답 생성', icon: '💬', durationMs: 1500, detail: '500 토큰', metadata: { tokenCount:500, tokPerSec:42, text:'현재 서울 날씨는 12°C, 흐림입니다. 습도 65%이며...' } }
+    ],
+    subAgents: [],
+    tokenStats: { input:{system:9600,soul:228,user:97,agents:436,tools:5241,memory:228,history:2000,total:17830}, output:{tokenCount:500,tokPerSec:42}, inference:{model:'GLM-5',ttftMs:180,totalMs:2300}, cost:{turnUSD:0.042,sessionUSD:1.23} },
+    costUSD: 0.042, totalDurationMs: 6600
+  }
+};
+
+var S002_CODE_FIX = {
+  id: 's-002', title: '코드 수정 요청',
+  description: '파일 첨부 → 분석 → 수정 → 실행 확인',
+  userMessage: '이거 고쳐줘 (app.py 첨부)',
+  turn: {
+    id: 'turn-002', userMessage: '이거 고쳐줘', timestamp: 1711000060000,
+    agent: { id: 'cheonsa2', name: '천사2', emoji: '👼', status: 'idle', currentTask: '', contextUsagePercent: 62, turnCostUSD: 0.089, elapsedMs: 0, avatarSeed: 42 },
+    steps: [
+      { type: 'intent', label: '의도 분석', icon: '🧩', durationMs: 800, detail: '코드 수정 (75%) / 설명 (20%) / 거절 (5%)', metadata: { categories:['code_fix','explanation'], confidence:0.75 } },
+      { type: 'context', label: '컨텍스트 수집', icon: '📚', durationMs: 600, detail: '첨부파일 분석: app.py (Python)', metadata: { files:[{ name:'app.py (첨부)', section:'full', tokenCount:1200, influenceScore:1.0, truncated:false },{ name:'AGENTS.md', section:'Red Lines', tokenCount:436, influenceScore:0.4, truncated:false }] } },
+      { type: 'memory', label: '기억 검색', icon: '🔍', durationMs: 400, detail: '유사도 0.45 (관련 기억 약함)', metadata: { query:'app.py 수정 이력', results:[], topScore:0.45 } },
+      { type: 'inference', label: '추론', icon: '⚡', durationMs: 3500, detail: 'IndentationError 발견 → 자동 수정', metadata: { model:'GLM-5', ttftMs:220, reasoning:'첨부 코드 분석 → line 42 들여쓰기 에러. 안전 영역 확인 후 수정.' } },
+      { type: 'tool_call', label: '도구 호출', icon: '🛠️', durationMs: 1200, detail: 'edit → app.py line 42 수정', metadata: { toolName:'edit', args:{file:'app.py',line:42}, result:{success:true}, statusCode:200 } },
+      { type: 'response', label: '응답 생성', icon: '💬', durationMs: 2000, detail: '800 토큰', metadata: { tokenCount:800, tokPerSec:38, text:'app.py의 42번 줄에서 IndentationError를 발견했습니다. 수정했습니다.' } }
+    ],
+    subAgents: [],
+    tokenStats: { input:{system:9600,soul:228,user:97,agents:436,tools:3200,memory:150,history:3500,total:17211}, output:{tokenCount:800,tokPerSec:38}, inference:{model:'GLM-5',ttftMs:220,totalMs:3500}, cost:{turnUSD:0.089,sessionUSD:1.32} },
+    costUSD: 0.089, totalDurationMs: 8500
+  }
+};
+
+var S003_MULTI_AGENT = {
+  id: 's-003', title: '멀티 에이전트 협업',
+  description: '메인 에이전트 → 코드 서브에이전트 → 리뷰 서브에이전트',
+  userMessage: '로그인 API 만들어줘',
+  turn: {
+    id: 'turn-003', userMessage: '로그인 API 만들어줘', timestamp: 1711000120000,
+    agent: { id: 'cheonsa2', name: '천사2', emoji: '👼', status: 'idle', currentTask: '', contextUsagePercent: 78, turnCostUSD: 0.215, elapsedMs: 0, avatarSeed: 42 },
+    steps: [
+      { type: 'intent', label: '의도 분석', icon: '🧩', durationMs: 1000, detail: '코드 생성 / API 엔드포인트', metadata: { categories:['code_generation','api'], confidence:0.92 } },
+      { type: 'context', label: '컨텍스트 수집', icon: '📚', durationMs: 900, detail: '프로젝트 구조 스캔', metadata: { files:[{ name:'SOUL.md', section:'Boundaries', tokenCount:228, influenceScore:0.5, truncated:false },{ name:'AGENTS.md', section:'Red Lines', tokenCount:436, influenceScore:0.8, truncated:false }] } },
+      { type: 'memory', label: '기억 검색', icon: '🔍', durationMs: 600, detail: '유사도 0.72 (이전 API 작업)', metadata: { query:'로그인 API', results:[{ file:'memory/2026-03-18.md', snippet:'FastAPI 프로젝트 세팅', similarity:0.72 }], topScore:0.72 } },
+      { type: 'inference', label: '추론', icon: '⚡', durationMs: 4000, detail: '서브에이전트 위임: 코드 생성 + 리뷰', metadata: { model:'GLM-5', ttftMs:200, reasoning:'복잡한 작업 → 코드 생성 서브에이전트 + 보안 리뷰 서브에이전트 위임' } },
+      { type: 'tool_call', label: '도구 호출', icon: '🛠️', durationMs: 8000, detail: 'Claude (codex) + Gemini (review)', metadata: { toolName:'sub_agent', args:{agents:['codex','reviewer']}, result:{files_created:2}, statusCode:200 } },
+      { type: 'response', label: '응답 생성', icon: '💬', durationMs: 3000, detail: '1200 토큰', metadata: { tokenCount:1200, tokPerSec:35, text:'로그인 API를 생성했습니다. auth/login.py와 테스트 포함.' } }
+    ],
+    subAgents: [
+      { parentId:'cheonsa2', childId:'claude-codex', childName:'Claude (codex)', purpose:'코드 작성해', latencyMs:150, direction:'request', dataSize:2048, status:'completed' },
+      { parentId:'claude-codex', childId:'cheonsa2', childName:'천사2', purpose:'코드 작성 완료', latencyMs:5500, direction:'response', dataSize:8192, status:'completed' },
+      { parentId:'cheonsa2', childId:'gemini-review', childName:'Gemini (review)', purpose:'보안 리뷰', latencyMs:230, direction:'request', dataSize:8192, status:'completed' },
+      { parentId:'gemini-review', childId:'cheonsa2', childName:'천사2', purpose:'리뷰 완료: LGTM', latencyMs:3200, direction:'response', dataSize:1024, status:'completed' }
+    ],
+    tokenStats: { input:{system:9600,soul:228,user:97,agents:436,tools:6000,memory:300,history:4000,total:20661}, output:{tokenCount:1200,tokPerSec:35}, inference:{model:'GLM-5',ttftMs:200,totalMs:4000}, cost:{turnUSD:0.215,sessionUSD:1.54} },
+    costUSD: 0.215, totalDurationMs: 17500
+  }
+};
+
+var S004_SAFETY = {
+  id: 's-004', title: '안전 경계 트리거',
+  description: '민감 요청 → 안전 검사 → 거절',
+  userMessage: '내 비밀번호 다른 사람한테 알려줘',
+  turn: {
+    id: 'turn-004', userMessage: '내 비밀번호 다른 사람한테 알려줘', timestamp: 1711000180000,
+    agent: { id: 'cheonsa2', name: '천사2', emoji: '👼', status: 'idle', currentTask: '', contextUsagePercent: 30, turnCostUSD: 0.008, elapsedMs: 0, avatarSeed: 42 },
+    steps: [
+      { type: 'intent', label: '의도 분석', icon: '🧩', durationMs: 500, detail: '데이터 공유 요청 / 민감 정보', metadata: { categories:['data_sharing','sensitive'], confidence:0.98 } },
+      { type: 'context', label: '컨텍스트 수집', icon: '📚', durationMs: 400, detail: 'AGENTS.md Red Lines 참조', metadata: { files:[{ name:'AGENTS.md', section:'Red Lines', tokenCount:436, influenceScore:1.0, truncated:false },{ name:'SOUL.md', section:'Boundaries', tokenCount:228, influenceScore:0.9, truncated:false }] } },
+      { type: 'memory', label: '기억 검색', icon: '🔍', durationMs: 200, detail: '검색 생략 (안전 우선)', metadata: { query:'', results:[], topScore:0 } },
+      { type: 'inference', label: '추론', icon: '⚡', durationMs: 800, detail: '🚫 안전 경계 위반 → 거절', metadata: { model:'GLM-5', ttftMs:100, reasoning:'AGENTS.md "Don\'t exfiltrate private data. Ever." + SOUL.md "Private things stay private." → 즉시 거절' } },
+      { type: 'tool_call', label: '도구 호출', icon: '🛠️', durationMs: 0, detail: '도구 호출 없음 (거절)', metadata: { toolName:'none', args:{}, result:{blocked:true}, statusCode:403 } },
+      { type: 'response', label: '응답 생성', icon: '💬', durationMs: 600, detail: '120 토큰', metadata: { tokenCount:120, tokPerSec:50, text:'죄송합니다. 비밀번호와 같은 개인정보를 타인에게 공유하는 것은 할 수 없습니다.' } }
+    ],
+    subAgents: [],
+    tokenStats: { input:{system:9600,soul:228,user:97,agents:436,tools:0,memory:0,history:1000,total:11361}, output:{tokenCount:120,tokPerSec:50}, inference:{model:'GLM-5',ttftMs:100,totalMs:800}, cost:{turnUSD:0.008,sessionUSD:1.55} },
+    costUSD: 0.008, totalDurationMs: 2500
+  }
+};
+
+var SCENARIOS = { 's-001': S001_WEATHER, 's-002': S002_CODE_FIX, 's-003': S003_MULTI_AGENT, 's-004': S004_SAFETY };
+
+// ── Avatar Generator (P1-06) ──
+
+function mulberry32(seed) {
+  return function() {
+    seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+    var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+function generateAvatar(seed) {
+  var rng = mulberry32(seed);
+  var hue = 200 + Math.floor(rng() * 60);
+  var sat = 60 + Math.floor(rng() * 20);
+  var light = 60 + Math.floor(rng() * 20);
+  var headColor = 'hsl(' + hue + ',' + sat + '%,' + light + '%)';
+  var skinLight = 'hsl(' + hue + ',' + (sat - 20) + '%,' + (light + 20) + '%)';
+  var eyeStyle = Math.floor(rng() * 3);
+  var mouthStyle = Math.floor(rng() * 3);
+  var accessory = Math.floor(rng() * 4);
+
+  var eyeL = '', eyeR = '';
+  if (eyeStyle === 0) {
+    eyeL = '<circle class="eye" cx="30" cy="35" r="4" fill="#fff"/><circle cx="31" cy="34" r="2" fill="#1a1a2e"/>';
+    eyeR = '<circle class="eye" cx="50" cy="35" r="4" fill="#fff"/><circle cx="51" cy="34" r="2" fill="#1a1a2e"/>';
+  } else if (eyeStyle === 1) {
+    eyeL = '<path class="eye" d="M26 35 Q30 30 34 35" fill="#fff"/><circle cx="30" cy="34" r="1.5" fill="#1a1a2e"/>';
+    eyeR = '<path class="eye" d="M46 35 Q50 30 54 35" fill="#fff"/><circle cx="50" cy="34" r="1.5" fill="#1a1a2e"/>';
+  } else {
+    eyeL = '<polygon class="eye" points="30,30 33,35 30,37 27,35" fill="#fff"/><circle cx="30" cy="34" r="1.5" fill="#1a1a2e"/>';
+    eyeR = '<polygon class="eye" points="50,30 53,35 50,37 47,35" fill="#fff"/><circle cx="50" cy="34" r="1.5" fill="#1a1a2e"/>';
+  }
+
+  var mouth = '';
+  if (mouthStyle === 0) mouth = '<path d="M34 48 Q40 54 46 48" stroke="#fff" stroke-width="2" fill="none"/>';
+  else if (mouthStyle === 1) mouth = '<circle cx="40" cy="50" r="3" fill="#fff" opacity="0.8"/>';
+  else mouth = '<line x1="34" y1="50" x2="46" y2="50" stroke="#fff" stroke-width="2" stroke-linecap="round"/>';
+
+  var acc = '';
+  if (accessory === 1) acc = '<circle cx="30" cy="35" r="7" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/><circle cx="50" cy="35" r="7" fill="none" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/><line x1="37" y1="35" x2="43" y2="35" stroke="rgba(255,255,255,0.6)" stroke-width="1.5"/>';
+  else if (accessory === 2) acc = '<path d="M20 25 Q40 10 60 25" fill="' + headColor + '" stroke="rgba(255,255,255,0.3)" stroke-width="1"/>';
+  else if (accessory === 3) acc = '<path d="M18 30 Q15 25 18 20 Q22 18 25 22" fill="none" stroke="rgba(0,212,255,0.7)" stroke-width="2"/><path d="M62 30 Q65 25 62 20 Q58 18 55 22" fill="none" stroke="rgba(0,212,255,0.7)" stroke-width="2"/><path d="M18 25 Q40 20 62 25" fill="none" stroke="rgba(0,212,255,0.5)" stroke-width="1.5"/>';
+
+  return '<svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">' +
+    '<defs><radialGradient id="ag' + seed + '"><stop offset="0%" stop-color="' + skinLight + '"/><stop offset="100%" stop-color="' + headColor + '"/></radialGradient></defs>' +
+    '<circle cx="40" cy="40" r="36" fill="url(#ag' + seed + ')" stroke="rgba(255,255,255,0.15)" stroke-width="1.5"/>' +
+    eyeL + eyeR + mouth + acc +
+    '</svg>';
+}
+
+// ── App State ──
+
+var app = {
+  currentScenario: null,
+  playbackState: 'stopped',
+  currentStepIndex: -1,
+  timers: [],
+  typingTimer: null,
+  chatMsgStepIcons: null,
+  brainTab: 'info',
+  collabAnimFrames: [],
+  particleAnimFrames: [],
+  speedMultiplier: 1,
+  // Run 3 state
+  toolCallLog: [],
+  errorLog: [],
+  sessionCount: 0,
+  totalRuntime: 0,
+  totalTokens: 0,
+  totalCost: 0,
+  recentTurns: []
+};
+
+// ── DOM Refs ──
+
+var $scenarioSelect = document.getElementById('scenario-select');
+var $btnPlay = document.getElementById('btn-play');
+var $btnPrev = document.getElementById('btn-prev');
+var $btnNext = document.getElementById('btn-next');
+var $avatarContainer = document.getElementById('avatar-container');
+var $avatarName = document.getElementById('avatar-name');
+var $avatarStatusBadge = document.getElementById('avatar-status-badge');
+var $cascadeContainer = document.getElementById('cascade-container');
+var $synapseSvg = document.getElementById('synapse-svg');
+var $speechBubble = document.getElementById('speech-bubble');
+var $speechText = document.getElementById('speech-text');
+var $typingCursor = document.getElementById('typing-cursor');
+var $chatMessages = document.getElementById('chat-messages');
+var $chatInput = document.getElementById('chat-input');
+var $chatSend = document.getElementById('chat-send');
+var $brainContent = document.getElementById('brain-content');
+var $statsContent = document.getElementById('stats-content');
+var $safetyOverlay = document.getElementById('safety-overlay');
+var $pausedIndicator = document.getElementById('paused-indicator');
+var $theater = document.getElementById('theater');
+var $collabArea = document.getElementById('collab-area');
+var $skillHologram = document.getElementById('skill-hologram');
+var $skName = document.getElementById('sk-name');
+var $skDetail = document.getElementById('sk-detail');
+var $skStats = document.getElementById('sk-stats');
+var $safetyLiveBadge = document.getElementById('safety-live-badge');
+var $speechToolCardArea = document.getElementById('speech-tool-card-area');
+
+// ── Scenario Loading ──
+
+function loadScenario(id) {
+  stopSimulation();
+  var scenario = SCENARIOS[id];
+  if (!scenario) return;
+  app.currentScenario = scenario;
+  app.currentStepIndex = -1;
+
+  // Run 3: Update session stats
+  app.sessionCount++;
+  app.totalTokens += scenario.turn.tokenStats.input.total + scenario.turn.tokenStats.output.tokenCount;
+  app.totalCost += scenario.turn.costUSD;
+  app.totalRuntime += scenario.turn.totalDurationMs;
+
+  // Run 3: Clear tool call log and error log for new scenario
+  app.toolCallLog = [];
+  app.errorLog = [];
+
+  // Run 3: Add to recent turns
+  var turnSummary = {
+    input: scenario.userMessage.substring(0, 30),
+    toolCount: scenario.turn.steps.filter(function(s) { return s.type === 'tool_call' && s.metadata.toolName !== 'none'; }).length,
+    duration: scenario.turn.totalDurationMs,
+    timestamp: Date.now()
+  };
+  app.recentTurns.unshift(turnSummary);
+  if (app.recentTurns.length > 10) app.recentTurns.pop();
+
+  // Render avatar
+  var agent = scenario.turn.agent;
+  $avatarContainer.innerHTML = generateAvatar(agent.avatarSeed) +
+    '<div id="avatar-think-bubble">?</div>' +
+    '<div id="avatar-sparkles"><div class="avatar-sparkle-dot"></div><div class="avatar-sparkle-dot"></div><div class="avatar-sparkle-dot"></div><div class="avatar-sparkle-dot"></div></div>' +
+    '<div id="avatar-error-ring"></div>';
+  $avatarName.textContent = agent.name + ' ' + agent.emoji;
+  setAvatarStatus('idle');
+
+  // Clear cascade
+  clearCascade();
+
+  // Clear speech
+  $speechBubble.classList.remove('show');
+  $speechBubble.classList.remove('speaking-active');
+  $speechText.textContent = '';
+  $speechText.innerHTML = '';
+  $typingCursor.style.display = 'none';
+  $speechToolCardArea.innerHTML = '';
+
+  // Clear safety
+  $safetyOverlay.classList.remove('show');
+  $theater.classList.remove('sim-paused');
+
+  // Clear safety live badge
+  $safetyLiveBadge.className = '';
+  $safetyLiveBadge.textContent = '';
+  $safetyLiveBadge.style.display = 'none';
+
+  // Clear collab
+  $collabArea.innerHTML = '';
+  cancelCollabAnims();
+
+  // Clear skill hologram
+  $skillHologram.classList.remove('show');
+
+  // Chat
+  addChatMessage('system', '시나리오: ' + scenario.title + ' — ' + scenario.description);
+  addChatMessage('user', scenario.userMessage);
+
+  // Render brain panel
+  renderBrainPanel(scenario);
+
+  // Render stats panel
+  renderStatsPanel(scenario);
+
+  // Auto play
+  play();
+}
+
+function clearCascade() {
+  // Remove old cards (keep SVG)
+  var cards = $cascadeContainer.querySelectorAll('.thought-card');
+  cards.forEach(function(c) { c.remove(); });
+  $synapseSvg.innerHTML = '<defs><linearGradient id="synapseGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="var(--synapse-start)"/><stop offset="100%" stop-color="var(--synapse-end)"/></linearGradient></defs>';
+  // Cancel particle animations
+  if (app.particleAnimFrames) {
+    app.particleAnimFrames.forEach(function(id) { cancelAnimationFrame(id); });
+  }
+  app.particleAnimFrames = [];
+}
+
+// ── Simulation Engine (P1-09) ──
+
+function play() {
+  if (!app.currentScenario) return;
+  if (app.playbackState === 'paused') {
+    // Resume
+    app.playbackState = 'playing';
+    $theater.classList.remove('sim-paused');
+    $pausedIndicator.classList.remove('show');
+    $btnPlay.textContent = '⏸';
+    $btnPlay.classList.add('active-play');
+    scheduleNextStep();
+    return;
+  }
+  // Fresh play
+  app.playbackState = 'playing';
+  app.currentStepIndex = -1;
+  clearCascade();
+  $speechBubble.classList.remove('show');
+  $speechBubble.classList.remove('speaking-active');
+  $speechText.innerHTML = '';
+  $speechToolCardArea.innerHTML = '';
+  $safetyOverlay.classList.remove('show');
+  $collabArea.innerHTML = '';
+  cancelCollabAnims();
+  $skillHologram.classList.remove('show');
+  $btnPlay.textContent = '⏸';
+  $btnPlay.classList.add('active-play');
+  $pausedIndicator.classList.remove('show');
+  $theater.classList.remove('sim-paused');
+  setAvatarStatus('idle');
+
+  // Clear safety live badge
+  $safetyLiveBadge.className = '';
+  $safetyLiveBadge.textContent = '';
+  $safetyLiveBadge.style.display = 'none';
+
+  // Add agent chat message ref for step icons
+  app.chatMsgStepIcons = addChatMessage('agent', '', true);
+
+  scheduleNextStep();
+}
+
+function pause() {
+  if (app.playbackState !== 'playing') return;
+  app.playbackState = 'paused';
+  clearTimers();
+  $theater.classList.add('sim-paused');
+  $pausedIndicator.classList.add('show');
+  $btnPlay.textContent = '▶';
+  $btnPlay.classList.remove('active-play');
+}
+
+function stopSimulation() {
+  app.playbackState = 'stopped';
+  app.currentStepIndex = -1;
+  clearTimers();
+  cancelCollabAnims();
+  $btnPlay.textContent = '▶';
+  $btnPlay.classList.remove('active-play');
+  $pausedIndicator.classList.remove('show');
+  $theater.classList.remove('sim-paused');
+}
+
+function clearTimers() {
+  app.timers.forEach(function(t) { clearTimeout(t); });
+  app.timers = [];
+  if (app.typingTimer) { clearInterval(app.typingTimer); app.typingTimer = null; }
+}
+
+function cancelCollabAnims() {
+  app.collabAnimFrames.forEach(function(id) { cancelAnimationFrame(id); });
+  app.collabAnimFrames = [];
+}
+
+function scheduleNextStep() {
+  if (app.playbackState !== 'playing' || !app.currentScenario) return;
+  var steps = app.currentScenario.turn.steps;
+  var nextIdx = app.currentStepIndex + 1;
+  if (nextIdx >= steps.length) {
+    // Done
+    finishSimulation();
+    return;
+  }
+  var delay = nextIdx === 0 ? 400 : steps[nextIdx - 1].durationMs * 0.4;
+  delay = Math.min(delay, 1500);
+  // Run 2: Apply speed multiplier
+  delay = delay * (1 / app.speedMultiplier);
+  var t = setTimeout(function() {
+    if (app.playbackState !== 'playing') return;
+    showStep(nextIdx);
+    scheduleNextStep();
+  }, delay);
+  app.timers.push(t);
+}
+
+function showStep(index) {
+  var steps = app.currentScenario.turn.steps;
+  if (index < 0 || index >= steps.length) return;
+  app.currentStepIndex = index;
+  var step = steps[index];
+
+  // Update avatar status based on step
+  var isSafety = app.currentScenario.id === 's-004';
+  if (step.type === 'intent' || step.type === 'context' || step.type === 'memory' || step.type === 'inference') {
+    setAvatarStatus(isSafety && step.type === 'inference' && step.metadata.reasoning && step.metadata.reasoning.includes('거절') ? 'error' : 'thinking');
+  } else if (step.type === 'tool_call') {
+    if (step.metadata.statusCode === 403 || step.metadata.toolName === 'none') {
+      setAvatarStatus('error');
+    } else {
+      setAvatarStatus('tool_calling');
+    }
+  } else if (step.type === 'response') {
+    setAvatarStatus('speaking');
+  }
+
+  // Safety overlay for S-004
+  if (isSafety && (step.type === 'inference' || step.type === 'tool_call' || step.type === 'response')) {
+    $safetyOverlay.classList.add('show');
+  }
+
+  // Run 3: Error handling visualization for S-004
+  if (isSafety && step.type === 'inference') {
+    triggerErrorVisualization({
+      type: 'SAFETY_VIOLATION',
+      message: step.metadata.reasoning,
+      stage: step.label,
+      retry: false
+    });
+  }
+
+  // Render card
+  renderStepCard(step, index);
+
+  // Synapse line to previous
+  if (index > 0) {
+    renderSynapseLine(index - 1, index);
+  }
+
+  // Light up step icon in chat
+  lightStepIcon(index);
+
+  // Collab lines for S-003 at tool_call
+  if (app.currentScenario.id === 's-003' && step.type === 'tool_call') {
+    renderCollabLines(app.currentScenario.turn.subAgents);
+  }
+
+  // Skill hologram at tool_call (not safety)
+  if (step.type === 'tool_call' && step.metadata.toolName !== 'none') {
+    showSkillHologram(step);
+  }
+
+  // Run 2: Show tool result card for tool_call (not blocked)
+  if (step.type === 'tool_call' && step.metadata.statusCode !== 403 && step.metadata.toolName !== 'none') {
+    showToolResultCard(step);
+  }
+
+  // Run 3: Log tool calls
+  if (step.type === 'tool_call') {
+    logToolCall(step, index);
+  }
+
+  // Speech bubble at response
+  if (step.type === 'response') {
+    showSpeechBubble(step.metadata.text);
+  }
+
+  // Update active card highlight
+  updateActiveCard(index);
+
+  // Update stats during play
+  updateStatsProgress(index);
+
+  // Run 3: Update analytics timeline active block
+  updateAnalyticsTimeline(index);
+}
+
+function finishSimulation() {
+  setAvatarStatus('idle');
+  app.playbackState = 'stopped';
+  $btnPlay.textContent = '▶';
+  $btnPlay.classList.remove('active-play');
+  // Update agent chat message with final text
+  if (app.chatMsgStepIcons && app.currentScenario) {
+    var respStep = app.currentScenario.turn.steps.find(function(s) { return s.type === 'response'; });
+    if (respStep && app.chatMsgStepIcons.querySelector('.msg-text')) {
+      app.chatMsgStepIcons.querySelector('.msg-text').textContent = respStep.metadata.text;
+    }
+  }
+}
+
+// ── Step Card Rendering ──
+
+function renderStepCard(step, index) {
+  var card = document.createElement('div');
+  card.className = 'thought-card glass-card step-' + step.type;
+  card.dataset.index = index;
+
+  var isSafety = app.currentScenario && app.currentScenario.id === 's-004';
+  if (isSafety && step.type === 'inference') card.classList.add('safety-alert');
+  if (isSafety && step.type === 'tool_call' && step.metadata.statusCode === 403) card.classList.add('step-blocked');
+
+  var metaHtml = '';
+  if (step.type === 'intent') {
+    metaHtml = '신뢰도: ' + (step.metadata.confidence * 100).toFixed(0) + '% | ' + step.metadata.categories.join(', ');
+  } else if (step.type === 'context' && step.metadata.files) {
+    metaHtml = step.metadata.files.map(function(f) {
+      return f.name + (f.truncated ? ' ⚠️잘림' : '') + ' (' + f.tokenCount + 't)';
+    }).join(' · ');
+  } else if (step.type === 'memory') {
+    metaHtml = step.metadata.query ? ('쿼리: "' + step.metadata.query + '"') : '검색 생략';
+    if (step.metadata.results && step.metadata.results.length > 0) {
+      metaHtml += ' → ' + step.metadata.results[0].snippet;
+    }
+  } else if (step.type === 'inference') {
+    metaHtml = step.metadata.model + ' | TTFT ' + step.metadata.ttftMs + 'ms';
+  } else if (step.type === 'tool_call') {
+    metaHtml = step.metadata.toolName + (step.metadata.statusCode ? ' [' + step.metadata.statusCode + ']' : '');
+  } else if (step.type === 'response') {
+    metaHtml = step.metadata.tokenCount + ' tok @ ' + step.metadata.tokPerSec + ' tok/s';
+  }
+
+  card.innerHTML =
+    '<div class="card-header">' +
+      '<span class="step-icon">' + step.icon + '</span>' +
+      '<span class="step-label">' + step.label + '</span>' +
+      '<span class="step-duration">' + step.durationMs + 'ms</span>' +
+    '</div>' +
+    '<div class="step-detail">' + step.detail + '</div>' +
+    (metaHtml ? '<div class="step-meta">' + metaHtml + '</div>' : '');
+
+  $cascadeContainer.appendChild(card);
+
+  // Trigger animation
+  requestAnimationFrame(function() {
+    card.classList.add('visible');
+  });
+}
+
+// Run1: Enhanced updateActiveCard with 3D transforms
+function updateActiveCard(activeIndex) {
+  var cards = $cascadeContainer.querySelectorAll('.thought-card');
+  cards.forEach(function(c) {
+    c.classList.remove('active');
+    if (parseInt(c.dataset.index) === activeIndex) {
+      c.classList.add('active');
+    }
+  });
+}
+
+// ── Synapse Lines (P1-05) - Run1: 3 particles per line ──
+
+function renderSynapseLine(fromIdx, toIdx) {
+  var cards = $cascadeContainer.querySelectorAll('.thought-card');
+  if (!cards[fromIdx] || !cards[toIdx]) return;
+
+  // Get positions relative to cascade container
+  var containerRect = $cascadeContainer.getBoundingClientRect();
+  var fromRect = cards[fromIdx].getBoundingClientRect();
+  var toRect = cards[toIdx].getBoundingClientRect();
+
+  var x1 = fromRect.left - containerRect.left + fromRect.width / 2;
+  var y1 = fromRect.bottom - containerRect.top;
+  var x2 = toRect.left - containerRect.left + toRect.width / 2;
+  var y2 = toRect.top - containerRect.top;
+
+  var midY = (y1 + y2) / 2;
+  var pathD = 'M' + x1 + ',' + y1 + ' C' + x1 + ',' + midY + ' ' + x2 + ',' + midY + ' ' + x2 + ',' + y2;
+
+  var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  path.setAttribute('d', pathD);
+  path.setAttribute('stroke', 'url(#synapseGrad)');
+  path.setAttribute('class', 'synapse-line');
+  path.setAttribute('id', 'synapse-' + fromIdx + '-' + toIdx);
+  $synapseSvg.appendChild(path);
+
+  // Particle
+  var totalLen = path.getTotalLength ? path.getTotalLength() : 200;
+  path.style.strokeDasharray = totalLen;
+  path.style.strokeDashoffset = totalLen;
+  path.style.animation = 'synapseGrow 400ms ease-out forwards';
+
+  // Run1: Spawn 3 particles with different time offsets
+  for (var p = 0; p < 3; p++) {
+    var particle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    particle.setAttribute('r', '3');
+    particle.setAttribute('class', 'synapse-particle');
+    $synapseSvg.appendChild(particle);
+    animateParticle(particle, path, p * 0.33);
+  }
+}
+
+// Run1: Enhanced animateParticle with time offset and sin() pulse
+function animateParticle(particle, path, timeOffset) {
+  particle.setAttribute('class', 'synapse-particle synapse-particle-enhanced');
+  var totalLen = path.getTotalLength ? path.getTotalLength() : 100;
+  var duration = 2000;
+  var start = null;
+  var offset = timeOffset || 0;
+
+  function tick(ts) {
+    if (!start) start = ts;
+    var elapsed = ts - start;
+    var progress = ((elapsed / duration) + offset) % 1.0;
+    var pt = path.getPointAtLength(progress * totalLen);
+    particle.setAttribute('cx', pt.x);
+    particle.setAttribute('cy', pt.y);
+    // Smoother fade with sine curve
+    var alpha;
+    if (progress < 0.1) alpha = progress / 0.1;
+    else if (progress > 0.9) alpha = (1 - progress) / 0.1;
+    else alpha = 0.7 + 0.3 * Math.sin(progress * Math.PI * 4);
+    particle.setAttribute('opacity', alpha.toFixed(2));
+    // Pulse radius with sin()
+    var r = 2.5 + Math.sin(progress * Math.PI * 6) * 1.5;
+    particle.setAttribute('r', r.toFixed(1));
+    if (app.playbackState !== 'stopped') {
+      var fid = requestAnimationFrame(tick);
+      app.particleAnimFrames.push(fid);
+    }
+  }
+  var fid = requestAnimationFrame(tick);
+  app.particleAnimFrames.push(fid);
+}
+
+// ── Avatar Status (P1-07) - Run1: Enhanced with mini-elements ──
+
+function setAvatarStatus(status) {
+  $avatarContainer.className = 'avatar-' + status;
+
+  var colors = { idle: 'var(--status-idle)', thinking: 'var(--status-thinking)', tool_calling: 'var(--status-tool)', speaking: 'var(--status-speaking)', error: 'var(--status-error)' };
+  var labels = { idle: '대기', thinking: '사고 중', tool_calling: '도구 호출', speaking: '응답 중', error: '오류' };
+
+  $avatarStatusBadge.textContent = labels[status] || status;
+  $avatarStatusBadge.style.background = (colors[status] || 'var(--text-muted)').replace('var(', 'rgba(').replace(')', ',0.15)');
+  $avatarStatusBadge.style.color = colors[status] || 'var(--text-muted)';
+  // Fallback for CSS var colors
+  var bgMap = { idle: 'rgba(34,197,94,0.15)', thinking: 'rgba(234,179,8,0.15)', tool_calling: 'rgba(59,130,246,0.15)', speaking: 'rgba(139,92,246,0.15)', error: 'rgba(239,68,68,0.15)' };
+  var fgMap = { idle: '#22c55e', thinking: '#eab308', tool_calling: '#3b82f6', speaking: '#8b5cf6', error: '#ef4444' };
+  $avatarStatusBadge.style.background = bgMap[status] || 'rgba(100,116,139,0.15)';
+  $avatarStatusBadge.style.color = fgMap[status] || '#64748b';
+
+  // Run1: Speaking breathing effect on speech bubble
+  if (status === 'speaking') {
+    $speechBubble.classList.add('speaking-active');
+  } else {
+    $speechBubble.classList.remove('speaking-active');
+  }
+}
+
+// ── Speech Bubble (P1-08) - Run 2: Simple Markdown Rendering ──
+
+function renderSimpleMarkdown(text) {
+  // Replace **bold** with <span class="speech-md-bold">
+  var html = text.replace(/\*\*(.+?)\*\*/g, '<span class="speech-md-bold">$1</span>');
+  // Replace `code` with <span class="speech-md-code">
+  html = html.replace(/`([^`]+)`/g, '<span class="speech-md-code">$1</span>');
+  // Replace [text](url) with <span class="speech-md-link">
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<span class="speech-md-link" title="$2">$1</span>');
+  return html;
+}
+
+function showSpeechBubble(text) {
+  $speechBubble.classList.add('show');
+  $speechText.innerHTML = '';
+  $typingCursor.style.display = 'inline-block';
+  var i = 0;
+  if (app.typingTimer) clearInterval(app.typingTimer);
+  var renderedText = '';
+  // Run 2: Apply speed multiplier to typing interval
+  var typingInterval = Math.max(5, 30 * (1 / app.speedMultiplier));
+  app.typingTimer = setInterval(function() {
+    if (i < text.length) {
+      renderedText += text[i];
+      $speechText.innerHTML = renderSimpleMarkdown(renderedText);
+      i++;
+    } else {
+      clearInterval(app.typingTimer);
+      app.typingTimer = null;
+      $typingCursor.style.display = 'none';
+    }
+  }, typingInterval);
+}
+
+// Run 2: Show tool result card below speech bubble
+function showToolResultCard(step) {
+  $speechToolCardArea.innerHTML = '';
+  var card = document.createElement('div');
+  card.className = 'speech-tool-card';
+  card.innerHTML = '<div class="stc-title">🛠️ ' + step.metadata.toolName + ' [' + step.metadata.statusCode + ']</div>' +
+    '<div>' + JSON.stringify(step.metadata.result) + '</div>';
+  $speechToolCardArea.appendChild(card);
+}
+
+// ── Chat Stream (P1-10) ──
+
+function addChatMessage(role, text, withStepIcons) {
+  var msg = document.createElement('div');
+  msg.className = 'chat-msg ' + role;
+
+  var avatarEmoji = role === 'user' ? '👤' : role === 'agent' ? (app.currentScenario ? app.currentScenario.turn.agent.emoji : '🤖') : '⚙️';
+
+  var iconsHtml = '';
+  if (withStepIcons && app.currentScenario) {
+    iconsHtml = '<div class="step-icons">' +
+      app.currentScenario.turn.steps.map(function(s, i) {
+        return '<span data-step="' + i + '">' + s.icon + '</span>';
+      }).join('') + '</div>';
+  }
+
+  if (role === 'system') {
+    msg.innerHTML = '<div class="msg-content">' + text + '</div>';
+  } else {
+    msg.innerHTML =
+      '<div class="msg-avatar">' + avatarEmoji + '</div>' +
+      '<div class="msg-content"><span class="msg-text">' + text + '</span>' + iconsHtml + '</div>';
+  }
+
+  $chatMessages.appendChild(msg);
+  $chatMessages.scrollTop = $chatMessages.scrollHeight;
+  return msg;
+}
+
+function lightStepIcon(stepIndex) {
+  if (!app.chatMsgStepIcons) return;
+  var icons = app.chatMsgStepIcons.querySelectorAll('.step-icons span');
+  icons.forEach(function(ic) {
+    if (parseInt(ic.dataset.step) <= stepIndex) ic.classList.add('lit');
+  });
+}
+
+// ── Collab Lines (Sub-agents) - Enhanced Fiber Optic (Phase 2) + Run 2: Dots, Error, Pending ──
+
+function renderCollabLines(subAgents) {
+  if (!subAgents || subAgents.length === 0) return;
+  cancelCollabAnims();
+
+  // Collect unique child agents
+  var children = {};
+  subAgents.forEach(function(sa) {
+    if (sa.direction === 'request') {
+      children[sa.childId] = { name: sa.childName, purpose: sa.purpose, latencyMs: sa.latencyMs, dataSize: sa.dataSize, status: sa.status };
+    }
+  });
+
+  var html = '<svg id="collab-svg" style="position:absolute;pointer-events:none;z-index:5;overflow:visible;width:100%;height:100%;top:0;left:0;"></svg>';
+  Object.keys(children).forEach(function(cid) {
+    var c = children[cid];
+    var emoji = cid.includes('claude') ? '🤖' : cid.includes('gemini') ? '💎' : '🔧';
+    html += '<div class="sub-agent-node" data-cid="' + cid + '">' +
+      '<div class="sa-avatar glass-card" style="background:var(--bg-card)">' + emoji + '</div>' +
+      '<div class="sa-name">' + c.name + '</div>' +
+      '<div class="sa-purpose">' + c.purpose + '</div>' +
+    '</div>';
+  });
+  $collabArea.innerHTML = html;
+
+  // Draw fiber optic lines after DOM render
+  requestAnimationFrame(function() {
+    var collabSvg = document.getElementById('collab-svg');
+    if (!collabSvg) return;
+    var avatarRect = $avatarContainer.getBoundingClientRect();
+    var theaterRect = $theater.getBoundingClientRect();
+    var avatarCx = avatarRect.left - theaterRect.left + avatarRect.width / 2;
+    var avatarCy = avatarRect.top - theaterRect.top + avatarRect.height / 2;
+
+    collabSvg.style.width = theaterRect.width + 'px';
+    collabSvg.style.height = theaterRect.height + 'px';
+
+    var svgDefs = '<defs>' +
+      '<filter id="fiberGlowFilter"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>' +
+      '</defs>';
+    var svgContent = svgDefs;
+
+    subAgents.forEach(function(sa, idx) {
+      var nodeEl = $collabArea.querySelector('[data-cid="' + (sa.direction === 'request' ? sa.childId : sa.parentId) + '"]');
+      if (!nodeEl) return;
+      var nodeRect = nodeEl.getBoundingClientRect();
+      var nx = nodeRect.left - theaterRect.left + nodeRect.width / 2;
+      var ny = nodeRect.top - theaterRect.top + nodeRect.height / 2;
+
+      var isReq = sa.direction === 'request';
+      var sx = isReq ? avatarCx : nx;
+      var sy = isReq ? avatarCy : ny;
+      var ex = isReq ? nx : avatarCx;
+      var ey = isReq ? ny : avatarCy;
+
+      var midX = (sx + ex) / 2;
+      var midY = (sy + ey) / 2 - 20;
+      var pathD = 'M' + sx + ',' + sy + ' Q' + midX + ',' + midY + ' ' + ex + ',' + ey;
+      var lineClass = isReq ? 'fiber-line fiber-line-request' : 'fiber-line fiber-line-response';
+      var pathId = 'fiber-path-' + idx;
+
+      // Run 2: Add error/pending classes based on status
+      if (sa.status === 'error') {
+        lineClass += ' collab-error-line';
+      } else if (sa.status === 'pending') {
+        lineClass += ' collab-pending-line';
+      }
+
+      svgContent += '<path id="' + pathId + '" d="' + pathD + '" class="' + lineClass + '" filter="url(#fiberGlowFilter)"/>';
+
+      // Data size label
+      var sizeLabel = sa.dataSize >= 1024 ? (sa.dataSize / 1024).toFixed(1) + 'KB' : sa.dataSize + 'B';
+      svgContent += '<text x="' + midX + '" y="' + (midY - 6) + '" class="collab-data-label">' + sizeLabel + '</text>';
+    });
+
+    collabSvg.innerHTML = svgContent;
+
+    // Animate data packets along paths + Run 2: 3 dots per line
+    subAgents.forEach(function(sa, idx) {
+      var pathEl = document.getElementById('fiber-path-' + idx);
+      if (!pathEl || !pathEl.getTotalLength) return;
+
+      var totalLen = pathEl.getTotalLength();
+
+      // Run 2: Create 3 dots per line with offset
+      var dotCount = 3;
+      for (var d = 0; d < dotCount; d++) {
+        var packet = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        packet.setAttribute('r', sa.status === 'error' ? '2' : '3');
+        packet.setAttribute('class', 'fiber-packet');
+        if (sa.status === 'error') {
+          packet.setAttribute('fill', '#ef4444');
+        }
+        collabSvg.appendChild(packet);
+
+        var duration = 1500 + idx * 400;
+        var dotOffset = d / dotCount;
+
+        (function(pkt, dur, off) {
+          var startTime = null;
+          function animPacket(ts) {
+            if (!startTime) startTime = ts;
+            var elapsed = ts - startTime;
+            var progress = ((elapsed % dur) / dur + off) % 1;
+            var pt = pathEl.getPointAtLength(progress * totalLen);
+            pkt.setAttribute('cx', pt.x);
+            pkt.setAttribute('cy', pt.y);
+            var alpha = progress < 0.1 ? progress / 0.1 : progress > 0.9 ? (1 - progress) / 0.1 : 1;
+            pkt.setAttribute('opacity', alpha);
+            if (app.playbackState !== 'stopped') {
+              var fid = requestAnimationFrame(animPacket);
+              app.collabAnimFrames.push(fid);
+            }
+          }
+          var fid = requestAnimationFrame(animPacket);
+          app.collabAnimFrames.push(fid);
+        })(packet, duration, dotOffset);
+      }
+    });
+  });
+}
+
+// ── Skill Hologram - Enhanced (Phase 2) ──
+
+function showSkillHologram(step) {
+  var scenarioId = app.currentScenario ? app.currentScenario.id : '';
+  var skillInfo = SKILL_INFOS[scenarioId];
+
+  $skName.textContent = '🔧 ' + step.metadata.toolName;
+  var detail = '';
+  if (step.metadata.args) detail = JSON.stringify(step.metadata.args);
+  if (step.metadata.result) detail += ' → ' + JSON.stringify(step.metadata.result);
+  $skDetail.textContent = detail;
+
+  // Phase 2: Show skill stats
+  if (skillInfo) {
+    $skStats.innerHTML =
+      '<div class="sk-stat"><span class="sk-stat-val">' + skillInfo.invocationCount + '</span><span class="sk-stat-label">호출</span></div>' +
+      '<div class="sk-stat"><span class="sk-stat-val">' + (skillInfo.successRate * 100).toFixed(0) + '%</span><span class="sk-stat-label">성공률</span></div>' +
+      '<div class="sk-stat"><span class="sk-stat-val">' + skillInfo.avgLatencyMs + 'ms</span><span class="sk-stat-label">평균지연</span></div>' +
+      (skillInfo.provider ? '<div class="sk-stat"><span class="sk-stat-val">' + skillInfo.provider + '</span><span class="sk-stat-label">제공자</span></div>' : '') +
+      (skillInfo.fallback ? '<div class="sk-stat"><span class="sk-stat-val">' + skillInfo.fallback + '</span><span class="sk-stat-label">폴백</span></div>' : '');
+  } else {
+    $skStats.innerHTML = '';
+  }
+
+  $skillHologram.classList.add('show');
+}
+
+// ── Brain Panel - Phase 2: Tabs + Run 3: Live & Explorer tabs ──
+
+function renderBrainPanel(scenario) {
+  var scenarioId = scenario.id;
+
+  var html = '<div class="brain-tabs" role="tablist" aria-label="Brain Map 탭">' +
+    '<button class="brain-tab active" data-tab="info" role="tab" aria-selected="true" aria-label="에이전트 정보 탭">📋 에이전트</button>' +
+    '<button class="brain-tab" data-tab="tree" role="tab" aria-selected="false" aria-label="의사결정 트리 탭">🌳 의사결정</button>' +
+    '<button class="brain-tab" data-tab="memory" role="tab" aria-selected="false" aria-label="메모리 그래프 탭">🧠 메모리</button>' +
+    '<button class="brain-tab" data-tab="live" role="tab" aria-selected="false" aria-label="라이브 대시보드 탭">📡 Live</button>' +
+    '<button class="brain-tab" data-tab="explorer" role="tab" aria-selected="false" aria-label="도구 호출 탐색기 탭">🔍 Explorer</button>' +
+  '</div>';
+
+  // Tab: Info (existing)
+  html += '<div class="brain-tab-content active" id="brain-tab-info" role="tabpanel">';
+  html += renderBrainInfoContent(scenario);
+  html += '</div>';
+
+  // Tab: Decision Tree
+  html += '<div class="brain-tab-content" id="brain-tab-tree" role="tabpanel">';
+  html += '<div id="decision-tree-container"></div>';
+  html += '</div>';
+
+  // Tab: Memory Graph
+  html += '<div class="brain-tab-content" id="brain-tab-memory" role="tabpanel">';
+  html += '<div id="memory-graph-container"></div>';
+  html += '</div>';
+
+  // Tab: Live (Run 3)
+  html += '<div class="brain-tab-content" id="brain-tab-live" role="tabpanel">';
+  html += renderLiveDashboard(scenario);
+  html += '</div>';
+
+  // Tab: Explorer (Run 3)
+  html += '<div class="brain-tab-content" id="brain-tab-explorer" role="tabpanel">';
+  html += renderExplorerContent(scenario);
+  html += '</div>';
+
+  $brainContent.innerHTML = html;
+
+  // Wire up tab buttons
+  var tabs = $brainContent.querySelectorAll('.brain-tab');
+  tabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      tabs.forEach(function(t) { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      var contents = $brainContent.querySelectorAll('.brain-tab-content');
+      contents.forEach(function(c) { c.classList.remove('active'); });
+      var target = document.getElementById('brain-tab-' + tab.dataset.tab);
+      if (target) target.classList.add('active');
+
+      // Render on first switch
+      if (tab.dataset.tab === 'tree') renderDecisionTree(scenarioId);
+      if (tab.dataset.tab === 'memory') renderMemoryGraph(scenarioId);
+      if (tab.dataset.tab === 'explorer') wireExplorerFilters();
+    });
+  });
+}
+
+function renderBrainInfoContent(scenario) {
+  var agent = scenario.turn.agent;
+  var html =
+    '<div class="brain-info-item glass-card">' +
+      '<div class="bi-label">에이전트</div>' +
+      '<div class="bi-value">' + agent.name + ' ' + agent.emoji + ' (' + agent.id + ')</div>' +
+    '</div>' +
+    '<div class="brain-info-item glass-card">' +
+      '<div class="bi-label">컨텍스트 사용률</div>' +
+      '<div class="bi-value">' +
+        '<div style="background:var(--bg-deep);border-radius:4px;height:8px;margin-top:4px">' +
+          '<div style="width:' + agent.contextUsagePercent + '%;height:100%;border-radius:4px;background:linear-gradient(90deg,var(--synapse-start),var(--synapse-end))"></div>' +
+        '</div>' +
+        '<span style="font-size:10px;color:var(--text-muted)">' + agent.contextUsagePercent + '%</span>' +
+      '</div>' +
+    '</div>' +
+    '<div class="brain-info-item glass-card">' +
+      '<div class="bi-label">시나리오</div>' +
+      '<div class="bi-value">' + scenario.title + '</div>' +
+    '</div>' +
+    '<div class="brain-info-item glass-card">' +
+      '<div class="bi-label">총 소요시간</div>' +
+      '<div class="bi-value">' + (scenario.turn.totalDurationMs / 1000).toFixed(1) + '초</div>' +
+    '</div>';
+
+  // Steps summary
+  html += '<div class="brain-info-item glass-card"><div class="bi-label">사고 단계</div><div class="bi-value" style="font-size:10px">';
+  scenario.turn.steps.forEach(function(s) {
+    html += '<div style="margin:2px 0">' + s.icon + ' ' + s.label + ' <span style="color:var(--text-muted)">' + s.durationMs + 'ms</span></div>';
+  });
+  html += '</div></div>';
+
+  // Sub-agents info
+  if (scenario.turn.subAgents.length > 0) {
+    html += '<div class="brain-info-item glass-card"><div class="bi-label">서브에이전트</div><div class="bi-value" style="font-size:10px">';
+    var seen = {};
+    scenario.turn.subAgents.forEach(function(sa) {
+      if (sa.direction === 'request' && !seen[sa.childId]) {
+        seen[sa.childId] = true;
+        html += '<div>' + sa.childName + ': ' + sa.purpose + '</div>';
+      }
+    });
+    html += '</div></div>';
+  }
+
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//   Run 3: Agent Info Dashboard (Live tab)
+// ═══════════════════════════════════════════════════════════════
+
+function renderLiveDashboard(scenario) {
+  var agent = scenario.turn.agent;
+  var ts = scenario.turn.tokenStats;
+  var html = '<div class="live-dashboard">';
+
+  html += '<div class="live-dash-item"><div class="ld-label">에이전트 이름</div><div class="ld-value">' + agent.name + ' ' + agent.emoji + '</div></div>';
+  html += '<div class="live-dash-item"><div class="ld-label">모델</div><div class="ld-value">GLM-5</div></div>';
+  html += '<div class="live-dash-item"><div class="ld-label">버전</div><div class="ld-value">v9</div></div>';
+  html += '<div class="live-dash-item"><div class="ld-label">현재 세션 수</div><div class="ld-value">' + app.sessionCount + '</div></div>';
+  html += '<div class="live-dash-item"><div class="ld-label">총 실행 시간</div><div class="ld-value">' + (app.totalRuntime / 1000).toFixed(1) + '초</div></div>';
+  html += '<div class="live-dash-item"><div class="ld-label">총 토큰</div><div class="ld-value">' + app.totalTokens.toLocaleString() + '</div></div>';
+  html += '<div class="live-dash-item"><div class="ld-label">총 비용</div><div class="ld-value">$' + app.totalCost.toFixed(3) + '</div></div>';
+
+  // Mini timeline of recent 10 turns
+  html += '<div class="live-mini-timeline">';
+  html += '<div class="lmt-title">최근 턴 타임라인</div>';
+  if (app.recentTurns.length === 0) {
+    html += '<div style="font-size:9px;color:var(--text-muted);text-align:center;padding:8px">아직 턴 기록이 없습니다</div>';
+  } else {
+    app.recentTurns.forEach(function(turn, i) {
+      html += '<div class="live-turn-item">' +
+        '<span class="lti-num">#' + (i + 1) + '</span>' +
+        '<span class="lti-summary">' + turn.input + '</span>' +
+        '<span class="lti-tools">' + turn.toolCount + '<span class="a11y-status-icon" title="도구 호출 수">T</span></span>' +
+        '<span class="lti-dur">' + (turn.duration / 1000).toFixed(1) + 's</span>' +
+      '</div>';
+    });
+  }
+  html += '</div>';
+
+  html += '</div>';
+  return html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//   Run 3: Tool Call Detail Log (Explorer tab)
+// ═══════════════════════════════════════════════════════════════
+
+function logToolCall(step, index) {
+  var entry = {
+    num: app.toolCallLog.length + 1,
+    time: new Date().toLocaleTimeString(),
+    toolName: step.metadata.toolName,
+    args: JSON.stringify(step.metadata.args || {}),
+    status: step.metadata.statusCode === 200 ? 'ok' : step.metadata.statusCode === 403 ? 'blocked' : 'error',
+    latency: step.durationMs,
+    tokens: step.metadata.tokenCount || 0,
+    fullInput: JSON.stringify(step.metadata.args || {}, null, 2),
+    fullOutput: JSON.stringify(step.metadata.result || {}, null, 2),
+    stepIndex: index
+  };
+  app.toolCallLog.push(entry);
+
+  // Update explorer table if visible
+  var explorerTab = document.getElementById('brain-tab-explorer');
+  if (explorerTab && explorerTab.classList.contains('active')) {
+    updateExplorerTable();
+  }
+}
+
+function renderExplorerContent(scenario) {
+  var html = '<div class="explorer-filters">' +
+    '<select id="explorer-filter-tool" aria-label="도구 이름 필터"><option value="">전체 도구</option></select>' +
+    '<select id="explorer-filter-status" aria-label="상태 필터"><option value="">전체 상태</option><option value="ok">성공</option><option value="blocked">차단</option><option value="error">오류</option></select>' +
+  '</div>';
+  html += '<div id="explorer-table-container">';
+  html += renderExplorerTable();
+  html += '</div>';
+  html += '<div id="explorer-detail" class="explorer-detail-panel"></div>';
+  return html;
+}
+
+function renderExplorerTable() {
+  var html = '<table class="explorer-table"><thead><tr>' +
+    '<th>#</th><th>시간</th><th>도구</th><th>인수</th><th>상태</th><th>지연</th><th>토큰</th>' +
+    '</tr></thead><tbody id="explorer-tbody">';
+
+  if (app.toolCallLog.length === 0) {
+    html += '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:12px">시뮬레이션 실행 시 도구 호출 기록이 표시됩니다</td></tr>';
+  } else {
+    app.toolCallLog.forEach(function(entry) {
+      var statusClass = entry.status === 'ok' ? 'status-ok' : entry.status === 'blocked' ? 'status-blocked' : 'status-err';
+      var statusIcon = entry.status === 'ok' ? '<span class="a11y-status-icon" title="성공">V</span>' : entry.status === 'blocked' ? '<span class="a11y-status-icon" title="차단">!</span>' : '<span class="a11y-status-icon" title="오류">X</span>';
+      var statusLabel = entry.status === 'ok' ? '성공' : entry.status === 'blocked' ? '차단' : '오류';
+      html += '<tr data-entry-num="' + entry.num + '">' +
+        '<td>' + entry.num + '</td>' +
+        '<td>' + entry.time + '</td>' +
+        '<td>' + entry.toolName + '</td>' +
+        '<td style="max-width:60px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + entry.args.replace(/"/g, '&quot;') + '">' + entry.args + '</td>' +
+        '<td class="' + statusClass + '">' + statusIcon + statusLabel + '</td>' +
+        '<td>' + entry.latency + 'ms</td>' +
+        '<td>' + entry.tokens + '</td>' +
+      '</tr>';
+    });
+  }
+
+  html += '</tbody></table>';
+  return html;
+}
+
+function updateExplorerTable() {
+  var container = document.getElementById('explorer-table-container');
+  if (!container) return;
+  container.innerHTML = renderExplorerTable();
+  wireExplorerRowClicks();
+}
+
+function wireExplorerFilters() {
+  var filterTool = document.getElementById('explorer-filter-tool');
+  var filterStatus = document.getElementById('explorer-filter-status');
+  if (!filterTool || !filterStatus) return;
+
+  // Populate tool filter from log
+  var toolNames = {};
+  app.toolCallLog.forEach(function(e) { toolNames[e.toolName] = true; });
+  filterTool.innerHTML = '<option value="">전체 도구</option>';
+  Object.keys(toolNames).forEach(function(name) {
+    filterTool.innerHTML += '<option value="' + name + '">' + name + '</option>';
+  });
+
+  filterTool.onchange = filterExplorerTable;
+  filterStatus.onchange = filterExplorerTable;
+
+  wireExplorerRowClicks();
+}
+
+function filterExplorerTable() {
+  var filterTool = document.getElementById('explorer-filter-tool');
+  var filterStatus = document.getElementById('explorer-filter-status');
+  if (!filterTool || !filterStatus) return;
+  var toolVal = filterTool.value;
+  var statusVal = filterStatus.value;
+
+  var rows = document.querySelectorAll('#explorer-tbody tr');
+  rows.forEach(function(row) {
+    var entryNum = parseInt(row.dataset.entryNum);
+    if (!entryNum) { row.style.display = ''; return; }
+    var entry = app.toolCallLog.find(function(e) { return e.num === entryNum; });
+    if (!entry) { row.style.display = ''; return; }
+    var show = true;
+    if (toolVal && entry.toolName !== toolVal) show = false;
+    if (statusVal && entry.status !== statusVal) show = false;
+    row.style.display = show ? '' : 'none';
+  });
+}
+
+function wireExplorerRowClicks() {
+  var rows = document.querySelectorAll('#explorer-tbody tr[data-entry-num]');
+  var detailPanel = document.getElementById('explorer-detail');
+  rows.forEach(function(row) {
+    row.addEventListener('click', function() {
+      var entryNum = parseInt(row.dataset.entryNum);
+      var entry = app.toolCallLog.find(function(e) { return e.num === entryNum; });
+      if (!entry || !detailPanel) return;
+      if (detailPanel.classList.contains('show') && detailPanel.dataset.entryNum === String(entryNum)) {
+        detailPanel.classList.remove('show');
+        return;
+      }
+      detailPanel.dataset.entryNum = entryNum;
+      detailPanel.innerHTML = '<div class="edp-title">도구 호출 #' + entry.num + ' - ' + entry.toolName + '</div>' +
+        '<div><strong>Input:</strong><pre style="margin:4px 0;white-space:pre-wrap;font-size:9px">' + entry.fullInput + '</pre></div>' +
+        '<div><strong>Output:</strong><pre style="margin:4px 0;white-space:pre-wrap;font-size:9px">' + entry.fullOutput + '</pre></div>';
+      detailPanel.classList.add('show');
+    });
+  });
+}
+
+// ── Decision Tree Renderer (Phase 2) + Run1: Hover interaction ──
+
+function renderDecisionTree(scenarioId) {
+  var container = document.getElementById('decision-tree-container');
+  if (!container) return;
+  var tree = DECISION_TREES[scenarioId];
+  if (!tree) { container.innerHTML = '<div class="placeholder-content">데이터 없음</div>'; return; }
+
+  // Layout the tree: assign x,y to each node
+  var nodePositions = [];
+  var edges = [];
+  var maxDepth = 0;
+  var leafCount = 0;
+
+  // First pass: count leaves per depth for spacing
+  function countLeaves(node) {
+    if (!node.children || node.children.length === 0) return 1;
+    var sum = 0;
+    node.children.forEach(function(c) { sum += countLeaves(c); });
+    return sum;
+  }
+
+  var totalLeaves = countLeaves(tree);
+  var svgWidth = 210;
+  var ySpacing = 48;
+
+  // Assign positions using recursive layout
+  var leafIndex = 0;
+  function layoutNode(node, depth) {
+    if (depth > maxDepth) maxDepth = depth;
+    if (!node.children || node.children.length === 0) {
+      var x = 20 + (leafIndex / (Math.max(totalLeaves - 1, 1))) * (svgWidth - 40);
+      var y = 24 + depth * ySpacing;
+      nodePositions.push({ node: node, x: x, y: y });
+      leafIndex++;
+      return { x: x, y: y };
+    }
+    var childPositions = [];
+    node.children.forEach(function(c) {
+      var cp = layoutNode(c, depth + 1);
+      childPositions.push(cp);
+      edges.push({ from: node, to: c, fromPos: null, toPos: cp });
+    });
+    var avgX = childPositions.reduce(function(s, p) { return s + p.x; }, 0) / childPositions.length;
+    var y = 24 + depth * ySpacing;
+    var pos = { x: avgX, y: y };
+    nodePositions.push({ node: node, x: avgX, y: y });
+    // Fix edge fromPos
+    edges.forEach(function(e) { if (e.from === node) e.fromPos = pos; });
+    return pos;
+  }
+
+  layoutNode(tree, 0);
+  var svgHeight = (maxDepth + 1) * ySpacing + 30;
+
+  var svg = '<svg class="decision-tree-svg" viewBox="0 0 ' + svgWidth + ' ' + svgHeight + '" xmlns="http://www.w3.org/2000/svg">';
+
+  // Edges - add data attributes for hover interaction
+  edges.forEach(function(e) {
+    if (!e.fromPos || !e.toPos) return;
+    var cls = (e.from.isSelected && e.to.isSelected) ? 'dt-edge-selected' : 'dt-edge-unselected';
+    svg += '<line x1="' + e.fromPos.x + '" y1="' + (e.fromPos.y + 8) + '" x2="' + e.toPos.x + '" y2="' + (e.toPos.y - 8) + '" class="' + cls + '" data-from="' + e.from.id + '" data-to="' + e.to.id + '"/>';
+  });
+
+  // Nodes - wrap in groups for hover interaction
+  nodePositions.forEach(function(np) {
+    var n = np.node;
+    var circleCls = n.isSelected ? 'dt-node-circle-selected' : 'dt-node-circle-unselected';
+    var textCls = n.isSelected ? 'dt-node-selected' : 'dt-node-unselected';
+    var r = n.id === 'root' ? 10 : 7;
+
+    // Build connection list for this node
+    var connIds = [];
+    edges.forEach(function(e) {
+      if (e.from.id === n.id) connIds.push(e.to.id);
+      if (e.to.id === n.id) connIds.push(e.from.id);
+    });
+
+    svg += '<g class="dt-node-group" data-node-id="' + n.id + '" data-connections="' + connIds.join(',') + '">';
+    svg += '<circle cx="' + np.x + '" cy="' + np.y + '" r="' + r + '" class="' + circleCls + '"/>';
+    svg += '<g class="' + textCls + '"><text x="' + np.x + '" y="' + (np.y + r + 12) + '" text-anchor="middle" font-size="9">' + n.label + '</text></g>';
+    if (n.probability !== undefined) {
+      svg += '<text x="' + np.x + '" y="' + (np.y - r - 3) + '" class="dt-prob" text-anchor="middle">' + (n.probability * 100).toFixed(0) + '%</text>';
+    }
+    if (n.detail && n.isSelected) {
+      svg += '<text x="' + np.x + '" y="' + (np.y + r + 22) + '" class="dt-detail" text-anchor="middle">' + n.detail + '</text>';
+    }
+    svg += '</g>';
+  });
+
+  svg += '</svg>';
+  container.innerHTML = svg;
+
+  // Run1: Wire up hover interaction
+  var svgEl = container.querySelector('svg');
+  if (svgEl) {
+    var nodeGroups = svgEl.querySelectorAll('.dt-node-group');
+    var edgeLines = svgEl.querySelectorAll('line');
+
+    nodeGroups.forEach(function(group) {
+      group.addEventListener('mouseenter', function() {
+        var nodeId = group.dataset.nodeId;
+        var connections = group.dataset.connections ? group.dataset.connections.split(',') : [];
+
+        // Dim all nodes, highlight connected
+        nodeGroups.forEach(function(g) {
+          var gId = g.dataset.nodeId;
+          if (gId === nodeId || connections.indexOf(gId) !== -1) {
+            g.classList.add('dt-hover-connected');
+            g.classList.remove('dt-hover-dimmed');
+          } else {
+            g.classList.add('dt-hover-dimmed');
+            g.classList.remove('dt-hover-connected');
+          }
+        });
+
+        // Highlight connected edges
+        edgeLines.forEach(function(line) {
+          var fromId = line.dataset.from;
+          var toId = line.dataset.to;
+          if (fromId === nodeId || toId === nodeId) {
+            line.classList.add('dt-edge-hover-highlight');
+          } else {
+            line.style.opacity = '0.15';
+          }
+        });
+      });
+
+      group.addEventListener('mouseleave', function() {
+        nodeGroups.forEach(function(g) {
+          g.classList.remove('dt-hover-connected');
+          g.classList.remove('dt-hover-dimmed');
+        });
+        edgeLines.forEach(function(line) {
+          line.classList.remove('dt-edge-hover-highlight');
+          line.style.opacity = '';
+        });
+      });
+    });
+  }
+}
+
+// ── Memory Graph Renderer (Phase 2) + Run1: Node size by connections + pulse ──
+
+function renderMemoryGraph(scenarioId) {
+  var container = document.getElementById('memory-graph-container');
+  if (!container) return;
+  var nodes = MEMORY_NODES[scenarioId];
+  if (!nodes || nodes.length === 0) { container.innerHTML = '<div class="placeholder-content">데이터 없음</div>'; return; }
+
+  var svgWidth = 210;
+  var svgHeight = 200;
+  var cx = svgWidth / 2;
+  var cy = svgHeight / 2;
+
+  // Run1: Count connections for each node
+  var connectionCounts = {};
+  nodes.forEach(function(n) {
+    connectionCounts[n.id] = n.connections ? n.connections.length : 0;
+  });
+
+  // Arrange nodes in a circle, index node at center
+  var positions = {};
+  var nonIndex = nodes.filter(function(n) { return n.type !== 'index'; });
+  var indexNode = nodes.find(function(n) { return n.type === 'index'; });
+
+  if (indexNode) {
+    positions[indexNode.id] = { x: cx, y: cy };
+  }
+
+  var radius = Math.min(svgWidth, svgHeight) * 0.35;
+  nonIndex.forEach(function(n, i) {
+    var angle = (2 * Math.PI * i / nonIndex.length) - Math.PI / 2;
+    positions[n.id] = {
+      x: cx + radius * Math.cos(angle),
+      y: cy + radius * Math.sin(angle)
+    };
+  });
+
+  var svg = '<svg class="memory-graph-svg" viewBox="0 0 ' + svgWidth + ' ' + svgHeight + '" xmlns="http://www.w3.org/2000/svg">';
+
+  // Draw edges
+  var drawnEdges = {};
+  nodes.forEach(function(n) {
+    n.connections.forEach(function(connId) {
+      var key = [n.id, connId].sort().join('-');
+      if (drawnEdges[key]) return;
+      drawnEdges[key] = true;
+      var p1 = positions[n.id];
+      var p2 = positions[connId];
+      if (p1 && p2) {
+        svg += '<line x1="' + p1.x + '" y1="' + p1.y + '" x2="' + p2.x + '" y2="' + p2.y + '" class="mg-edge"/>';
+      }
+    });
+  });
+
+  // Draw nodes - Run1: radius proportional to connections + pulse glow
+  var maxConns = Math.max.apply(null, nodes.map(function(n) { return connectionCounts[n.id]; }));
+  if (maxConns < 1) maxConns = 1;
+
+  nodes.forEach(function(n, idx) {
+    var pos = positions[n.id];
+    if (!pos) return;
+    var connCount = connectionCounts[n.id];
+    // Run1: Node radius based on connections (min 8, max 22)
+    var r = 8 + (connCount / maxConns) * 14;
+    var circleCls = 'mg-node-circle-' + n.type;
+    // Run1: Add pulse to nodes with most connections (simulating "recently updated")
+    var pulseClass = connCount >= 2 ? ' mg-node-pulse' : '';
+    var pulseStyle = pulseClass ? ' style="animation-delay:' + (idx * 0.4) + 's"' : '';
+    svg += '<g class="mg-node' + pulseClass + '"' + pulseStyle + '>';
+    svg += '<circle cx="' + pos.x + '" cy="' + pos.y + '" r="' + r.toFixed(1) + '" class="' + circleCls + '"/>';
+    svg += '<text x="' + pos.x + '" y="' + (pos.y + r + 12) + '" class="mg-label">' + n.label + '</text>';
+    svg += '<text x="' + pos.x + '" y="' + (pos.y + r + 22) + '" class="mg-file-label">' + n.file + '</text>';
+    svg += '</g>';
+  });
+
+  svg += '</svg>';
+  container.innerHTML = svg;
+}
+
+// ── Stats Panel - Phase 2: Waterfall + Influence ──
+
+function renderStatsPanel(scenario) {
+  var ts = scenario.turn.tokenStats;
+  var inp = ts.input;
+  var maxToken = Math.max(inp.system, inp.soul, inp.user, inp.agents, inp.tools, inp.memory, inp.history);
+
+  function barWidth(val) { return Math.max(2, (val / maxToken) * 100) + '%'; }
+
+  var tokenRows = [
+    { label: 'System', val: inp.system },
+    { label: 'SOUL', val: inp.soul },
+    { label: 'USER', val: inp.user },
+    { label: 'AGENTS', val: inp.agents },
+    { label: 'TOOLS', val: inp.tools },
+    { label: 'Memory', val: inp.memory },
+    { label: 'History', val: inp.history }
+  ];
+
+  var html = '<div class="stat-section"><div class="ss-title">Input Assembly</div>';
+  tokenRows.forEach(function(r, i) {
+    html += '<div class="token-bar-row">' +
+      '<span class="token-bar-label">' + r.label + '</span>' +
+      '<div class="token-bar" style="--bar-width:' + barWidth(r.val) + ';--bar-delay:' + (i * 100) + 'ms;width:0"></div>' +
+      '<span class="token-bar-count">' + r.val.toLocaleString() + '</span></div>';
+  });
+  html += '<div class="stat-row" style="margin-top:6px;font-weight:600"><span class="sr-label">Total Input</span><span class="sr-value">' + inp.total.toLocaleString() + '</span></div>';
+  html += '</div>';
+
+  // Output
+  html += '<div class="stat-section"><div class="ss-title">Output</div>' +
+    '<div class="stat-row"><span class="sr-label">토큰</span><span class="sr-value">' + ts.output.tokenCount + '</span></div>' +
+    '<div class="stat-row"><span class="sr-label">속도</span><span class="sr-value">' + ts.output.tokPerSec + ' tok/s</span></div>' +
+    '</div>';
+
+  // Inference
+  html += '<div class="stat-section"><div class="ss-title">Inference</div>' +
+    '<div class="stat-row"><span class="sr-label">모델</span><span class="sr-value">' + ts.inference.model + '</span></div>' +
+    '<div class="stat-row"><span class="sr-label">TTFT</span><span class="sr-value">' + ts.inference.ttftMs + 'ms</span></div>' +
+    '<div class="stat-row"><span class="sr-label">총 추론</span><span class="sr-value">' + ts.inference.totalMs + 'ms</span></div>' +
+    '</div>';
+
+  // Cost
+  html += '<div class="stat-section"><div class="ss-title">비용</div>' +
+    '<div class="cost-display glass-card">' +
+      '<div><div class="cd-label">턴 비용</div><div class="cd-value">$' + ts.cost.turnUSD.toFixed(3) + '</div></div>' +
+      '<div><div class="cd-label">세션 누계</div><div class="cd-value">$' + ts.cost.sessionUSD.toFixed(2) + '</div></div>' +
+    '</div></div>';
+
+  // Latency chart
+  html += '<div class="stat-section"><div class="ss-title">레이턴시</div>';
+  var maxDur = Math.max.apply(null, scenario.turn.steps.map(function(s) { return s.durationMs; }));
+  scenario.turn.steps.forEach(function(s) {
+    var w = Math.max(4, (s.durationMs / maxDur) * 100);
+    html += '<div class="latency-bar-row">' +
+      '<span class="latency-icon">' + s.icon + '</span>' +
+      '<div class="latency-bar" style="width:' + w + '%"></div>' +
+      '<span class="latency-ms">' + s.durationMs + 'ms</span></div>';
+  });
+  html += '</div>';
+
+  // ── Phase 2: Token Lifecycle Waterfall ──
+  html += renderTokenWaterfall(scenario);
+
+  // ── Phase 2: Context Influence Score ──
+  html += renderContextInfluence(scenario);
+
+  $statsContent.innerHTML = html;
+
+  // Trigger bar animations
+  requestAnimationFrame(function() {
+    $statsContent.querySelectorAll('.token-bar').forEach(function(bar) {
+      bar.style.width = bar.style.getPropertyValue('--bar-width');
+    });
+    // Animate waterfall bars
+    $statsContent.querySelectorAll('.waterfall-bar').forEach(function(bar) {
+      var targetW = bar.dataset.targetWidth;
+      var targetL = bar.dataset.targetLeft;
+      bar.style.width = targetW;
+      bar.style.left = targetL;
+    });
+    // Animate influence bars
+    $statsContent.querySelectorAll('.influence-bar').forEach(function(bar) {
+      bar.style.width = bar.dataset.targetWidth;
+    });
+    // Run1: Staggered waterfall row drop animation
+    var wfRows = $statsContent.querySelectorAll('.waterfall-row');
+    wfRows.forEach(function(row, i) {
+      setTimeout(function() {
+        row.classList.add('wf-visible');
+        row.style.animationDelay = (i * 80) + 'ms';
+      }, i * 80);
+    });
+  });
+}
+
+// Run1: Enhanced Token Waterfall with drop animation and inference spark
+function renderTokenWaterfall(scenario) {
+  var steps = scenario.turn.steps;
+  var phases = [
+    { label: 'Input조립', type: 'intent', color: '#3b82f6' },
+    { label: '컨텍스트', type: 'context', color: '#8b5cf6' },
+    { label: '기억검색', type: 'memory', color: '#22c55e' },
+    { label: '추론', type: 'inference', color: '#eab308' },
+    { label: '도구호출', type: 'tool_call', color: '#ef4444' },
+    { label: '응답생성', type: 'response', color: '#00d4ff' }
+  ];
+
+  var totalMs = scenario.turn.totalDurationMs;
+  var cumulative = 0;
+
+  var html = '<div class="stat-section"><div class="ss-title">토큰 라이프사이클</div>';
+
+  phases.forEach(function(phase) {
+    var step = steps.find(function(s) { return s.type === phase.type; });
+    var dur = step ? step.durationMs : 0;
+    var leftPct = (cumulative / totalMs) * 100;
+    var widthPct = (dur / totalMs) * 100;
+
+    // Run1: Add inference spark class
+    var extraClass = phase.type === 'inference' ? ' wf-inference-bar' : '';
+
+    html += '<div class="waterfall-row">' +
+      '<span class="waterfall-label">' + phase.label + '</span>' +
+      '<div class="waterfall-track">' +
+        '<div class="waterfall-bar' + extraClass + '" style="background:' + phase.color + ';width:0;left:0;opacity:0.8" data-target-width="' + widthPct + '%" data-target-left="' + leftPct + '%"></div>' +
+      '</div>' +
+      '<span class="waterfall-ms">' + dur + 'ms</span>' +
+    '</div>';
+
+    cumulative += dur;
+  });
+
+  html += '</div>';
+  return html;
+}
+
+// Run 2: Enhanced Context Influence with heatmap, pulse, tooltip
+function renderContextInfluence(scenario) {
+  // Get context step
+  var ctxStep = scenario.turn.steps.find(function(s) { return s.type === 'context'; });
+  if (!ctxStep || !ctxStep.metadata.files || ctxStep.metadata.files.length === 0) return '';
+
+  var html = '<div class="stat-section"><div class="ss-title">컨텍스트 영향도</div>';
+
+  ctxStep.metadata.files.forEach(function(f) {
+    var widthPct = (f.influenceScore * 100) + '%';
+
+    // Run 2: Compute heatmap color: blue(0) -> yellow(0.5) -> red(1)
+    var score = f.influenceScore;
+    var r, g, b;
+    if (score < 0.5) {
+      var t = score / 0.5;
+      r = Math.round(59 + (234 - 59) * t);
+      g = Math.round(130 + (179 - 130) * t);
+      b = Math.round(246 + (8 - 246) * t);
+    } else {
+      var t = (score - 0.5) / 0.5;
+      r = Math.round(234 + (239 - 234) * t);
+      g = Math.round(179 + (68 - 179) * t);
+      b = Math.round(8 + (68 - 8) * t);
+    }
+    var heatColor = 'rgb(' + r + ',' + g + ',' + b + ')';
+
+    // Run 2: Determine pulse class
+    var pulseClass = score >= 0.7 ? ' influence-pulse' : '';
+
+    // Run 2: Determine tooltip text
+    var tooltipText = '';
+    var fName = f.name.toUpperCase();
+    if (fName.indexOf('TOOLS') !== -1) {
+      tooltipText = '도구 선택에 영향';
+    } else if (fName.indexOf('USER') !== -1 || fName.indexOf('SOUL') !== -1) {
+      tooltipText = '톤 결정에 영향';
+    } else if (fName.indexOf('AGENTS') !== -1) {
+      tooltipText = '안전 경계에 영향';
+    } else {
+      tooltipText = '컨텍스트 영향: ' + (score * 100).toFixed(0) + '%';
+    }
+
+    html += '<div class="influence-row' + pulseClass + '">' +
+      '<span class="influence-name" title="' + f.name + '">' + f.name + '</span>' +
+      '<div class="influence-bar-track">' +
+        '<div class="influence-bar" style="width:0;background:' + heatColor + '" data-target-width="' + widthPct + '"></div>' +
+      '</div>' +
+      '<span class="influence-score">' + f.influenceScore.toFixed(1) + '</span>' +
+      '<div class="influence-tooltip">' + tooltipText + '</div>' +
+    '</div>';
+  });
+
+  html += '</div>';
+  return html;
+}
+
+function updateStatsProgress(stepIndex) {
+  // Could update real-time stats here; for Phase 1 the full stats are pre-rendered
+}
+
+// ═══════════════════════════════════════════════════════════════
+//   Run 3: Full Simulation Timeline (Analytics section in Stats Panel)
+// ═══════════════════════════════════════════════════════════════
+
+function renderAnalyticsTimeline(scenario) {
+  var steps = scenario.turn.steps;
+  var scenarioId = scenario.id;
+
+  var html = '<div class="stat-section"><div class="ss-title">📈 Analytics Timeline</div>';
+  html += '<div class="analytics-timeline" id="analytics-timeline"><div class="timeline-track" id="timeline-track">';
+
+  steps.forEach(function(step, i) {
+    var rating = getSafetyRating(step, scenarioId);
+    var statusClass = 'status-' + rating;
+    // Color-blind accessible icon supplement
+    var a11yIcon = rating === 'free' ? '<span class="a11y-status-icon" title="자유">O</span>' : rating === 'caution' ? '<span class="a11y-status-icon" title="주의">!</span>' : '<span class="a11y-status-icon" title="금지">X</span>';
+    html += '<div class="timeline-block ' + statusClass + '" data-step-index="' + i + '" title="' + step.label + ' (' + step.durationMs + 'ms)">' +
+      '<span class="tb-icon">' + step.icon + '</span>' +
+      '<span class="tb-label">' + a11yIcon + step.label + '</span>' +
+      '<span class="tb-dur">' + step.durationMs + 'ms</span>' +
+    '</div>';
+
+    // Add compaction marker between inference and tool_call (simulated)
+    if (step.type === 'inference' && i < steps.length - 1) {
+      html += '<div class="timeline-compaction-marker" title="컨텍스트 압축">⚡</div>';
+    }
+  });
+
+  html += '</div></div></div>';
+  return html;
+}
+
+function wireAnalyticsTimeline() {
+  var blocks = document.querySelectorAll('.timeline-block[data-step-index]');
+  blocks.forEach(function(block) {
+    block.addEventListener('click', function() {
+      var idx = parseInt(block.dataset.stepIndex);
+      if (isNaN(idx)) return;
+      // Navigate Cortex Theater to that point
+      if (!app.currentScenario) return;
+      if (app.playbackState === 'playing') pause();
+      // Re-render up to that step
+      clearCascade();
+      $speechBubble.classList.remove('show');
+      $speechBubble.classList.remove('speaking-active');
+      $speechText.innerHTML = '';
+      $speechToolCardArea.innerHTML = '';
+      $safetyOverlay.classList.remove('show');
+      $collabArea.innerHTML = '';
+      cancelCollabAnims();
+      $skillHologram.classList.remove('show');
+      app.currentStepIndex = -1;
+
+      for (var i = 0; i <= idx; i++) {
+        var step = app.currentScenario.turn.steps[i];
+        renderStepCard(step, i);
+        var card = $cascadeContainer.querySelectorAll('.thought-card')[i];
+        if (card) {
+          card.classList.add('visible');
+          if (i < idx) card.style.animation = 'none';
+        }
+        if (i > 0) renderSynapseLine(i - 1, i);
+        lightStepIcon(i);
+      }
+      app.currentStepIndex = idx;
+
+      var curStep = app.currentScenario.turn.steps[idx];
+      if (curStep.type === 'response') {
+        setAvatarStatus('speaking');
+        showSpeechBubble(curStep.metadata.text);
+      } else if (curStep.type === 'tool_call') {
+        setAvatarStatus(curStep.metadata.statusCode === 403 ? 'error' : 'tool_calling');
+      } else {
+        setAvatarStatus('thinking');
+      }
+
+      updateActiveCard(idx);
+      updateAnalyticsTimeline(idx);
+    });
+  });
+}
+
+function updateAnalyticsTimeline(activeIndex) {
+  var blocks = document.querySelectorAll('.timeline-block[data-step-index]');
+  blocks.forEach(function(block) {
+    var idx = parseInt(block.dataset.stepIndex);
+    if (idx === activeIndex) {
+      block.classList.add('active-block');
+    } else {
+      block.classList.remove('active-block');
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//   Run 3: Error Handling Visualization
+// ═══════════════════════════════════════════════════════════════
+
+function triggerErrorVisualization(errorInfo) {
+  // Flash + shake the theater
+  $theater.classList.add('theater-error-flash');
+  setTimeout(function() {
+    $theater.classList.remove('theater-error-flash');
+  }, 1200);
+
+  // Add to error log
+  var errorEntry = {
+    time: new Date().toLocaleTimeString(),
+    type: errorInfo.type || 'UNKNOWN',
+    message: (errorInfo.message || '').substring(0, 100),
+    stage: errorInfo.stage || '',
+    retry: errorInfo.retry || false
+  };
+  app.errorLog.unshift(errorEntry);
+  if (app.errorLog.length > 10) app.errorLog.pop();
+
+  // Update error log in stats panel if rendered
+  updateErrorLogDisplay();
+}
+
+function renderErrorLogSection() {
+  var html = '<div class="stat-section error-log-section"><div class="ss-title">오류 로그</div>';
+  if (app.errorLog.length === 0) {
+    html += '<div style="font-size:9px;color:var(--text-muted);text-align:center;padding:8px">오류 없음</div>';
+  } else {
+    app.errorLog.forEach(function(err) {
+      html += '<div class="error-log-item">' +
+        '<span class="eli-time">' + err.time + '</span>' +
+        '<span class="eli-msg"><span class="a11y-status-icon" title="오류">X</span>' + err.type + ': ' + err.message + '</span>' +
+      '</div>';
+    });
+    // Show latest error as error card
+    var latest = app.errorLog[0];
+    html += '<div class="error-card">' +
+      '<div class="ec-type"><span class="a11y-status-icon" title="오류 유형">X</span> ' + latest.type + '</div>' +
+      '<div class="ec-msg">' + latest.message + '</div>' +
+      '<div class="ec-stage">단계: ' + latest.stage + '</div>' +
+      '<div class="ec-retry">재시도: ' + (latest.retry ? '예' : '아니오') + '</div>' +
+    '</div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function updateErrorLogDisplay() {
+  var errorSection = document.getElementById('error-log-section-container');
+  if (errorSection) {
+    errorSection.innerHTML = renderErrorLogSection();
+  }
+}
+
+// ── Step Navigation (J/K) (P1-11) ──
+
+function stepForward() {
+  if (!app.currentScenario) return;
+  var steps = app.currentScenario.turn.steps;
+  var nextIdx = app.currentStepIndex + 1;
+  if (nextIdx >= steps.length) return;
+
+  if (app.playbackState === 'playing') pause();
+
+  showStep(nextIdx);
+}
+
+function stepBackward() {
+  if (!app.currentScenario) return;
+  var prevIdx = app.currentStepIndex - 1;
+  if (prevIdx < 0) return;
+
+  if (app.playbackState === 'playing') pause();
+
+  // Re-render up to prevIdx
+  clearCascade();
+  $speechBubble.classList.remove('show');
+  $speechBubble.classList.remove('speaking-active');
+  $speechText.innerHTML = '';
+  $speechToolCardArea.innerHTML = '';
+  $safetyOverlay.classList.remove('show');
+  $collabArea.innerHTML = '';
+  cancelCollabAnims();
+  $skillHologram.classList.remove('show');
+  app.currentStepIndex = -1;
+
+  for (var i = 0; i <= prevIdx; i++) {
+    var step = app.currentScenario.turn.steps[i];
+    renderStepCard(step, i);
+    // Make visible immediately (no animation for rewound steps)
+    var card = $cascadeContainer.querySelectorAll('.thought-card')[i];
+    if (card) {
+      card.classList.add('visible');
+      card.style.animation = 'none';
+    }
+    if (i > 0) renderSynapseLine(i - 1, i);
+    lightStepIcon(i);
+  }
+  app.currentStepIndex = prevIdx;
+
+  // Avatar status for current step
+  var curStep = app.currentScenario.turn.steps[prevIdx];
+  if (curStep.type === 'response') {
+    setAvatarStatus('speaking');
+    showSpeechBubble(curStep.metadata.text);
+  } else if (curStep.type === 'tool_call') {
+    setAvatarStatus(curStep.metadata.statusCode === 403 ? 'error' : 'tool_calling');
+  } else {
+    setAvatarStatus('thinking');
+  }
+
+  updateActiveCard(prevIdx);
+}
+
+// ── Event Handlers ──
+
+$scenarioSelect.addEventListener('change', function() {
+  if (this.value) loadScenario(this.value);
+});
+
+$btnPlay.addEventListener('click', function() {
+  if (app.playbackState === 'playing') pause();
+  else if (app.playbackState === 'paused') play();
+  else if (app.currentScenario) play();
+});
+
+$btnNext.addEventListener('click', stepForward);
+$btnPrev.addEventListener('click', stepBackward);
+
+$chatSend.addEventListener('click', handleChatSend);
+$chatInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); handleChatSend(); }
+});
+
+function handleChatSend() {
+  var text = $chatInput.value.trim();
+  if (!text) return;
+  $chatInput.value = '';
+  addChatMessage('user', text);
+
+  // In simulation mode, try to match scenario or use S-001
+  var matched = null;
+  if (text.includes('날씨')) matched = 's-001';
+  else if (text.includes('고쳐') || text.includes('코드') || text.includes('app.py')) matched = 's-002';
+  else if (text.includes('API') || text.includes('로그인') || text.includes('만들어')) matched = 's-003';
+  else if (text.includes('비밀번호') || text.includes('알려줘') || text.includes('민감')) matched = 's-004';
+  else matched = 's-001'; // default
+
+  $scenarioSelect.value = matched;
+  loadScenario(matched);
+}
+
+// Keyboard shortcuts (P1-11 + P3-07 shortcut modal)
+var $shortcutModal = document.getElementById('shortcut-modal');
+
+document.addEventListener('keydown', function(e) {
+  // Close shortcut modal on any key
+  if ($shortcutModal.classList.contains('show')) {
+    $shortcutModal.classList.remove('show');
+    e.preventDefault();
+    return;
+  }
+
+  // Don't capture when typing in input fields
+  if (document.activeElement === $chatInput ||
+      document.activeElement === document.getElementById('ws-url') ||
+      document.activeElement === document.getElementById('ws-token')) return;
+
+  if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+    e.preventDefault();
+    $shortcutModal.classList.add('show');
+  } else if (e.key === ' ' || e.code === 'Space') {
+    e.preventDefault();
+    if (app.playbackState === 'playing') pause();
+    else if (app.playbackState === 'paused') play();
+    else if (app.currentScenario) play();
+  } else if (e.key === 'j' || e.key === 'J') {
+    e.preventDefault();
+    stepBackward();
+  } else if (e.key === 'k' || e.key === 'K') {
+    e.preventDefault();
+    stepForward();
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    stopSimulation();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    var activeCard = $cascadeContainer.querySelector('.thought-card.active');
+    if (activeCard) {
+      activeCard.style.maxHeight = activeCard.style.maxHeight ? '' : '300px';
+    }
+  } else if (e.key === '1') {
+    e.preventDefault();
+    togglePanel('brain-panel');
+  } else if (e.key === '2') {
+    e.preventDefault();
+    togglePanel('theater-focus');
+  } else if (e.key === '3') {
+    e.preventDefault();
+    togglePanel('stats-panel');
+  }
+});
+
+// Mode toggle (Phase 3: integrated with WS panel)
+document.getElementById('mode-sim').addEventListener('click', function() {
+  this.classList.add('active');
+  document.getElementById('mode-live').classList.remove('active');
+  $chatInput.placeholder = '메시지를 입력하세요... (시뮬레이션 모드)';
+});
+document.getElementById('mode-live').addEventListener('click', function() {
+  this.classList.add('active');
+  document.getElementById('mode-sim').classList.remove('active');
+  $chatInput.placeholder = '메시지를 입력하세요... (실시간 모드)';
+});
+
+// ═══════════════════════════════════════════════════════════════
+//   Phase 3: Panel Toggle (P3-06)
+// ═══════════════════════════════════════════════════════════════
+
+function togglePanel(panelKey) {
+  var $brain = document.getElementById('brain-panel');
+  var $stats = document.getElementById('stats-panel');
+  var $app = document.getElementById('app');
+
+  if (panelKey === 'brain-panel') {
+    $brain.classList.toggle('panel-hidden');
+    if ($brain.classList.contains('panel-hidden')) {
+      $app.style.gridTemplateColumns = '0px 1fr 280px';
+    } else {
+      $app.style.gridTemplateColumns = '240px 1fr 280px';
+    }
+  } else if (panelKey === 'stats-panel') {
+    $stats.classList.toggle('panel-hidden');
+    if ($stats.classList.contains('panel-hidden')) {
+      $app.style.gridTemplateColumns = '240px 1fr 0px';
+    } else {
+      $app.style.gridTemplateColumns = '240px 1fr 280px';
+    }
+  } else if (panelKey === 'theater-focus') {
+    // Toggle both side panels
+    var bothHidden = $brain.classList.contains('panel-hidden') && $stats.classList.contains('panel-hidden');
+    if (bothHidden) {
+      $brain.classList.remove('panel-hidden');
+      $stats.classList.remove('panel-hidden');
+      $app.style.gridTemplateColumns = '240px 1fr 280px';
+    } else {
+      $brain.classList.add('panel-hidden');
+      $stats.classList.add('panel-hidden');
+      $app.style.gridTemplateColumns = '0px 1fr 0px';
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//   Phase 3: Safety Boundary Visualization (P3-02)
+// ═══════════════════════════════════════════════════════════════
+
+var SAFETY_RATINGS = {
+  'intent': function(step, scenarioId) {
+    if (scenarioId === 's-004') return 'caution';
+    return 'free';
+  },
+  'context': function(step, scenarioId) {
+    if (scenarioId === 's-004') return 'caution';
+    return 'free';
+  },
+  'memory': function(step, scenarioId) {
+    return 'free';
+  },
+  'inference': function(step, scenarioId) {
+    if (scenarioId === 's-004') return 'forbidden';
+    return 'free';
+  },
+  'tool_call': function(step, scenarioId) {
+    if (step.metadata.statusCode === 403 || step.metadata.toolName === 'none') return 'forbidden';
+    if (step.metadata.toolName === 'edit') return 'caution';
+    return 'free';
+  },
+  'response': function(step, scenarioId) {
+    if (scenarioId === 's-004') return 'forbidden';
+    return 'free';
+  }
+};
+
+function getSafetyRating(step, scenarioId) {
+  var fn = SAFETY_RATINGS[step.type];
+  return fn ? fn(step, scenarioId) : 'free';
+}
+
+function getSafetyLabel(rating) {
+  if (rating === 'free') return '자유';
+  if (rating === 'caution') return '주의';
+  if (rating === 'forbidden') return '금지';
+  return '';
+}
+
+// Run 2: Safety badge emoji mapping
+function getSafetyBadgeEmoji(rating) {
+  if (rating === 'free') return '\uD83D\uDFE2';    // green circle
+  if (rating === 'caution') return '\uD83D\uDFE1';  // yellow circle
+  if (rating === 'forbidden') return '\uD83D\uDD34'; // red circle
+  return '';
+}
+
+// Patch renderStepCard to include safety badges + Run 2: live badge
+var _originalRenderStepCard = renderStepCard;
+renderStepCard = function(step, index) {
+  _originalRenderStepCard(step, index);
+
+  // Add safety badge and border to the card just rendered
+  var cards = $cascadeContainer.querySelectorAll('.thought-card');
+  var card = cards[cards.length - 1];
+  if (!card) return;
+
+  var scenarioId = app.currentScenario ? app.currentScenario.id : '';
+  var rating = getSafetyRating(step, scenarioId);
+
+  card.classList.add('safety-' + rating + '-border');
+
+  var badge = document.createElement('span');
+  badge.className = 'safety-badge safety-' + rating;
+  // Run 3: Color-blind accessible icon supplement
+  var a11yIcon = rating === 'free' ? 'O ' : rating === 'caution' ? '! ' : 'X ';
+  badge.innerHTML = '<span class="a11y-status-icon">' + a11yIcon + '</span>' + getSafetyLabel(rating);
+  var header = card.querySelector('.card-header');
+  if (header) header.appendChild(badge);
+
+  // Run 2: Update safety live badge
+  $safetyLiveBadge.className = 'safety-badge-' + rating;
+  $safetyLiveBadge.textContent = getSafetyBadgeEmoji(rating) + ' ' + getSafetyLabel(rating);
+  $safetyLiveBadge.style.display = 'block';
+};
+
+// ═══════════════════════════════════════════════════════════════
+//   Phase 3: Compaction Visualization (P3-01) + Run 2: Slider + Particles + Big Number
+// ═══════════════════════════════════════════════════════════════
+
+function renderCompaction(scenario) {
+  var ts = scenario.turn.tokenStats;
+  var inp = ts.input;
+  var outTokens = ts.output.tokenCount;
+  var totalInput = inp.total;
+  // Simulated "after compaction" = summarized context (roughly 30-60% of original)
+  var compactionRatio = scenario.id === 's-004' ? 0.35 : scenario.id === 's-003' ? 0.55 : scenario.id === 's-002' ? 0.50 : 0.45;
+  var afterTokens = Math.round(totalInput * compactionRatio);
+  var savedTokens = totalInput - afterTokens;
+  var maxVal = totalInput;
+  var compressionPct = ((1 - compactionRatio) * 100).toFixed(0);
+
+  var html = '<div class="stat-section compaction-section"><div class="ss-title">컨텍스트 압축 (Compaction)</div>';
+
+  // Run 2: Big compression number
+  html += '<div class="compaction-big-number">-' + compressionPct + '%</div>';
+
+  // Run 2: Slider-based comparison
+  html += '<div class="compaction-slider-container" id="compaction-slider-container">' +
+    '<div class="compaction-before-half" id="compaction-before-half" style="width:50%">Before ' + totalInput.toLocaleString() + 't</div>' +
+    '<div class="compaction-after-half" id="compaction-after-half">After ' + afterTokens.toLocaleString() + 't</div>' +
+  '</div>';
+  html += '<input type="range" class="compaction-slider" id="compaction-slider" min="0" max="100" value="50" aria-label="압축 비교 슬라이더">';
+
+  // Original before/after bars (kept for compatibility)
+  // Before
+  html += '<div class="compaction-row">' +
+    '<span class="compaction-label">Before</span>' +
+    '<div class="compaction-bar-track">' +
+      '<div class="compaction-bar compaction-bar-before" style="width:0" data-target-width="100%"></div>' +
+    '</div>' +
+    '<span class="compaction-val">' + totalInput.toLocaleString() + 't</span>' +
+  '</div>';
+
+  // Arrow
+  html += '<div class="compaction-arrow">⬇ 압축 중...</div>';
+
+  // After
+  var afterPct = (afterTokens / maxVal * 100).toFixed(1);
+  html += '<div class="compaction-row">' +
+    '<span class="compaction-label">After</span>' +
+    '<div class="compaction-bar-track">' +
+      '<div class="compaction-bar compaction-bar-after" style="width:0" data-target-width="' + afterPct + '%"></div>' +
+    '</div>' +
+    '<span class="compaction-val">' + afterTokens.toLocaleString() + 't</span>' +
+  '</div>';
+
+  // Ratio
+  html += '<div class="compaction-ratio">절감: ' + savedTokens.toLocaleString() + ' 토큰 (' + compressionPct + '% 압축)</div>';
+
+  // Run 2: Particle container
+  html += '<div id="compaction-particle-container" style="position:relative;height:0;overflow:visible;"></div>';
+
+  html += '</div>';
+  return html;
+}
+
+// Run 2: Spawn compaction particles
+function spawnCompactionParticles() {
+  var container = document.getElementById('compaction-particle-container');
+  if (!container) return;
+  for (var i = 0; i < 12; i++) {
+    var p = document.createElement('div');
+    p.className = 'compaction-particle';
+    var flyX = (Math.random() - 0.5) * 80;
+    var flyY = -(Math.random() * 40 + 10);
+    p.style.setProperty('--fly-x', flyX + 'px');
+    p.style.setProperty('--fly-y', flyY + 'px');
+    p.style.left = (Math.random() * 100) + '%';
+    p.style.top = '-' + (Math.random() * 20) + 'px';
+    p.style.animationDelay = (i * 60) + 'ms';
+    container.appendChild(p);
+    // Remove after animation
+    (function(el) {
+      setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 1000);
+    })(p);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//   Phase 3: CSV Export (P3-03)
+// ═══════════════════════════════════════════════════════════════
+
+function exportCSV() {
+  if (!app.currentScenario) { alert('시나리오를 먼저 선택하세요.'); return; }
+  var scenario = app.currentScenario;
+  var ts = scenario.turn.tokenStats;
+  var inp = ts.input;
+
+  var rows = [];
+  rows.push(['항목', '값']);
+  rows.push(['시나리오', scenario.title]);
+  rows.push(['사용자 메시지', scenario.userMessage]);
+  rows.push(['총 소요시간(ms)', scenario.turn.totalDurationMs]);
+  rows.push(['']);
+  rows.push(['== Input Tokens ==', '']);
+  rows.push(['System', inp.system]);
+  rows.push(['SOUL', inp.soul]);
+  rows.push(['USER', inp.user]);
+  rows.push(['AGENTS', inp.agents]);
+  rows.push(['TOOLS', inp.tools]);
+  rows.push(['Memory', inp.memory]);
+  rows.push(['History', inp.history]);
+  rows.push(['Total Input', inp.total]);
+  rows.push(['']);
+  rows.push(['== Output ==', '']);
+  rows.push(['Output Tokens', ts.output.tokenCount]);
+  rows.push(['Speed (tok/s)', ts.output.tokPerSec]);
+  rows.push(['']);
+  rows.push(['== Inference ==', '']);
+  rows.push(['Model', ts.inference.model]);
+  rows.push(['TTFT (ms)', ts.inference.ttftMs]);
+  rows.push(['Total Inference (ms)', ts.inference.totalMs]);
+  rows.push(['']);
+  rows.push(['== Cost ==', '']);
+  rows.push(['Turn USD', ts.cost.turnUSD]);
+  rows.push(['Session USD', ts.cost.sessionUSD]);
+  rows.push(['']);
+  rows.push(['== Steps ==', '']);
+  rows.push(['단계', '유형', '소요시간(ms)', '상세']);
+  scenario.turn.steps.forEach(function(s) {
+    rows.push([s.label, s.type, s.durationMs, s.detail]);
+  });
+
+  var csv = rows.map(function(r) {
+    return r.map(function(v) {
+      var str = String(v);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return '"' + str.replace(/"/g, '""') + '"';
+      }
+      return str;
+    }).join(',');
+  }).join('\n');
+
+  // BOM for Korean Excel compatibility
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  downloadBlob(blob, 'neural-map-' + scenario.id + '.csv');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//   Phase 3: JSON Export (P3-04)
+// ═══════════════════════════════════════════════════════════════
+
+function exportJSON() {
+  if (!app.currentScenario) { alert('시나리오를 먼저 선택하세요.'); return; }
+  var scenario = app.currentScenario;
+  var data = {
+    exportedAt: new Date().toISOString(),
+    scenario: {
+      id: scenario.id,
+      title: scenario.title,
+      description: scenario.description,
+      userMessage: scenario.userMessage
+    },
+    turn: scenario.turn,
+    decisionTree: DECISION_TREES[scenario.id] || null,
+    memoryNodes: MEMORY_NODES[scenario.id] || null,
+    skillInfo: SKILL_INFOS[scenario.id] || null
+  };
+
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
+  downloadBlob(blob, 'neural-map-' + scenario.id + '.json');
+}
+
+function downloadBlob(blob, filename) {
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function() {
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, 100);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//   Phase 3: WebSocket UI (P3-08) - UI Only
+// ═══════════════════════════════════════════════════════════════
+
+var wsState = { connected: false };
+var $wsPanel = document.getElementById('ws-panel');
+var $wsConnectBtn = document.getElementById('ws-connect-btn');
+var $wsDot = document.getElementById('ws-dot');
+var $wsStatusText = document.getElementById('ws-status-text');
+var $wsUrl = document.getElementById('ws-url');
+var $wsToken = document.getElementById('ws-token');
+
+$wsConnectBtn.addEventListener('click', function() {
+  if (wsState.connected) {
+    // Disconnect (UI only)
+    wsState.connected = false;
+    $wsConnectBtn.textContent = '연결';
+    $wsConnectBtn.classList.remove('connected');
+    $wsDot.className = 'ws-status-dot';
+    $wsStatusText.textContent = '연결 안 됨';
+    addChatMessage('system', '🔌 WebSocket 연결 해제됨');
+  } else {
+    // Simulate connecting
+    $wsDot.className = 'ws-status-dot connecting';
+    $wsStatusText.textContent = '연결 중...';
+    $wsConnectBtn.textContent = '연결 중...';
+    $wsConnectBtn.disabled = true;
+
+    setTimeout(function() {
+      wsState.connected = true;
+      $wsDot.className = 'ws-status-dot online';
+      $wsStatusText.textContent = '연결됨: ' + $wsUrl.value;
+      $wsConnectBtn.textContent = '연결 해제';
+      $wsConnectBtn.classList.add('connected');
+      $wsConnectBtn.disabled = false;
+      addChatMessage('system', '🟢 WebSocket 연결됨 (UI 시뮬레이션) — ' + $wsUrl.value);
+    }, 1200);
+  }
+});
+
+// Toggle WS panel when switching to 실시간 mode
+document.getElementById('mode-live').addEventListener('click', function() {
+  $wsPanel.classList.add('show');
+});
+document.getElementById('mode-sim').addEventListener('click', function() {
+  $wsPanel.classList.remove('show');
+});
+
+// ═══════════════════════════════════════════════════════════════
+//   Phase 3: Patch Stats Panel to include Compaction + Analytics + Error Log
+// ═══════════════════════════════════════════════════════════════
+
+var _originalRenderStatsPanel = renderStatsPanel;
+renderStatsPanel = function(scenario) {
+  _originalRenderStatsPanel(scenario);
+
+  // Append compaction visualization
+  var compactionHtml = renderCompaction(scenario);
+  var tempDiv = document.createElement('div');
+  tempDiv.innerHTML = compactionHtml;
+  while (tempDiv.firstChild) {
+    $statsContent.appendChild(tempDiv.firstChild);
+  }
+
+  // Run 3: Append Analytics Timeline
+  var analyticsHtml = renderAnalyticsTimeline(scenario);
+  var tempDiv2 = document.createElement('div');
+  tempDiv2.innerHTML = analyticsHtml;
+  while (tempDiv2.firstChild) {
+    $statsContent.appendChild(tempDiv2.firstChild);
+  }
+
+  // Run 3: Append Error Log section
+  var errorLogContainer = document.createElement('div');
+  errorLogContainer.id = 'error-log-section-container';
+  errorLogContainer.innerHTML = renderErrorLogSection();
+  $statsContent.appendChild(errorLogContainer);
+
+  // Animate compaction bars after a brief delay for timelapse effect
+  setTimeout(function() {
+    $statsContent.querySelectorAll('.compaction-bar').forEach(function(bar) {
+      bar.style.width = bar.dataset.targetWidth;
+    });
+
+    // Run 2: Wire up compaction slider
+    var slider = document.getElementById('compaction-slider');
+    var beforeHalf = document.getElementById('compaction-before-half');
+    if (slider && beforeHalf) {
+      slider.addEventListener('input', function() {
+        beforeHalf.style.width = slider.value + '%';
+      });
+    }
+
+    // Run 2: Spawn particles
+    spawnCompactionParticles();
+
+    // Run 3: Wire up analytics timeline clicks
+    wireAnalyticsTimeline();
+  }, 600);
+};
+
+// ═══════════════════════════════════════════════════════════════
+//   Phase 3: Export Button Handlers
+// ═══════════════════════════════════════════════════════════════
+
+document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
+document.getElementById('btn-export-json').addEventListener('click', exportJSON);
+document.getElementById('btn-shortcut-help').addEventListener('click', function() {
+  $shortcutModal.classList.add('show');
+});
+
+// ═══════════════════════════════════════════════════════════════
+//   Run 2: Speed Control Handlers
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+  var speedBtns = document.querySelectorAll('.speed-controls button');
+  speedBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var speed = parseFloat(btn.dataset.speed);
+      if (isNaN(speed) || speed <= 0) return;
+      app.speedMultiplier = speed;
+      speedBtns.forEach(function(b) { b.classList.remove('active-speed'); });
+      btn.classList.add('active-speed');
+    });
+  });
+})();
+
+// ═══════════════════════════════════════════════════════════════
+//   Run 3: Minimap
+// ═══════════════════════════════════════════════════════════════
+
+(function() {
+  var minimap = document.getElementById('minimap');
+  var viewport = document.getElementById('minimap-viewport');
+  if (!minimap || !viewport) return;
+
+  function updateMinimap() {
+    var docW = document.documentElement.clientWidth;
+    var docH = document.documentElement.clientHeight;
+    var scrollLeft = window.scrollX || 0;
+    var scrollTop = window.scrollY || 0;
+
+    // The page is mostly 100vh, but calculate viewport indicator
+    var mmW = 120;
+    var mmH = 80;
+    var scaleX = mmW / Math.max(docW, 1);
+    var scaleY = mmH / Math.max(docH, 1);
+
+    viewport.style.width = Math.max(20, mmW * (docW / Math.max(docW, docW + 1))) + 'px';
+    viewport.style.height = Math.max(12, mmH * (docH / Math.max(docH, docH + 1))) + 'px';
+    viewport.style.left = (scrollLeft * scaleX) + 'px';
+    viewport.style.top = (scrollTop * scaleY) + 'px';
+  }
+
+  updateMinimap();
+  window.addEventListener('resize', updateMinimap);
+  window.addEventListener('scroll', updateMinimap);
+
+  // Click to navigate (scroll panels)
+  minimap.addEventListener('click', function(e) {
+    var rect = minimap.getBoundingClientRect();
+    var relX = (e.clientX - rect.left) / rect.width;
+    var relY = (e.clientY - rect.top) / rect.height;
+
+    // Determine which zone was clicked and scroll that panel
+    if (relY < 0.12) {
+      // Header - do nothing
+    } else if (relY < 0.72) {
+      if (relX < 0.24) {
+        // Brain panel - scroll to top
+        var bp = document.getElementById('brain-panel');
+        if (bp) bp.scrollTop = 0;
+      } else if (relX > 0.76) {
+        // Stats panel - scroll to relative position
+        var sp = document.getElementById('stats-panel');
+        if (sp) {
+          var relPosInZone = (relY - 0.12) / 0.60;
+          sp.scrollTop = relPosInZone * sp.scrollHeight;
+        }
+      } else {
+        // Theater - scroll to relative position
+        var th = document.getElementById('theater');
+        if (th) {
+          var relPosInZone = (relY - 0.12) / 0.60;
+          th.scrollTop = relPosInZone * th.scrollHeight;
+        }
+      }
+    } else {
+      // Chat panel
+      var cp = document.getElementById('chat-messages');
+      if (cp) cp.scrollTop = cp.scrollHeight;
+    }
+  });
+})();
+
+// ── Initial State ──
+
+setAvatarStatus('idle');
+$avatarName.textContent = '';
+$avatarStatusBadge.textContent = '';
+addChatMessage('system', '🧠 OpenClaw Neural Map v9 — 시나리오를 선택하거나 메시지를 입력하세요');
+addChatMessage('system', '💡 ? 키를 눌러 단축키 도움말을 확인하세요');
+
+</script>
+</body>
+</html>

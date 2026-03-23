@@ -1,0 +1,2791 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team A - Ralphton Manager Dashboard</title>
+<style>
+/* ============================================================
+   CSS VARIABLES & THEMING
+   ============================================================ */
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0f1429;
+  --bg-tertiary: #141a2e;
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --bg-card-hover: rgba(255, 255, 255, 0.08);
+  --bg-modal-overlay: rgba(0, 0, 0, 0.7);
+  --border-card: rgba(255, 255, 255, 0.08);
+  --border-card-hover: rgba(255, 255, 255, 0.15);
+  --border-accent: rgba(102, 126, 234, 0.3);
+  --text-primary: #e8eaf6;
+  --text-secondary: #9ca3c4;
+  --text-muted: #5a6080;
+  --text-accent: #667eea;
+  --gradient-primary: linear-gradient(135deg, #667eea, #764ba2);
+  --gradient-secondary: linear-gradient(135deg, #43e97b, #38f9d7);
+  --gradient-warning: linear-gradient(135deg, #f6d365, #fda085);
+  --gradient-danger: linear-gradient(135deg, #f093fb, #f5576c);
+  --gradient-info: linear-gradient(135deg, #4facfe, #00f2fe);
+  --color-completed: #43e97b;
+  --color-running: #4facfe;
+  --color-failed: #f5576c;
+  --color-pending: #f6d365;
+  --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --shadow-card-hover: 0 8px 40px rgba(0, 0, 0, 0.5);
+  --shadow-glow: 0 0 30px rgba(102, 126, 234, 0.15);
+  --blur-glass: blur(12px);
+  --blur-glass-strong: blur(20px);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+  --transition-slow: 0.5s ease;
+  --font-family: 'Segoe UI', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  --z-modal-overlay: 1000;
+  --z-modal: 1001;
+  --z-tooltip: 1100;
+}
+
+/* ============================================================
+   RESET & BASE STYLES
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-family);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   FOCUS VISIBLE & ACCESSIBILITY
+   ============================================================ */
+*:focus {
+  outline: none;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--text-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ============================================================
+   KEYFRAME ANIMATIONS
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeInLeft {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes fadeInScale {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 5px rgba(79, 172, 254, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(79, 172, 254, 0.6); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes countUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes borderGlow {
+  0%, 100% { border-color: rgba(102, 126, 234, 0.2); }
+  50% { border-color: rgba(102, 126, 234, 0.5); }
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.9) translateY(20px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes progressFill {
+  from { width: 0; }
+}
+
+@keyframes dotPulse {
+  0%, 80%, 100% { transform: scale(0); }
+  40% { transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes ripple {
+  0% { transform: scale(0); opacity: 0.5; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+/* ============================================================
+   LAYOUT CONTAINER
+   ============================================================ */
+.team-a-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  animation: fadeIn 0.6s ease;
+}
+
+/* ============================================================
+   TAB NAVIGATION
+   ============================================================ */
+.tab-nav {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 28px;
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 6px;
+  animation: fadeInUp 0.5s ease;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 14px 24px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.tab-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  border-radius: var(--radius-md);
+}
+
+.tab-btn:hover {
+  color: var(--text-primary);
+}
+
+.tab-btn:hover::before {
+  opacity: 0.1;
+}
+
+.tab-btn.active {
+  color: #fff;
+  font-weight: 600;
+}
+
+.tab-btn.active::before {
+  opacity: 1;
+}
+
+.tab-btn span {
+  position: relative;
+  z-index: 1;
+}
+
+.tab-btn .tab-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+/* ============================================================
+   TAB PANELS
+   ============================================================ */
+.tab-panel {
+  display: none;
+  animation: fadeIn 0.4s ease;
+}
+
+.tab-panel.active {
+  display: block;
+}
+
+/* ============================================================
+   GLASS CARD BASE
+   ============================================================ */
+.glass-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+.glass-card:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-card-hover);
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
+/* ============================================================
+   SECTION HEADERS
+   ============================================================ */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.section-title .icon {
+  font-size: 20px;
+}
+
+.section-badge {
+  background: var(--gradient-primary);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+
+/* ============================================================
+   DASHBOARD TAB STYLES
+   ============================================================ */
+
+/* Top Bar: Clock & Quick Actions */
+.dashboard-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  animation: fadeInUp 0.5s ease 0.1s both;
+}
+
+.realtime-clock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 12px 24px;
+}
+
+.clock-icon {
+  font-size: 22px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.clock-time {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 700;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: 2px;
+}
+
+.clock-date {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-left: 12px;
+}
+
+.quick-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.quick-action-btn {
+  padding: 12px 22px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.quick-action-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(102, 126, 234, 0.2);
+  border-radius: 50%;
+  transition: width 0.4s ease, height 0.4s ease;
+  transform: translate(-50%, -50%);
+}
+
+.quick-action-btn:hover::after {
+  width: 200px;
+  height: 200px;
+}
+
+.quick-action-btn:hover {
+  border-color: var(--text-accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.2);
+}
+
+.quick-action-btn.primary {
+  background: var(--gradient-primary);
+  border-color: transparent;
+  color: #fff;
+}
+
+.quick-action-btn.primary:hover {
+  box-shadow: 0 4px 24px rgba(102, 126, 234, 0.4);
+}
+
+.quick-action-btn .btn-icon {
+  font-size: 16px;
+}
+
+/* Stat Cards Grid */
+.stat-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: all var(--transition-normal);
+  cursor: default;
+}
+
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+}
+
+.stat-card:nth-child(1)::before { background: var(--gradient-primary); }
+.stat-card:nth-child(2)::before { background: var(--gradient-secondary); }
+.stat-card:nth-child(3)::before { background: var(--gradient-info); }
+.stat-card:nth-child(4)::before { background: var(--gradient-warning); }
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle, rgba(255,255,255,0.03) 0%, transparent 70%);
+  transition: all var(--transition-slow);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-card-hover);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.stat-card:hover::after {
+  top: -30%;
+  right: -30%;
+}
+
+.stat-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.stat-card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-card:nth-child(1) .stat-card-icon { background: linear-gradient(135deg, rgba(102,126,234,0.2), rgba(118,75,162,0.2)); }
+.stat-card:nth-child(2) .stat-card-icon { background: linear-gradient(135deg, rgba(67,233,123,0.2), rgba(56,249,215,0.2)); }
+.stat-card:nth-child(3) .stat-card-icon { background: linear-gradient(135deg, rgba(79,172,254,0.2), rgba(0,242,254,0.2)); }
+.stat-card:nth-child(4) .stat-card-icon { background: linear-gradient(135deg, rgba(246,211,101,0.2), rgba(253,160,133,0.2)); }
+
+.stat-card-trend {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.stat-card-trend.up {
+  color: var(--color-completed);
+  background: rgba(67, 233, 123, 0.1);
+}
+
+.stat-card-trend.neutral {
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.stat-card-value {
+  font-size: 36px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  position: relative;
+  z-index: 1;
+  font-family: var(--font-mono);
+  line-height: 1.2;
+}
+
+.stat-card-value .unit {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-left: 4px;
+}
+
+.stat-card-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  position: relative;
+  z-index: 1;
+}
+
+/* Charts Row */
+.charts-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.chart-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  transition: all var(--transition-normal);
+}
+
+.chart-card:hover {
+  border-color: var(--border-card-hover);
+  box-shadow: var(--shadow-card);
+}
+
+.chart-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chart-title .chart-icon {
+  font-size: 18px;
+}
+
+.chart-canvas-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.chart-canvas-wrap canvas {
+  width: 100%;
+  display: block;
+}
+
+/* Donut chart legend */
+.donut-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.donut-legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.donut-legend-value {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+/* Recent Run Timeline */
+.timeline-section {
+  margin-bottom: 24px;
+  animation: fadeInUp 0.5s ease 0.4s both;
+}
+
+.timeline-scroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 12px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.timeline-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.timeline-scroll::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.03);
+  border-radius: 3px;
+}
+
+.timeline-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+.timeline-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.2);
+}
+
+.timeline-item {
+  flex: 0 0 260px;
+  scroll-snap-align: start;
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  position: relative;
+  transition: all var(--transition-normal);
+  cursor: default;
+}
+
+.timeline-item:hover {
+  transform: translateY(-3px);
+  border-color: var(--border-card-hover);
+  box-shadow: var(--shadow-card);
+}
+
+.timeline-item-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  position: absolute;
+  top: 18px;
+  right: 18px;
+}
+
+.timeline-item-dot.completed { background: var(--color-completed); }
+.timeline-item-dot.running { background: var(--color-running); animation: pulse 1.5s ease-in-out infinite; }
+.timeline-item-dot.failed { background: var(--color-failed); }
+
+.timeline-item-project {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+  padding-right: 20px;
+}
+
+.timeline-item-phase {
+  font-size: 12px;
+  color: var(--text-accent);
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.timeline-item-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.timeline-item-lines {
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.timeline-item-date {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}
+
+/* Today Summary */
+.today-summary {
+  animation: fadeInUp 0.5s ease 0.5s both;
+}
+
+.today-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.today-stat {
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  text-align: center;
+  transition: all var(--transition-normal);
+}
+
+.today-stat:hover {
+  border-color: var(--border-accent);
+  transform: translateY(-2px);
+}
+
+.today-stat-value {
+  font-size: 28px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.today-stat-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ============================================================
+   PROJECTS TAB STYLES
+   ============================================================ */
+
+/* Search & Filter */
+.projects-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  animation: fadeInUp 0.5s ease 0.1s both;
+}
+
+.search-input-wrap {
+  flex: 1;
+  position: relative;
+}
+
+.search-input-wrap .search-icon {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 16px;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color var(--transition-fast);
+}
+
+.search-input {
+  width: 100%;
+  padding: 14px 16px 14px 46px;
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-family);
+  font-size: 14px;
+  transition: all var(--transition-normal);
+}
+
+.search-input::placeholder {
+  color: var(--text-muted);
+}
+
+.search-input:focus {
+  border-color: var(--text-accent);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+.search-input:focus + .search-icon {
+  color: var(--text-accent);
+}
+
+.filter-btn {
+  padding: 14px 20px;
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-family: var(--font-family);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-btn:hover {
+  border-color: var(--text-accent);
+  color: var(--text-primary);
+}
+
+.filter-btn.active {
+  border-color: var(--text-accent);
+  color: var(--text-accent);
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.project-count-badge {
+  font-size: 13px;
+  color: var(--text-muted);
+  padding: 14px 16px;
+  white-space: nowrap;
+}
+
+/* Project Cards Grid */
+.project-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.project-card {
+  background: var(--bg-card);
+  backdrop-filter: var(--blur-glass);
+  -webkit-backdrop-filter: var(--blur-glass);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  padding: 0;
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease both;
+}
+
+.project-card:nth-child(1) { animation-delay: 0.1s; }
+.project-card:nth-child(2) { animation-delay: 0.15s; }
+.project-card:nth-child(3) { animation-delay: 0.2s; }
+.project-card:nth-child(4) { animation-delay: 0.25s; }
+.project-card:nth-child(5) { animation-delay: 0.3s; }
+.project-card:nth-child(6) { animation-delay: 0.35s; }
+
+.project-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.project-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--border-card-hover);
+  box-shadow: var(--shadow-card-hover), var(--shadow-glow);
+}
+
+.project-card:hover::before {
+  opacity: 1;
+}
+
+.project-card-body {
+  padding: 24px;
+}
+
+.project-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.project-card-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  transition: color var(--transition-fast);
+}
+
+.project-card:hover .project-card-name {
+  color: var(--text-accent);
+}
+
+.project-card-version {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 10px;
+  background: rgba(102, 126, 234, 0.15);
+  color: var(--text-accent);
+  white-space: nowrap;
+}
+
+.project-card-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+  line-height: 1.5;
+}
+
+.project-card-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.project-stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.project-stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.project-stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.project-stat-value.score {
+  background: var(--gradient-secondary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Progress Bar */
+.project-progress {
+  margin-bottom: 8px;
+}
+
+.project-progress-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.project-progress-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.project-progress-pct {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-accent);
+}
+
+.progress-bar-track {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: var(--gradient-primary);
+  border-radius: 3px;
+  transition: width 1s ease;
+  animation: progressFill 1.2s ease;
+  position: relative;
+}
+
+.progress-bar-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+.progress-bar-fill.complete {
+  background: var(--gradient-secondary);
+}
+
+/* Project Card Footer */
+.project-card-footer {
+  padding: 14px 24px;
+  border-top: 1px solid var(--border-card);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.project-card-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.project-card-footer-right {
+  font-size: 12px;
+  color: var(--text-accent);
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: color var(--transition-fast);
+}
+
+.project-card:hover .project-card-footer-right {
+  color: #fff;
+}
+
+/* ============================================================
+   MODAL STYLES
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-modal-overlay);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: var(--z-modal-overlay);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: overlayIn 0.3s ease;
+}
+
+.modal-overlay.visible {
+  display: flex;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-xl);
+  width: 100%;
+  max-width: 900px;
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  animation: modalIn 0.35s ease;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--border-card);
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.modal-close-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.modal-close-btn:hover {
+  background: rgba(245, 87, 108, 0.1);
+  border-color: rgba(245, 87, 108, 0.3);
+  color: var(--color-failed);
+}
+
+.modal-body {
+  padding: 28px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.1);
+  border-radius: 3px;
+}
+
+/* Modal Project Info */
+.modal-project-info {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.modal-info-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  text-align: center;
+}
+
+.modal-info-value {
+  font-size: 24px;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.modal-info-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Modal Charts */
+.modal-charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+
+.modal-chart-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 20px;
+}
+
+.modal-chart-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* Modal Run History Table */
+.run-history-table-wrap {
+  overflow-x: auto;
+}
+
+.run-history-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.run-history-table thead th {
+  padding: 12px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-card);
+  white-space: nowrap;
+  background: var(--bg-card);
+  position: sticky;
+  top: 0;
+}
+
+.run-history-table thead th:first-child {
+  border-radius: var(--radius-sm) 0 0 0;
+}
+
+.run-history-table thead th:last-child {
+  border-radius: 0 var(--radius-sm) 0 0;
+}
+
+.run-history-table tbody td {
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  white-space: nowrap;
+}
+
+.run-history-table tbody tr {
+  transition: background var(--transition-fast);
+}
+
+.run-history-table tbody tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.run-history-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-badge.completed {
+  background: rgba(67, 233, 123, 0.1);
+  color: var(--color-completed);
+}
+
+.status-badge.running {
+  background: rgba(79, 172, 254, 0.1);
+  color: var(--color-running);
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.status-badge.failed {
+  background: rgba(245, 87, 108, 0.1);
+  color: var(--color-failed);
+}
+
+.status-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-badge.completed .status-badge-dot { background: var(--color-completed); }
+.status-badge.running .status-badge-dot { background: var(--color-running); }
+.status-badge.failed .status-badge-dot { background: var(--color-failed); }
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state-text {
+  font-size: 15px;
+}
+
+/* ============================================================
+   TOOLTIP
+   ============================================================ */
+.tooltip {
+  position: absolute;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  z-index: var(--z-tooltip);
+  pointer-events: none;
+  animation: fadeIn 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+/* ============================================================
+   SCROLLBAR GLOBAL
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.08);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.15);
+}
+
+/* ============================================================
+   RESPONSIVE STYLES
+   ============================================================ */
+@media (max-width: 768px) {
+  .team-a-container {
+    padding: 12px;
+  }
+
+  .tab-nav {
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .tab-btn {
+    padding: 12px 16px;
+    font-size: 14px;
+  }
+
+  .dashboard-topbar {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .realtime-clock {
+    justify-content: center;
+  }
+
+  .quick-actions {
+    flex-direction: column;
+  }
+
+  .stat-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+
+  .stat-card-value {
+    font-size: 26px;
+  }
+
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+
+  .today-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .project-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .projects-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .search-input-wrap {
+    width: 100%;
+    flex: none;
+  }
+
+  .modal {
+    max-width: 100%;
+    max-height: 95vh;
+    border-radius: var(--radius-lg);
+  }
+
+  .modal-project-info {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .modal-charts-row {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline-item {
+    flex: 0 0 220px;
+  }
+
+  .clock-time {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .stat-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 18px;
+  }
+
+  .stat-card-value {
+    font-size: 28px;
+  }
+
+  .modal-project-info {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .project-card-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ============================================================
+   DARK SELECTION
+   ============================================================ */
+::selection {
+  background: rgba(102, 126, 234, 0.3);
+  color: #fff;
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="team-a-container" role="main" aria-label="Ralphton Manager - Team A">
+
+  <!-- ============================
+       TAB NAVIGATION
+       ============================ -->
+  <nav class="tab-nav" role="tablist" aria-label="메인 탭 네비게이션">
+    <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="panel-dashboard" id="tab-dashboard" tabindex="0" onclick="switchTab('dashboard')">
+      <span><span class="tab-icon">📊</span> 대시보드</span>
+    </button>
+    <button class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-projects" id="tab-projects" tabindex="-1" onclick="switchTab('projects')">
+      <span><span class="tab-icon">📋</span> 프로젝트</span>
+    </button>
+  </nav>
+
+  <!-- ============================
+       DASHBOARD TAB PANEL
+       ============================ -->
+  <div class="tab-panel active" id="panel-dashboard" role="tabpanel" aria-labelledby="tab-dashboard">
+
+    <!-- Top Bar: Clock & Quick Actions -->
+    <div class="dashboard-topbar">
+      <div class="realtime-clock" aria-label="실시간 시계" role="timer">
+        <span class="clock-icon" aria-hidden="true">🕐</span>
+        <span class="clock-time" id="clock-time">--:--:--</span>
+        <span class="clock-date" id="clock-date">----년 --월 --일</span>
+      </div>
+      <div class="quick-actions">
+        <button class="quick-action-btn primary" aria-label="새 Run 시작" onclick="handleNewRun()">
+          <span class="btn-icon" aria-hidden="true">▶</span> 새 Run 시작
+        </button>
+        <button class="quick-action-btn" aria-label="전체 보기" onclick="switchTab('projects')">
+          <span class="btn-icon" aria-hidden="true">📋</span> 전체 보기
+        </button>
+      </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="stat-cards-grid" aria-label="통계 카드">
+      <div class="stat-card" aria-label="총 프로젝트 수" role="article">
+        <div class="stat-card-header">
+          <div class="stat-card-icon" aria-hidden="true">📦</div>
+          <div class="stat-card-trend up" aria-label="증가">+2 이번 주</div>
+        </div>
+        <div class="stat-card-value" id="stat-projects" data-target="6">0</div>
+        <div class="stat-card-label">총 프로젝트</div>
+      </div>
+
+      <div class="stat-card" aria-label="총 Run 수" role="article">
+        <div class="stat-card-header">
+          <div class="stat-card-icon" aria-hidden="true">🔄</div>
+          <div class="stat-card-trend up" aria-label="증가">+5 오늘</div>
+        </div>
+        <div class="stat-card-value" id="stat-runs" data-target="12">0</div>
+        <div class="stat-card-label">총 Run</div>
+      </div>
+
+      <div class="stat-card" aria-label="총 코드량" role="article">
+        <div class="stat-card-header">
+          <div class="stat-card-icon" aria-hidden="true">📝</div>
+          <div class="stat-card-trend up" aria-label="증가">+3.2k 오늘</div>
+        </div>
+        <div class="stat-card-value" id="stat-lines" data-target="0">0<span class="unit">줄</span></div>
+        <div class="stat-card-label">총 코드량</div>
+      </div>
+
+      <div class="stat-card" aria-label="총 소요시간" role="article">
+        <div class="stat-card-header">
+          <div class="stat-card-icon" aria-hidden="true">⏱</div>
+          <div class="stat-card-trend neutral">누적</div>
+        </div>
+        <div class="stat-card-value" id="stat-duration" data-target="0">0<span class="unit">시간</span></div>
+        <div class="stat-card-label">총 소요시간</div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row" aria-label="차트 영역">
+      <div class="chart-card" role="img" aria-label="프로젝트별 코드 라인 차트">
+        <div class="chart-title">
+          <span class="chart-icon" aria-hidden="true">📈</span>
+          프로젝트별 코드 라인
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="line-chart" width="700" height="320" aria-label="프로젝트별 최종 코드 라인 수를 보여주는 라인 차트"></canvas>
+        </div>
+      </div>
+      <div class="chart-card" role="img" aria-label="상태 분포 도넛 차트">
+        <div class="chart-title">
+          <span class="chart-icon" aria-hidden="true">🍩</span>
+          상태 분포
+        </div>
+        <div class="chart-canvas-wrap" style="display:flex; flex-direction:column; align-items:center;">
+          <canvas id="donut-chart" width="240" height="240" aria-label="Run 상태 분포를 보여주는 도넛 차트"></canvas>
+          <div class="donut-legend" id="donut-legend"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Run Timeline -->
+    <div class="timeline-section">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="icon" aria-hidden="true">🕒</span>
+          최근 Run 타임라인
+        </div>
+        <span class="section-badge" id="timeline-count-badge">0개 Run</span>
+      </div>
+      <div class="timeline-scroll" id="timeline-scroll" role="list" aria-label="최근 Run 타임라인 목록">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+
+    <!-- Today's Run Summary -->
+    <div class="today-summary">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="icon" aria-hidden="true">📅</span>
+          오늘의 Run 요약
+        </div>
+      </div>
+      <div class="today-summary-grid" id="today-summary-grid">
+        <div class="today-stat" role="article">
+          <div class="today-stat-value" id="today-runs">0</div>
+          <div class="today-stat-label">오늘 Run 수</div>
+        </div>
+        <div class="today-stat" role="article">
+          <div class="today-stat-value" id="today-lines">0</div>
+          <div class="today-stat-label">오늘 생성 코드량</div>
+        </div>
+        <div class="today-stat" role="article">
+          <div class="today-stat-value" id="today-duration">0h</div>
+          <div class="today-stat-label">오늘 소요시간</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================
+       PROJECTS TAB PANEL
+       ============================ -->
+  <div class="tab-panel" id="panel-projects" role="tabpanel" aria-labelledby="tab-projects">
+
+    <!-- Toolbar -->
+    <div class="projects-toolbar">
+      <div class="search-input-wrap">
+        <input
+          type="text"
+          class="search-input"
+          id="project-search"
+          placeholder="프로젝트 검색..."
+          aria-label="프로젝트 검색"
+          oninput="filterProjects(this.value)"
+        />
+        <span class="search-icon" aria-hidden="true">🔍</span>
+      </div>
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)" aria-label="전체 필터">전체</button>
+      <button class="filter-btn" data-filter="completed" onclick="setFilter('completed', this)" aria-label="완료 필터">완료</button>
+      <button class="filter-btn" data-filter="running" onclick="setFilter('running', this)" aria-label="진행중 필터">진행중</button>
+      <span class="project-count-badge" id="project-count-badge" aria-live="polite">6개 프로젝트</span>
+    </div>
+
+    <!-- Project Cards Grid -->
+    <div class="project-cards-grid" id="project-cards-grid" aria-label="프로젝트 카드 목록">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- ============================
+       PROJECT DETAIL MODAL
+       ============================ -->
+  <div class="modal-overlay" id="project-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-project-title">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-project-title">
+          <span aria-hidden="true">📦</span>
+          <span id="modal-project-name">프로젝트</span>
+        </div>
+        <button class="modal-close-btn" onclick="closeModal()" aria-label="모달 닫기" title="닫기 (ESC)">✕</button>
+      </div>
+      <div class="modal-body">
+        <!-- Project Info Cards -->
+        <div class="modal-project-info" id="modal-project-info">
+          <div class="modal-info-card">
+            <div class="modal-info-value" id="modal-info-version">-</div>
+            <div class="modal-info-label">현재 버전</div>
+          </div>
+          <div class="modal-info-card">
+            <div class="modal-info-value" id="modal-info-runs">-</div>
+            <div class="modal-info-label">Run 수</div>
+          </div>
+          <div class="modal-info-card">
+            <div class="modal-info-value" id="modal-info-lines">-</div>
+            <div class="modal-info-label">최종 코드 라인</div>
+          </div>
+          <div class="modal-info-card">
+            <div class="modal-info-value" id="modal-info-score">-</div>
+            <div class="modal-info-label">최종 점수</div>
+          </div>
+        </div>
+
+        <!-- Modal Charts -->
+        <div class="modal-charts-row">
+          <div class="modal-chart-card">
+            <div class="modal-chart-title">코드 라인 추이</div>
+            <canvas id="modal-lines-chart" width="380" height="220" aria-label="코드 라인 추이 차트"></canvas>
+          </div>
+          <div class="modal-chart-card">
+            <div class="modal-chart-title">점수 추이</div>
+            <canvas id="modal-score-chart" width="380" height="220" aria-label="점수 추이 차트"></canvas>
+          </div>
+        </div>
+
+        <!-- Run History Table -->
+        <div class="section-header" style="margin-top: 8px;">
+          <div class="section-title">
+            <span class="icon" aria-hidden="true">📜</span>
+            Run 히스토리
+          </div>
+        </div>
+        <div class="run-history-table-wrap">
+          <table class="run-history-table" id="modal-run-table" aria-label="Run 히스토리 테이블">
+            <thead>
+              <tr>
+                <th>라운드</th>
+                <th>타입</th>
+                <th>페이즈</th>
+                <th>상태</th>
+                <th>시작일</th>
+                <th>소요시간</th>
+                <th>코드 라인</th>
+                <th>크기</th>
+                <th>점수</th>
+              </tr>
+            </thead>
+            <tbody id="modal-run-tbody">
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+/* ==============================================================
+   DATA
+   ============================================================== */
+const INITIAL_PROJECTS = [
+  {
+    id: "oc-neural-map", name: "Neural Map", description: "OpenClaw 아키텍처 시각화",
+    path: "~/workspace/projects/oc-neural-map", currentVersion: 9, targetLines: 5000,
+    runs: [
+      {round:1,type:"iterative-ralphton",status:"completed",startedAt:"2026-03-21",duration:10800,result:{linesAfter:4549,sizeKB:174,score:"43/43"}}
+    ]
+  },
+  {
+    id: "oc-devmon", name: "OC-DevMon", description: "OpenClaw 개발 모니터",
+    path: "~/workspace/projects/oc-devmon", currentVersion: 1, targetLines: 5000,
+    runs: [
+      {round:1,type:"iterative-ralphton",status:"completed",startedAt:"2026-03-20",duration:7200,result:{linesAfter:4545,sizeKB:152,score:"43/43"}}
+    ]
+  },
+  {
+    id: "portfolio-gen", name: "Portfolio Generator", description: "포트폴리오 생성기",
+    path: "~/workspace/projects/portfolio-gen", currentVersion: 1, targetLines: 5000,
+    runs: [
+      {round:1,type:"team-ralphton",status:"completed",startedAt:"2026-03-21",duration:10800,result:{linesAfter:4931,sizeKB:135,score:"38/38"}}
+    ]
+  },
+  {
+    id: "openclaw-hub", name: "OpenClaw Hub", description: "OpenClaw 종합 관리 웹 앱",
+    path: "~/workspace/projects/openclaw-hub", currentVersion: 4, targetLines: 10000,
+    runs: [
+      {round:1,type:"team-ralphton",phase:"Phase 1",status:"completed",startedAt:"2026-03-21",duration:900,result:{linesAfter:2668,sizeKB:134,score:"45/48"}},
+      {round:1,type:"team-ralphton",phase:"Run 1",status:"completed",startedAt:"2026-03-21",duration:3600,result:{linesAfter:6262,sizeKB:173,score:"49/52"}},
+      {round:1,type:"team-ralphton",phase:"Run 2",status:"completed",startedAt:"2026-03-21",duration:2400,result:{linesAfter:6548,sizeKB:182,score:"49/52"}},
+      {round:2,type:"team-ralphton-evolve",phase:"Teams",status:"completed",startedAt:"2026-03-21",duration:1800,result:{linesAfter:8280,sizeKB:239,score:"44/44"}},
+      {round:3,type:"team-ralphton-evolve",phase:"단일",status:"completed",startedAt:"2026-03-22",duration:1800,result:{linesAfter:8414,sizeKB:243,score:"69/69"}},
+      {round:4,type:"team-ralphton-evolve",phase:"LIVE",status:"completed",startedAt:"2026-03-22",duration:1800,result:{linesAfter:9863,sizeKB:287,score:"31/32"}}
+    ]
+  },
+  {
+    id: "agentcore-viz", name: "Agent Core 시각화", description: "에이전트 코어 구조 시각화",
+    path: "~/workspace/projects/agentcore-viz", currentVersion: 3, targetLines: 5000,
+    runs: [
+      {round:1,type:"ralphton",status:"completed",startedAt:"2026-03-21",duration:3600,result:{linesAfter:2000,sizeKB:60,score:"완료"}}
+    ]
+  },
+  {
+    id: "gostop-v7", name: "맞고 v7", description: "한국어 카드 게임",
+    path: "~/workspace/projects/gostop-v7", currentVersion: 7, targetLines: 5000,
+    runs: [
+      {round:1,type:"ralphton",status:"completed",startedAt:"2026-03-19",duration:3600,result:{linesAfter:2958,sizeKB:91,score:"완료"}}
+    ]
+  }
+];
+
+/* ==============================================================
+   STATE
+   ============================================================== */
+let currentTab = 'dashboard';
+let currentFilter = 'all';
+let searchQuery = '';
+let modalOpen = false;
+let animationFrameIds = {};
+
+/* ==============================================================
+   UTILITY FUNCTIONS
+   ============================================================== */
+
+/** Format seconds to human readable duration */
+function formatDuration(seconds) {
+  if (seconds < 60) return `${seconds}초`;
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}분`;
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  return m > 0 ? `${h}시간 ${m}분` : `${h}시간`;
+}
+
+/** Format duration as short hours */
+function formatDurationShort(seconds) {
+  const h = (seconds / 3600).toFixed(1);
+  return `${h}h`;
+}
+
+/** Format number with commas */
+function formatNumber(n) {
+  return n.toLocaleString('ko-KR');
+}
+
+/** Get final (last) run of a project */
+function getFinalRun(project) {
+  if (!project.runs || project.runs.length === 0) return null;
+  return project.runs[project.runs.length - 1];
+}
+
+/** Get final linesAfter for a project */
+function getFinalLines(project) {
+  const run = getFinalRun(project);
+  return run && run.result ? run.result.linesAfter : 0;
+}
+
+/** Get final score for a project */
+function getFinalScore(project) {
+  const run = getFinalRun(project);
+  return run && run.result ? run.result.score : '-';
+}
+
+/** Get total lines across all projects (sum of final linesAfter) */
+function getTotalLines() {
+  return INITIAL_PROJECTS.reduce((sum, p) => sum + getFinalLines(p), 0);
+}
+
+/** Get total runs across all projects */
+function getTotalRuns() {
+  return INITIAL_PROJECTS.reduce((sum, p) => sum + p.runs.length, 0);
+}
+
+/** Get total duration in seconds */
+function getTotalDuration() {
+  return INITIAL_PROJECTS.reduce((sum, p) => {
+    return sum + p.runs.reduce((s, r) => s + (r.duration || 0), 0);
+  }, 0);
+}
+
+/** Get all runs flattened with project name */
+function getAllRuns() {
+  const runs = [];
+  INITIAL_PROJECTS.forEach(p => {
+    p.runs.forEach(r => {
+      runs.push({ ...r, projectName: p.name, projectId: p.id });
+    });
+  });
+  return runs;
+}
+
+/** Get status counts */
+function getStatusCounts() {
+  const counts = { completed: 0, running: 0, failed: 0 };
+  getAllRuns().forEach(r => {
+    if (counts.hasOwnProperty(r.status)) {
+      counts[r.status]++;
+    } else {
+      counts.completed++;
+    }
+  });
+  return counts;
+}
+
+/** Get today's runs */
+function getTodayRuns() {
+  const today = '2026-03-22';
+  return getAllRuns().filter(r => r.startedAt === today);
+}
+
+/** Parse score string to numeric value (numerator) */
+function parseScoreNum(scoreStr) {
+  if (!scoreStr || scoreStr === '-') return 0;
+  if (typeof scoreStr === 'number') return scoreStr;
+  const match = scoreStr.match(/^(\d+)/);
+  return match ? parseInt(match[1], 10) : 0;
+}
+
+/** DPI-aware canvas context setup */
+function setupCanvas(canvas, width, height) {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  canvas.style.width = width + 'px';
+  canvas.style.height = height + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return ctx;
+}
+
+/* ==============================================================
+   TAB SWITCHING
+   ============================================================== */
+function switchTab(tabName) {
+  currentTab = tabName;
+
+  // Update tab buttons
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    const isActive = btn.id === `tab-${tabName}`;
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+    btn.setAttribute('tabindex', isActive ? '0' : '-1');
+  });
+
+  // Update panels
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `panel-${tabName}`);
+  });
+
+  // Re-render content if needed
+  if (tabName === 'dashboard') {
+    renderDashboard();
+  } else if (tabName === 'projects') {
+    renderProjectCards();
+  }
+}
+
+/* ==============================================================
+   COUNT-UP ANIMATION
+   ============================================================== */
+function animateCountUp(element, target, duration, suffix) {
+  suffix = suffix || '';
+  const startTime = performance.now();
+  const startVal = 0;
+
+  function update(currentTime) {
+    const elapsed = currentTime - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease out cubic
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const current = Math.round(startVal + (target - startVal) * eased);
+
+    if (suffix) {
+      element.innerHTML = formatNumber(current) + '<span class="unit">' + suffix + '</span>';
+    } else {
+      element.textContent = formatNumber(current);
+    }
+
+    if (progress < 1) {
+      requestAnimationFrame(update);
+    }
+  }
+
+  requestAnimationFrame(update);
+}
+
+/* ==============================================================
+   REAL-TIME CLOCK
+   ============================================================== */
+function updateClock() {
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const dateStr = now.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+
+  const timeEl = document.getElementById('clock-time');
+  const dateEl = document.getElementById('clock-date');
+
+  if (timeEl) timeEl.textContent = timeStr;
+  if (dateEl) dateEl.textContent = dateStr;
+}
+
+function startClock() {
+  updateClock();
+  setInterval(updateClock, 1000);
+}
+
+/* ==============================================================
+   DASHBOARD RENDERING
+   ============================================================== */
+function renderDashboard() {
+  renderStatCards();
+  renderLineChart();
+  renderDonutChart();
+  renderTimeline();
+  renderTodaySummary();
+}
+
+/** Stat cards with count-up */
+function renderStatCards() {
+  const totalLines = getTotalLines();
+  const totalDurationSec = getTotalDuration();
+  const totalDurationHours = parseFloat((totalDurationSec / 3600).toFixed(1));
+
+  // Update data targets
+  document.getElementById('stat-lines').setAttribute('data-target', totalLines);
+  document.getElementById('stat-duration').setAttribute('data-target', totalDurationHours);
+
+  // Animate
+  animateCountUp(document.getElementById('stat-projects'), 6, 1200);
+  animateCountUp(document.getElementById('stat-runs'), getTotalRuns(), 1200);
+  animateCountUp(document.getElementById('stat-lines'), totalLines, 1800, '줄');
+  animateCountUp(document.getElementById('stat-duration'), totalDurationHours, 1500, '시간');
+}
+
+/** Line Chart - Code lines per project */
+function renderLineChart() {
+  const canvas = document.getElementById('line-chart');
+  if (!canvas) return;
+
+  const W = 700, H = 320;
+  const ctx = setupCanvas(canvas, W, H);
+
+  const padding = { top: 30, right: 30, bottom: 60, left: 70 };
+  const chartW = W - padding.left - padding.right;
+  const chartH = H - padding.top - padding.bottom;
+
+  // Data
+  const projects = INITIAL_PROJECTS.map(p => ({
+    name: p.name,
+    lines: getFinalLines(p)
+  }));
+
+  const maxLines = Math.max(...projects.map(p => p.lines)) * 1.15;
+
+  // Clear
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid lines
+  const gridSteps = 5;
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= gridSteps; i++) {
+    const y = padding.top + (chartH / gridSteps) * i;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(W - padding.right, y);
+    ctx.stroke();
+
+    // Y-axis labels
+    const val = Math.round(maxLines - (maxLines / gridSteps) * i);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '11px SF Mono, Consolas, monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(formatNumber(val), padding.left - 10, y);
+  }
+
+  // Data points
+  const points = projects.map((p, i) => ({
+    x: padding.left + (chartW / (projects.length - 1)) * i,
+    y: padding.top + chartH - (p.lines / maxLines) * chartH,
+    name: p.name,
+    lines: p.lines
+  }));
+
+  // Gradient fill under line
+  const gradient = ctx.createLinearGradient(0, padding.top, 0, H - padding.bottom);
+  gradient.addColorStop(0, 'rgba(102, 126, 234, 0.25)');
+  gradient.addColorStop(1, 'rgba(102, 126, 234, 0.02)');
+
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, H - padding.bottom);
+  points.forEach((p, i) => {
+    if (i === 0) {
+      ctx.lineTo(p.x, p.y);
+    } else {
+      // Smooth curve
+      const prev = points[i - 1];
+      const cpx = (prev.x + p.x) / 2;
+      ctx.bezierCurveTo(cpx, prev.y, cpx, p.y, p.x, p.y);
+    }
+  });
+  ctx.lineTo(points[points.length - 1].x, H - padding.bottom);
+  ctx.closePath();
+  ctx.fillStyle = gradient;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  points.forEach((p, i) => {
+    if (i === 0) {
+      ctx.moveTo(p.x, p.y);
+    } else {
+      const prev = points[i - 1];
+      const cpx = (prev.x + p.x) / 2;
+      ctx.bezierCurveTo(cpx, prev.y, cpx, p.y, p.x, p.y);
+    }
+  });
+  ctx.strokeStyle = '#667eea';
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+
+  // Glow line
+  ctx.beginPath();
+  points.forEach((p, i) => {
+    if (i === 0) {
+      ctx.moveTo(p.x, p.y);
+    } else {
+      const prev = points[i - 1];
+      const cpx = (prev.x + p.x) / 2;
+      ctx.bezierCurveTo(cpx, prev.y, cpx, p.y, p.x, p.y);
+    }
+  });
+  ctx.strokeStyle = 'rgba(102, 126, 234, 0.3)';
+  ctx.lineWidth = 6;
+  ctx.stroke();
+
+  // Points & labels
+  points.forEach((p, i) => {
+    // Outer glow
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 8, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(102, 126, 234, 0.15)';
+    ctx.fill();
+
+    // Point
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#667eea';
+    ctx.fill();
+    ctx.strokeStyle = '#0a0e1a';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Value above point
+    ctx.fillStyle = 'rgba(255,255,255,0.8)';
+    ctx.font = 'bold 11px SF Mono, Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(formatNumber(p.lines), p.x, p.y - 14);
+
+    // X-axis label
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.font = '11px Segoe UI, Noto Sans KR, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+
+    // Rotate for long names
+    ctx.save();
+    ctx.translate(p.x, H - padding.bottom + 12);
+    ctx.rotate(-0.3);
+    ctx.fillText(p.name, 0, 0);
+    ctx.restore();
+  });
+}
+
+/** Donut Chart - Status breakdown */
+function renderDonutChart() {
+  const canvas = document.getElementById('donut-chart');
+  if (!canvas) return;
+
+  const size = 240;
+  const ctx = setupCanvas(canvas, size, size);
+  const cx = size / 2, cy = size / 2;
+  const outerR = 95, innerR = 60;
+
+  const counts = getStatusCounts();
+  const total = counts.completed + counts.running + counts.failed;
+
+  const segments = [
+    { label: '완료', count: counts.completed, color: '#43e97b', hoverColor: '#5af590' },
+    { label: '진행중', count: counts.running, color: '#4facfe', hoverColor: '#6fbfff' },
+    { label: '실패', count: counts.failed, color: '#f5576c', hoverColor: '#f77588' }
+  ].filter(s => s.count > 0);
+
+  ctx.clearRect(0, 0, size, size);
+
+  let startAngle = -Math.PI / 2;
+  const gap = 0.03; // Gap between segments
+
+  segments.forEach((seg, i) => {
+    const sliceAngle = (seg.count / total) * (Math.PI * 2) - gap;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, outerR, startAngle, startAngle + sliceAngle);
+    ctx.arc(cx, cy, innerR, startAngle + sliceAngle, startAngle, true);
+    ctx.closePath();
+
+    // Gradient for segment
+    const midAngle = startAngle + sliceAngle / 2;
+    const gx1 = cx + Math.cos(midAngle) * innerR;
+    const gy1 = cy + Math.sin(midAngle) * innerR;
+    const gx2 = cx + Math.cos(midAngle) * outerR;
+    const gy2 = cy + Math.sin(midAngle) * outerR;
+    const grad = ctx.createLinearGradient(gx1, gy1, gx2, gy2);
+    grad.addColorStop(0, seg.color);
+    grad.addColorStop(1, seg.hoverColor);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Shadow
+    ctx.shadowColor = seg.color;
+    ctx.shadowBlur = 8;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    startAngle += sliceAngle + gap;
+  });
+
+  // Center text
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.font = 'bold 28px SF Mono, Consolas, monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(total, cx, cy - 8);
+
+  ctx.fillStyle = 'rgba(255,255,255,0.4)';
+  ctx.font = '12px Segoe UI, Noto Sans KR, sans-serif';
+  ctx.fillText('전체 Run', cx, cy + 14);
+
+  // Legend
+  const legendEl = document.getElementById('donut-legend');
+  if (legendEl) {
+    legendEl.innerHTML = segments.map(s => `
+      <div class="donut-legend-item">
+        <span class="donut-legend-dot" style="background:${s.color}"></span>
+        <span>${s.label}</span>
+        <span class="donut-legend-value">${s.count}</span>
+      </div>
+    `).join('');
+  }
+}
+
+/** Recent Run Timeline */
+function renderTimeline() {
+  const container = document.getElementById('timeline-scroll');
+  if (!container) return;
+
+  const allRuns = getAllRuns();
+  // Sort by date descending
+  allRuns.sort((a, b) => {
+    if (a.startedAt === b.startedAt) return 0;
+    return a.startedAt > b.startedAt ? -1 : 1;
+  });
+
+  const badge = document.getElementById('timeline-count-badge');
+  if (badge) badge.textContent = `${allRuns.length}개 Run`;
+
+  container.innerHTML = allRuns.map((run, idx) => `
+    <div class="timeline-item" role="listitem" style="animation-delay: ${idx * 0.05}s; animation: fadeInRight 0.4s ease ${idx * 0.05}s both;" aria-label="${run.projectName} - ${run.phase || run.type}">
+      <span class="timeline-item-dot ${run.status}" aria-hidden="true"></span>
+      <div class="timeline-item-project">${run.projectName}</div>
+      <div class="timeline-item-phase">${run.phase || run.type}</div>
+      <div class="timeline-item-meta">
+        <span class="timeline-item-lines">${run.result ? formatNumber(run.result.linesAfter) + '줄' : '-'}</span>
+        <span>${formatDuration(run.duration)}</span>
+      </div>
+      <div class="timeline-item-date">${run.startedAt}</div>
+    </div>
+  `).join('');
+}
+
+/** Today's Run Summary */
+function renderTodaySummary() {
+  const todayRuns = getTodayRuns();
+  const todayLines = todayRuns.reduce((s, r) => s + (r.result ? r.result.linesAfter : 0), 0);
+  const todayDuration = todayRuns.reduce((s, r) => s + (r.duration || 0), 0);
+
+  const runsEl = document.getElementById('today-runs');
+  const linesEl = document.getElementById('today-lines');
+  const durationEl = document.getElementById('today-duration');
+
+  if (runsEl) animateCountUp(runsEl, todayRuns.length, 800);
+  if (linesEl) animateCountUp(linesEl, todayLines, 1200);
+  if (durationEl) durationEl.textContent = formatDurationShort(todayDuration);
+}
+
+/* ==============================================================
+   PROJECTS RENDERING
+   ============================================================== */
+function renderProjectCards() {
+  const container = document.getElementById('project-cards-grid');
+  if (!container) return;
+
+  let projects = INITIAL_PROJECTS;
+
+  // Apply search filter
+  if (searchQuery) {
+    const q = searchQuery.toLowerCase();
+    projects = projects.filter(p =>
+      p.name.toLowerCase().includes(q) ||
+      p.description.toLowerCase().includes(q) ||
+      p.id.toLowerCase().includes(q)
+    );
+  }
+
+  // Apply status filter
+  if (currentFilter !== 'all') {
+    projects = projects.filter(p => {
+      const finalRun = getFinalRun(p);
+      return finalRun && finalRun.status === currentFilter;
+    });
+  }
+
+  // Update count badge
+  const countBadge = document.getElementById('project-count-badge');
+  if (countBadge) countBadge.textContent = `${projects.length}개 프로젝트`;
+
+  if (projects.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1;">
+        <div class="empty-state-icon" aria-hidden="true">🔍</div>
+        <div class="empty-state-text">검색 결과가 없습니다</div>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = projects.map((p, idx) => {
+    const finalLines = getFinalLines(p);
+    const finalScore = getFinalScore(p);
+    const progress = Math.min((finalLines / p.targetLines) * 100, 100);
+    const progressClass = progress >= 100 ? 'complete' : '';
+    const finalRun = getFinalRun(p);
+    const status = finalRun ? finalRun.status : 'completed';
+
+    return `
+      <div class="project-card" onclick="openProjectModal('${p.id}')" tabindex="0" role="button"
+           aria-label="${p.name} 프로젝트 상세보기" style="animation-delay: ${idx * 0.08}s"
+           onkeydown="if(event.key==='Enter')openProjectModal('${p.id}')">
+        <div class="project-card-body">
+          <div class="project-card-top">
+            <div class="project-card-name">${p.name}</div>
+            <div class="project-card-version">v${p.currentVersion}</div>
+          </div>
+          <div class="project-card-desc">${p.description}</div>
+          <div class="project-card-stats">
+            <div class="project-stat-item">
+              <span class="project-stat-label">Run 수</span>
+              <span class="project-stat-value">${p.runs.length}</span>
+            </div>
+            <div class="project-stat-item">
+              <span class="project-stat-label">코드 라인</span>
+              <span class="project-stat-value">${formatNumber(finalLines)}</span>
+            </div>
+            <div class="project-stat-item">
+              <span class="project-stat-label">목표</span>
+              <span class="project-stat-value">${formatNumber(p.targetLines)}</span>
+            </div>
+            <div class="project-stat-item">
+              <span class="project-stat-label">점수</span>
+              <span class="project-stat-value score">${finalScore}</span>
+            </div>
+          </div>
+          <div class="project-progress">
+            <div class="project-progress-header">
+              <span class="project-progress-label">진행률</span>
+              <span class="project-progress-pct">${progress.toFixed(1)}%</span>
+            </div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill ${progressClass}" style="width: ${progress}%" role="progressbar"
+                   aria-valuenow="${progress.toFixed(0)}" aria-valuemin="0" aria-valuemax="100"
+                   aria-label="${p.name} 진행률 ${progress.toFixed(1)}%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="project-card-footer">
+          <div class="project-card-footer-left">
+            <span class="status-badge ${status}"><span class="status-badge-dot"></span> ${status === 'completed' ? '완료' : status === 'running' ? '진행중' : '실패'}</span>
+          </div>
+          <div class="project-card-footer-right">
+            상세보기 →
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/** Filter projects by search */
+function filterProjects(query) {
+  searchQuery = query;
+  renderProjectCards();
+}
+
+/** Set active filter */
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderProjectCards();
+}
+
+/* ==============================================================
+   PROJECT DETAIL MODAL
+   ============================================================== */
+function openProjectModal(projectId) {
+  const project = INITIAL_PROJECTS.find(p => p.id === projectId);
+  if (!project) return;
+
+  modalOpen = true;
+  const overlay = document.getElementById('project-modal-overlay');
+  overlay.classList.add('visible');
+  document.body.style.overflow = 'hidden';
+
+  // Populate header
+  document.getElementById('modal-project-name').textContent = project.name;
+
+  // Populate info cards
+  document.getElementById('modal-info-version').textContent = `v${project.currentVersion}`;
+  document.getElementById('modal-info-runs').textContent = project.runs.length;
+  document.getElementById('modal-info-lines').textContent = formatNumber(getFinalLines(project));
+  document.getElementById('modal-info-score').textContent = getFinalScore(project);
+
+  // Populate run history table
+  const tbody = document.getElementById('modal-run-tbody');
+  tbody.innerHTML = project.runs.map(run => `
+    <tr>
+      <td>${run.round}</td>
+      <td><code style="color:var(--text-accent);font-size:12px;">${run.type}</code></td>
+      <td>${run.phase || '-'}</td>
+      <td><span class="status-badge ${run.status}"><span class="status-badge-dot"></span> ${run.status === 'completed' ? '완료' : run.status === 'running' ? '진행중' : '실패'}</span></td>
+      <td>${run.startedAt}</td>
+      <td>${formatDuration(run.duration)}</td>
+      <td style="font-family:var(--font-mono);font-weight:600;">${run.result ? formatNumber(run.result.linesAfter) : '-'}</td>
+      <td>${run.result ? run.result.sizeKB + 'KB' : '-'}</td>
+      <td style="color:var(--color-completed);font-weight:600;">${run.result ? run.result.score : '-'}</td>
+    </tr>
+  `).join('');
+
+  // Render modal charts after a brief delay so canvas is visible
+  requestAnimationFrame(() => {
+    renderModalLinesChart(project);
+    renderModalScoreChart(project);
+  });
+
+  // Focus trap: focus the close button
+  setTimeout(() => {
+    document.querySelector('.modal-close-btn').focus();
+  }, 100);
+}
+
+function closeModal() {
+  modalOpen = false;
+  const overlay = document.getElementById('project-modal-overlay');
+  overlay.classList.remove('visible');
+  document.body.style.overflow = '';
+}
+
+/** Modal - Code Lines Chart */
+function renderModalLinesChart(project) {
+  const canvas = document.getElementById('modal-lines-chart');
+  if (!canvas) return;
+
+  const W = 380, H = 220;
+  const ctx = setupCanvas(canvas, W, H);
+
+  const padding = { top: 20, right: 20, bottom: 40, left: 55 };
+  const chartW = W - padding.left - padding.right;
+  const chartH = H - padding.top - padding.bottom;
+
+  const data = project.runs.map((r, i) => ({
+    label: r.phase || `Run ${i + 1}`,
+    value: r.result ? r.result.linesAfter : 0
+  }));
+
+  if (data.length === 0) return;
+
+  const maxVal = Math.max(...data.map(d => d.value)) * 1.15;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const y = padding.top + (chartH / steps) * i;
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(W - padding.right, y);
+    ctx.stroke();
+
+    const val = Math.round(maxVal - (maxVal / steps) * i);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px SF Mono, Consolas, monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(formatNumber(val), padding.left - 8, y);
+  }
+
+  // Points
+  const points = data.map((d, i) => {
+    const x = data.length === 1
+      ? padding.left + chartW / 2
+      : padding.left + (chartW / (data.length - 1)) * i;
+    const y = padding.top + chartH - (d.value / maxVal) * chartH;
+    return { x, y, ...d };
+  });
+
+  // Area fill
+  const grad = ctx.createLinearGradient(0, padding.top, 0, H - padding.bottom);
+  grad.addColorStop(0, 'rgba(79, 172, 254, 0.2)');
+  grad.addColorStop(1, 'rgba(79, 172, 254, 0.01)');
+
+  ctx.beginPath();
+  ctx.moveTo(points[0].x, H - padding.bottom);
+  points.forEach((p, i) => {
+    if (i === 0) {
+      ctx.lineTo(p.x, p.y);
+    } else {
+      const prev = points[i - 1];
+      const cpx = (prev.x + p.x) / 2;
+      ctx.bezierCurveTo(cpx, prev.y, cpx, p.y, p.x, p.y);
+    }
+  });
+  ctx.lineTo(points[points.length - 1].x, H - padding.bottom);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line
+  ctx.beginPath();
+  points.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else {
+      const prev = points[i - 1];
+      const cpx = (prev.x + p.x) / 2;
+      ctx.bezierCurveTo(cpx, prev.y, cpx, p.y, p.x, p.y);
+    }
+  });
+  ctx.strokeStyle = '#4facfe';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Points
+  points.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = '#4facfe';
+    ctx.fill();
+    ctx.strokeStyle = '#0a0e1a';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  });
+
+  // X labels
+  points.forEach(p => {
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '9px Segoe UI, Noto Sans KR, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(p.label, p.x, H - padding.bottom + 8);
+  });
+}
+
+/** Modal - Score Chart */
+function renderModalScoreChart(project) {
+  const canvas = document.getElementById('modal-score-chart');
+  if (!canvas) return;
+
+  const W = 380, H = 220;
+  const ctx = setupCanvas(canvas, W, H);
+
+  const padding = { top: 20, right: 20, bottom: 40, left: 55 };
+  const chartW = W - padding.left - padding.right;
+  const chartH = H - padding.top - padding.bottom;
+
+  const data = project.runs.map((r, i) => {
+    const scoreStr = r.result ? r.result.score : '0';
+    return {
+      label: r.phase || `Run ${i + 1}`,
+      value: parseScoreNum(scoreStr),
+      scoreText: scoreStr
+    };
+  });
+
+  if (data.length === 0) return;
+
+  const maxVal = Math.max(...data.map(d => d.value)) * 1.2 || 100;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  const steps = 4;
+  for (let i = 0; i <= steps; i++) {
+    const y = padding.top + (chartH / steps) * i;
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(W - padding.right, y);
+    ctx.stroke();
+
+    const val = Math.round(maxVal - (maxVal / steps) * i);
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px SF Mono, Consolas, monospace';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(val, padding.left - 8, y);
+  }
+
+  // Bar chart for scores
+  const barWidth = Math.min(chartW / data.length * 0.5, 40);
+  const barGap = chartW / data.length;
+
+  data.forEach((d, i) => {
+    const x = padding.left + barGap * i + barGap / 2 - barWidth / 2;
+    const barH = (d.value / maxVal) * chartH;
+    const y = padding.top + chartH - barH;
+
+    // Bar gradient
+    const grad = ctx.createLinearGradient(x, y, x, padding.top + chartH);
+    grad.addColorStop(0, '#43e97b');
+    grad.addColorStop(1, 'rgba(67, 233, 123, 0.3)');
+
+    // Rounded top bar
+    const r = Math.min(barWidth / 2, 4);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + barWidth - r, y);
+    ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + r);
+    ctx.lineTo(x + barWidth, padding.top + chartH);
+    ctx.lineTo(x, padding.top + chartH);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Glow
+    ctx.shadowColor = '#43e97b';
+    ctx.shadowBlur = 6;
+    ctx.fill();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    // Score text above bar
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.font = 'bold 9px SF Mono, Consolas, monospace';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(d.scoreText, x + barWidth / 2, y - 4);
+
+    // X label
+    ctx.fillStyle = 'rgba(255,255,255,0.35)';
+    ctx.font = '9px Segoe UI, Noto Sans KR, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillText(d.label, x + barWidth / 2, H - padding.bottom + 8);
+  });
+}
+
+/* ==============================================================
+   QUICK ACTIONS
+   ============================================================== */
+function handleNewRun() {
+  // Visual feedback
+  const btn = document.querySelector('.quick-action-btn.primary');
+  if (btn) {
+    btn.style.transform = 'scale(0.95)';
+    setTimeout(() => {
+      btn.style.transform = '';
+      alert('새 Run이 시작되었습니다! (데모)');
+    }, 150);
+  }
+}
+
+/* ==============================================================
+   KEYBOARD EVENTS
+   ============================================================== */
+document.addEventListener('keydown', (e) => {
+  // Close modal on Escape
+  if (e.key === 'Escape' && modalOpen) {
+    closeModal();
+    return;
+  }
+
+  // Tab navigation with arrow keys
+  if (e.target.classList.contains('tab-btn')) {
+    const tabs = Array.from(document.querySelectorAll('.tab-btn'));
+    const currentIndex = tabs.indexOf(e.target);
+
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = tabs[(currentIndex + 1) % tabs.length];
+      next.focus();
+      next.click();
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const prev = tabs[(currentIndex - 1 + tabs.length) % tabs.length];
+      prev.focus();
+      prev.click();
+    }
+  }
+});
+
+// Close modal on overlay click
+document.getElementById('project-modal-overlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    closeModal();
+  }
+});
+
+/* ==============================================================
+   WINDOW RESIZE HANDLER
+   ============================================================== */
+let resizeTimeout;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimeout);
+  resizeTimeout = setTimeout(() => {
+    if (currentTab === 'dashboard') {
+      renderLineChart();
+      renderDonutChart();
+    }
+  }, 250);
+});
+
+/* ==============================================================
+   INITIALIZATION
+   ============================================================== */
+document.addEventListener('DOMContentLoaded', () => {
+  startClock();
+  renderDashboard();
+  renderProjectCards();
+});
+
+// Fallback init if DOMContentLoaded already fired
+if (document.readyState !== 'loading') {
+  startClock();
+  renderDashboard();
+  renderProjectCards();
+}
+</script>
+
+</body>
+</html>

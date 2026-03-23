@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neural Map v10 - 에이전트 신경망 시각화</title>
+<link rel="stylesheet" href="animations.css">
+<style>
+/* ===== 기본 리셋 & 테마 ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-panel: rgba(17, 24, 39, 0.7);
+  --border-glow: rgba(99, 102, 241, 0.3);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-accent: #818cf8;
+  --accent-indigo: #6366f1;
+  --accent-cyan: #22d3ee;
+  --accent-emerald: #34d399;
+  --accent-rose: #fb7185;
+  --accent-amber: #fbbf24;
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(148, 163, 184, 0.12);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+/* ===== 전체 레이아웃 ===== */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ===== 탭 네비게이션 ===== */
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.tab-bar .logo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-indigo);
+  margin-right: 12px;
+  white-space: nowrap;
+  letter-spacing: -0.5px;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.tab-btn:hover { background: rgba(99, 102, 241, 0.1); color: var(--text-primary); }
+.tab-btn.active { background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo); }
+
+.scenario-select {
+  margin-left: auto;
+  padding: 6px 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.scenario-select option { background: var(--bg-primary); }
+
+.btn-start {
+  padding: 6px 14px;
+  margin-left: 6px;
+  background: var(--accent-indigo);
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-start:hover { opacity: 0.85; }
+
+/* ===== 메인 콘텐츠 그리드 ===== */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
+  padding: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ===== 글래스모피즘 패널 ===== */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--glass-border);
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.panel-header .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  min-height: 0;
+}
+
+.panel-body::-webkit-scrollbar { width: 4px; }
+.panel-body::-webkit-scrollbar-track { background: transparent; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 2px; }
+
+/* ===== 존 1: 브레인맵 ===== */
+.zone-brainmap {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.zone-brainmap .panel-header .dot { background: var(--accent-cyan); }
+
+#brainmap-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.neural-node {
+  cursor: pointer;
+  transition: filter 0.3s;
+}
+.neural-node:hover { filter: brightness(1.3); }
+
+.synapse-line {
+  stroke-linecap: round;
+}
+
+/* ===== 존 2: 코텍스 시어터 ===== */
+.zone-cortex {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.zone-cortex .panel-header .dot { background: var(--accent-indigo); }
+
+/* 에이전트 아바타 표시 */
+.agent-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.agent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-indigo), #312e81);
+  border: 2px solid var(--accent-indigo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.agent-avatar.idle { border-color: var(--text-secondary); opacity: 0.6; }
+.agent-avatar.thinking { border-color: var(--accent-cyan); }
+.agent-avatar.tool_calling { border-color: var(--accent-amber); }
+.agent-avatar.speaking { border-color: var(--accent-emerald); }
+.agent-avatar.error { border-color: var(--accent-rose); }
+
+.agent-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.agent-status-text .name { font-size: 13px; font-weight: 600; }
+.agent-status-text .status { font-size: 11px; color: var(--text-secondary); }
+
+/* 사고 카드 */
+.thought-card {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  position: relative;
+}
+
+.thought-card .phase-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.cascade-phase-1 .phase-label { background: rgba(99,102,241,0.2); color: var(--accent-indigo); }
+.cascade-phase-2 .phase-label { background: rgba(34,211,238,0.2); color: var(--accent-cyan); }
+.cascade-phase-3 .phase-label { background: rgba(52,211,153,0.2); color: var(--accent-emerald); }
+.cascade-phase-4 .phase-label { background: rgba(251,191,36,0.2); color: var(--accent-amber); }
+.cascade-phase-5 .phase-label { background: rgba(251,113,133,0.2); color: var(--accent-rose); }
+.cascade-phase-6 .phase-label { background: rgba(167,139,250,0.2); color: #a78bfa; }
+
+.thought-card .thought-text { color: var(--text-primary); }
+.thought-card .thought-meta { font-size: 10px; color: var(--text-secondary); margin-top: 6px; }
+
+/* 말풍선 */
+.speech-bubble {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  position: relative;
+}
+
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 16px;
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  border: inherit;
+  border-bottom: none;
+  border-right: none;
+  transform: rotate(45deg);
+}
+
+/* ===== 존 3: 딥 스탯 ===== */
+.zone-deepstats {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.zone-deepstats .panel-header .dot { background: var(--accent-emerald); }
+
+.stat-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.stat-card .stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.stat-card .stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.sub-panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 12px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sub-panel-title:first-child { margin-top: 0; }
+
+/* 시각화 컨테이너 */
+.viz-container {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  min-height: 120px;
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.viz-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 도구 로그 테이블 */
+.tool-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.tool-log-table th {
+  text-align: left;
+  padding: 6px 8px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--glass-border);
+  font-weight: 600;
+}
+
+.tool-log-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+  color: var(--text-primary);
+}
+
+.tool-log-table tr:hover td { background: rgba(99, 102, 241, 0.05); }
+
+/* 내보내기 버튼 */
+.export-btn {
+  padding: 5px 12px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--accent-indigo);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.export-btn:hover { background: rgba(99, 102, 241, 0.25); }
+
+/* ===== 채팅 존 (하단) ===== */
+.zone-chat {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  max-height: 200px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  min-height: 60px;
+}
+
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 2px; }
+
+.chat-msg {
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.chat-msg.user { color: var(--accent-cyan); }
+.chat-msg.agent { color: var(--text-primary); }
+.chat-msg .msg-sender {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.chat-input-bar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.chat-input:focus { border-color: var(--accent-indigo); }
+.chat-input::placeholder { color: var(--text-secondary); }
+
+.chat-send-btn {
+  padding: 8px 18px;
+  background: var(--accent-indigo);
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.chat-send-btn:hover { opacity: 0.85; }
+
+/* ===== floating / glow / pulse 기본 상태 ===== */
+.floating { position: relative; }
+.glow { filter: drop-shadow(0 0 6px var(--accent-indigo)); }
+.pulse { }
+
+/* ===== 반응형 (모바일 768px) ===== */
+@media (max-width: 768px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    overflow-y: auto;
+  }
+
+  .zone-brainmap,
+  .zone-cortex,
+  .zone-deepstats,
+  .zone-chat {
+    grid-column: 1;
+    grid-row: auto;
+    min-height: 400px;
+  }
+
+  .zone-brainmap,
+  .zone-cortex,
+  .zone-deepstats {
+    display: none;
+  }
+
+  .zone-chat {
+    display: flex;
+    max-height: none;
+    min-height: 300px;
+  }
+
+  .zone-brainmap.mobile-active,
+  .zone-cortex.mobile-active,
+  .zone-deepstats.mobile-active,
+  .zone-chat.mobile-active {
+    display: flex;
+  }
+
+  .tab-bar { flex-wrap: wrap; }
+  .tab-bar .logo { width: 100%; margin-bottom: 4px; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===== 탭 네비게이션 ===== -->
+  <nav class="tab-bar">
+    <span class="logo">Neural Map v10</span>
+    <button class="tab-btn active" data-zone="brainmap">브레인맵</button>
+    <button class="tab-btn" data-zone="cortex">코텍스 시어터</button>
+    <button class="tab-btn" data-zone="deepstats">딥 스탯</button>
+    <button class="tab-btn" data-zone="chat">채팅</button>
+
+    <select class="scenario-select" id="scenario-select">
+      <option value="code_review">코드 리뷰</option>
+      <option value="data_analysis">데이터 분석</option>
+      <option value="creative_writing">창의적 글쓰기</option>
+      <option value="debugging">디버깅</option>
+    </select>
+    <button class="btn-start" id="btn-start">시뮬레이션 시작</button>
+  </nav>
+
+  <!-- ===== 메인 콘텐츠 ===== -->
+  <div class="main-grid">
+
+    <!-- 존 1: 브레인맵 -->
+    <section class="glass-panel zone-brainmap mobile-active" id="zone-brainmap">
+      <div class="panel-header">
+        <span class="dot"></span>
+        브레인맵 - 신경망 시각화
+      </div>
+      <div class="panel-body" style="padding:0;">
+        <svg id="brainmap-svg" viewBox="0 0 500 400" preserveAspectRatio="xMidYMid meet">
+          <!-- 시냅스 연결선 -->
+          <g id="synapse-group">
+            <line class="synapse-line" x1="250" y1="80" x2="140" y2="180" stroke="rgba(99,102,241,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="250" y1="80" x2="360" y2="180" stroke="rgba(99,102,241,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="140" y1="180" x2="100" y2="300" stroke="rgba(34,211,238,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="140" y1="180" x2="220" y2="300" stroke="rgba(34,211,238,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="360" y1="180" x2="300" y2="300" stroke="rgba(52,211,153,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="360" y1="180" x2="420" y2="300" stroke="rgba(52,211,153,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="140" y1="180" x2="360" y2="180" stroke="rgba(251,191,36,0.15)" stroke-width="1"/>
+            <line class="synapse-line" x1="220" y1="300" x2="300" y2="300" stroke="rgba(251,191,36,0.15)" stroke-width="1"/>
+          </g>
+          <!-- 신경 노드 -->
+          <g id="node-group">
+            <g class="neural-node floating" data-node="input" transform="translate(250,80)">
+              <circle r="22" fill="rgba(99,102,241,0.3)" stroke="#6366f1" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="10" font-weight="600">입력</text>
+            </g>
+            <g class="neural-node floating" data-node="reasoning" transform="translate(140,180)">
+              <circle r="20" fill="rgba(34,211,238,0.3)" stroke="#22d3ee" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="10" font-weight="600">추론</text>
+            </g>
+            <g class="neural-node floating" data-node="tools" transform="translate(360,180)">
+              <circle r="20" fill="rgba(251,191,36,0.3)" stroke="#fbbf24" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="10" font-weight="600">도구</text>
+            </g>
+            <g class="neural-node floating" data-node="memory" transform="translate(100,300)">
+              <circle r="18" fill="rgba(52,211,153,0.3)" stroke="#34d399" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="9" font-weight="600">메모리</text>
+            </g>
+            <g class="neural-node floating" data-node="context" transform="translate(220,300)">
+              <circle r="18" fill="rgba(167,139,250,0.3)" stroke="#a78bfa" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="9" font-weight="600">컨텍스트</text>
+            </g>
+            <g class="neural-node floating" data-node="output" transform="translate(300,300)">
+              <circle r="18" fill="rgba(251,113,133,0.3)" stroke="#fb7185" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="9" font-weight="600">출력</text>
+            </g>
+            <g class="neural-node floating" data-node="decision" transform="translate(420,300)">
+              <circle r="18" fill="rgba(99,102,241,0.3)" stroke="#6366f1" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="9" font-weight="600">결정</text>
+            </g>
+          </g>
+          <!-- 활성화 표시 오버레이 -->
+          <g id="activation-overlay"></g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- 존 2: 코텍스 시어터 -->
+    <section class="glass-panel zone-cortex" id="zone-cortex">
+      <div class="panel-header">
+        <span class="dot"></span>
+        코텍스 시어터 - 사고 캐스케이드
+      </div>
+      <div class="agent-status-bar">
+        <div class="agent-avatar idle" id="agent-avatar">
+          <span>&#x1F9E0;</span>
+        </div>
+        <div class="agent-status-text">
+          <span class="name">클로드 에이전트</span>
+          <span class="status" id="agent-status-label">대기 중</span>
+        </div>
+      </div>
+      <div class="panel-body" id="thought-feed">
+        <div class="thought-card cascade-phase-1">
+          <span class="phase-label">대기</span>
+          <div class="thought-text">시뮬레이션을 시작하려면 위의 "시뮬레이션 시작" 버튼을 누르거나 채팅에 메시지를 입력하세요.</div>
+          <div class="thought-meta">시스템 안내</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 존 3: 딥 스탯 -->
+    <section class="glass-panel zone-deepstats" id="zone-deepstats">
+      <div class="panel-header">
+        <span class="dot"></span>
+        딥 스탯 - 통계 대시보드
+      </div>
+      <div class="panel-body">
+        <!-- 토큰 사용량 -->
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-label">총 토큰</div>
+            <div class="stat-value" id="stat-total-tokens" style="color:var(--accent-indigo);">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">입력 토큰</div>
+            <div class="stat-value" id="stat-input-tokens" style="color:var(--accent-cyan);">0</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-label">출력 토큰</div>
+            <div class="stat-value" id="stat-output-tokens" style="color:var(--accent-emerald);">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">컨텍스트 점수</div>
+            <div class="stat-value" id="stat-context-score" style="color:var(--accent-amber);">0%</div>
+          </div>
+        </div>
+
+        <!-- 의사결정 트리 -->
+        <div class="sub-panel-title">의사결정 트리</div>
+        <div class="viz-container" id="decision-tree-container" style="min-height:100px;"></div>
+
+        <!-- 메모리 그래프 -->
+        <div class="sub-panel-title">메모리 그래프</div>
+        <div class="viz-container" id="memory-graph-container" style="min-height:100px;"></div>
+
+        <!-- 토큰 워터폴 -->
+        <div class="sub-panel-title">토큰 라이프사이클</div>
+        <div class="viz-container" style="min-height:100px;">
+          <canvas id="token-waterfall-canvas"></canvas>
+        </div>
+
+        <!-- 컨텍스트 히트맵 -->
+        <div class="sub-panel-title">컨텍스트 영향도</div>
+        <div class="viz-container" id="context-heatmap-container" style="min-height:80px;"></div>
+
+        <!-- 도구 로그 -->
+        <div class="sub-panel-title">도구 호출 로그</div>
+        <div id="tool-log-container">
+          <table class="tool-log-table">
+            <thead>
+              <tr>
+                <th>시간</th>
+                <th>도구</th>
+                <th>상태</th>
+                <th>소요(ms)</th>
+              </tr>
+            </thead>
+            <tbody id="tool-log-body">
+              <tr>
+                <td colspan="4" style="color:var(--text-secondary); text-align:center; padding:16px;">로그 없음</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 내보내기 -->
+        <div id="export-controls" style="display:flex; gap:8px; margin-top:12px;">
+          <button class="export-btn" data-format="csv">CSV 내보내기</button>
+          <button class="export-btn" data-format="json">JSON 내보내기</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 존 4: 채팅 -->
+    <section class="glass-panel zone-chat mobile-active" id="zone-chat">
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-msg agent">
+          <div class="msg-sender">클로드 에이전트</div>
+          <div>안녕하세요! Neural Map v10에 오신 것을 환영합니다. 질문이나 작업을 입력하면 시뮬레이션이 시작됩니다.</div>
+        </div>
+      </div>
+      <div class="chat-input-bar">
+        <input type="text" class="chat-input" id="chat-input" placeholder="메시지를 입력하세요..." autocomplete="off">
+        <button class="chat-send-btn" id="chat-send-btn">전송</button>
+      </div>
+    </section>
+
+  </div><!-- /main-grid -->
+</div><!-- /app -->
+
+<!-- ===== 시뮬레이션 엔진 ===== -->
+<script>
+(function() {
+  'use strict';
+
+  // ===== 시나리오 데이터 =====
+  var SCENARIOS = {
+    code_review: {
+      name: '코드 리뷰',
+      events: [
+        { delay: 0,    type: 'status_change', data: { status: 'thinking', label: '코드 분석 중...' }},
+        { delay: 600,  type: 'thought', data: { phase: 1, text: '제출된 코드를 수신했습니다. 구조를 파악하겠습니다.', node: 'input' }},
+        { delay: 1400, type: 'thought', data: { phase: 2, text: '함수 구조를 분석합니다. 복잡도가 높은 부분을 탐색 중...', node: 'reasoning' }},
+        { delay: 2000, type: 'token_update', data: { input: 1250, output: 180, context: 42 }},
+        { delay: 2400, type: 'tool_call', data: { tool: 'grep', status: '완료', duration: 45, desc: '패턴 검색: 미사용 변수' }},
+        { delay: 3200, type: 'memory_access', data: { action: '읽기', key: '코드 스타일 가이드', node: 'memory' }},
+        { delay: 3800, type: 'thought', data: { phase: 3, text: '버그 발견: 라인 42에서 null 체크가 누락되었습니다. NullPointerException 위험이 있습니다.', node: 'reasoning' }},
+        { delay: 4500, type: 'decision', data: { decision: '버그 리포트 생성', confidence: 0.92, alternatives: ['무시', '경고만 표시'], node: 'decision' }},
+        { delay: 5200, type: 'tool_call', data: { tool: 'read_file', status: '완료', duration: 32, desc: '관련 테스트 파일 확인' }},
+        { delay: 5800, type: 'thought', data: { phase: 4, text: '테스트 커버리지가 부족합니다. 엣지 케이스 테스트를 제안하겠습니다.', node: 'context' }},
+        { delay: 6500, type: 'token_update', data: { input: 1250, output: 620, context: 67 }},
+        { delay: 7000, type: 'thought', data: { phase: 5, text: '수정 제안을 작성합니다: Optional 패턴 적용, 테스트 3건 추가.', node: 'output' }},
+        { delay: 7800, type: 'status_change', data: { status: 'speaking', label: '결과 보고 중...' }},
+        { delay: 8200, type: 'thought', data: { phase: 6, text: '리뷰 완료. 버그 1건, 개선 사항 3건, 테스트 제안 2건을 보고합니다.', node: 'output' }},
+        { delay: 9000, type: 'token_update', data: { input: 1250, output: 890, context: 78 }},
+        { delay: 9500, type: 'status_change', data: { status: 'idle', label: '대기 중' }},
+      ]
+    },
+    data_analysis: {
+      name: '데이터 분석',
+      events: [
+        { delay: 0,    type: 'status_change', data: { status: 'thinking', label: '데이터셋 수신 중...' }},
+        { delay: 500,  type: 'thought', data: { phase: 1, text: 'CSV 데이터셋을 수신했습니다. 10,000행 x 15열 구조입니다.', node: 'input' }},
+        { delay: 1200, type: 'tool_call', data: { tool: 'python', status: '실행 중', duration: 230, desc: 'pandas로 데이터 로드' }},
+        { delay: 1800, type: 'thought', data: { phase: 2, text: '결측치 분석: 3개 열에서 총 847개의 결측값을 발견했습니다.', node: 'reasoning' }},
+        { delay: 2500, type: 'token_update', data: { input: 2100, output: 320, context: 38 }},
+        { delay: 3000, type: 'tool_call', data: { tool: 'python', status: '완료', duration: 450, desc: '통계 요약 및 상관관계 계산' }},
+        { delay: 3700, type: 'memory_access', data: { action: '쓰기', key: '분석 중간 결과', node: 'memory' }},
+        { delay: 4200, type: 'thought', data: { phase: 3, text: '강한 양의 상관관계 발견: 매출과 마케팅 비용 (r=0.87). 계절성 패턴도 감지됩니다.', node: 'reasoning' }},
+        { delay: 5000, type: 'decision', data: { decision: '회귀 분석 수행', confidence: 0.88, alternatives: ['클러스터링', '시계열 분석'], node: 'decision' }},
+        { delay: 5800, type: 'tool_call', data: { tool: 'python', status: '완료', duration: 680, desc: '선형 회귀 모델 학습' }},
+        { delay: 6500, type: 'thought', data: { phase: 4, text: 'R² = 0.76. 모델이 분산의 76%를 설명합니다. 잔차 분석을 진행합니다.', node: 'context' }},
+        { delay: 7200, type: 'token_update', data: { input: 2100, output: 780, context: 72 }},
+        { delay: 7800, type: 'thought', data: { phase: 5, text: '시각화 차트 3개를 생성합니다: 산점도, 히스토그램, 시계열 그래프.', node: 'output' }},
+        { delay: 8500, type: 'status_change', data: { status: 'speaking', label: '인사이트 보고 중...' }},
+        { delay: 9000, type: 'thought', data: { phase: 6, text: '분석 완료. 핵심 인사이트 5개와 실행 가능한 제안 3개를 도출했습니다.', node: 'output' }},
+        { delay: 9800, type: 'token_update', data: { input: 2100, output: 1150, context: 85 }},
+        { delay: 10200, type: 'status_change', data: { status: 'idle', label: '대기 중' }},
+      ]
+    },
+    creative_writing: {
+      name: '창의적 글쓰기',
+      events: [
+        { delay: 0,    type: 'status_change', data: { status: 'thinking', label: '창작 구상 중...' }},
+        { delay: 700,  type: 'thought', data: { phase: 1, text: '주제를 수신했습니다. 장르와 톤을 결정하겠습니다.', node: 'input' }},
+        { delay: 1500, type: 'memory_access', data: { action: '읽기', key: '문학 스타일 레퍼런스', node: 'memory' }},
+        { delay: 2000, type: 'thought', data: { phase: 2, text: '브레인스토밍: 3가지 플롯 방향을 탐색합니다. 감정적 몰입도가 높은 구조를 우선합니다.', node: 'reasoning' }},
+        { delay: 2800, type: 'token_update', data: { input: 850, output: 210, context: 35 }},
+        { delay: 3300, type: 'decision', data: { decision: '비선형 서사 구조 선택', confidence: 0.79, alternatives: ['3막 구조', '편지체'], node: 'decision' }},
+        { delay: 4000, type: 'thought', data: { phase: 3, text: '캐릭터 설정: 주인공의 내면 갈등을 중심으로 서사를 구축합니다.', node: 'reasoning' }},
+        { delay: 4800, type: 'status_change', data: { status: 'speaking', label: '초안 작성 중...' }},
+        { delay: 5200, type: 'thought', data: { phase: 4, text: '첫 문단 초안 완성. 감각적 묘사를 강화하고 리듬감을 조절합니다.', node: 'context' }},
+        { delay: 6000, type: 'token_update', data: { input: 850, output: 560, context: 58 }},
+        { delay: 6800, type: 'thought', data: { phase: 5, text: '수정 단계: 불필요한 부사를 제거하고, 대화의 자연스러움을 개선합니다.', node: 'output' }},
+        { delay: 7500, type: 'memory_access', data: { action: '쓰기', key: '작성된 초안', node: 'memory' }},
+        { delay: 8000, type: 'thought', data: { phase: 6, text: '글쓰기 완료. 총 3개 문단, 감정 곡선이 자연스럽게 상승합니다.', node: 'output' }},
+        { delay: 8600, type: 'token_update', data: { input: 850, output: 920, context: 71 }},
+        { delay: 9000, type: 'status_change', data: { status: 'idle', label: '대기 중' }},
+      ]
+    },
+    debugging: {
+      name: '디버깅',
+      events: [
+        { delay: 0,    type: 'status_change', data: { status: 'thinking', label: '오류 분석 중...' }},
+        { delay: 500,  type: 'thought', data: { phase: 1, text: '오류 보고서를 수신했습니다. TypeError: Cannot read property "length" of undefined', node: 'input' }},
+        { delay: 1200, type: 'tool_call', data: { tool: 'read_file', status: '완료', duration: 28, desc: '오류 발생 파일 읽기' }},
+        { delay: 1800, type: 'thought', data: { phase: 2, text: '스택 트레이스 분석: 오류는 utils.js:156에서 발생. 호출 체인을 추적합니다.', node: 'reasoning' }},
+        { delay: 2400, type: 'token_update', data: { input: 1800, output: 240, context: 45 }},
+        { delay: 2900, type: 'tool_call', data: { tool: 'grep', status: '완료', duration: 52, desc: '함수 호출 추적: processData()' }},
+        { delay: 3500, type: 'memory_access', data: { action: '읽기', key: '이전 버그 패턴', node: 'memory' }},
+        { delay: 4000, type: 'thought', data: { phase: 3, text: '가설 1: API 응답이 빈 배열 대신 undefined를 반환하는 경우가 있습니다.', node: 'reasoning' }},
+        { delay: 4700, type: 'decision', data: { decision: '가설 1 검증', confidence: 0.85, alternatives: ['가설 2: 초기화 순서 문제', '가설 3: 캐시 불일치'], node: 'decision' }},
+        { delay: 5300, type: 'status_change', data: { status: 'tool_calling', label: '도구 사용 중...' }},
+        { delay: 5600, type: 'tool_call', data: { tool: 'bash', status: '완료', duration: 120, desc: 'API 응답 시뮬레이션 테스트' }},
+        { delay: 6200, type: 'thought', data: { phase: 4, text: '가설 확인! API 타임아웃 시 undefined를 반환합니다. 방어 코드가 필요합니다.', node: 'context' }},
+        { delay: 6800, type: 'token_update', data: { input: 1800, output: 650, context: 73 }},
+        { delay: 7300, type: 'thought', data: { phase: 5, text: '수정 패치 작성: 옵셔널 체이닝(?.length) 적용 및 fallback 빈 배열 처리.', node: 'output' }},
+        { delay: 7900, type: 'tool_call', data: { tool: 'bash', status: '완료', duration: 340, desc: '수정 후 테스트 실행 (12/12 통과)' }},
+        { delay: 8500, type: 'thought', data: { phase: 6, text: '디버깅 완료. 원인: API 타임아웃. 수정: 방어 코드 추가. 모든 테스트 통과.', node: 'output' }},
+        { delay: 9000, type: 'token_update', data: { input: 1800, output: 980, context: 82 }},
+        { delay: 9200, type: 'status_change', data: { status: 'speaking', label: '결과 보고 중...' }},
+        { delay: 9800, type: 'status_change', data: { status: 'idle', label: '대기 중' }},
+      ]
+    }
+  };
+
+  // ===== 시뮬레이션 엔진 =====
+  var SimulationEngine = {
+    _listeners: [],
+    _timers: [],
+    _running: false,
+    _currentScenario: null,
+
+    // 토큰 통계
+    _stats: { inputTokens: 0, outputTokens: 0, totalTokens: 0, contextScore: 0 },
+
+    start: function(scenarioId) {
+      var self = this;
+      this.stop();
+
+      var scenario = SCENARIOS[scenarioId];
+      if (!scenario) { console.warn('알 수 없는 시나리오:', scenarioId); return; }
+
+      this._running = true;
+      this._currentScenario = scenarioId;
+      this._stats = { inputTokens: 0, outputTokens: 0, totalTokens: 0, contextScore: 0 };
+
+      scenario.events.forEach(function(evt) {
+        var timer = setTimeout(function() {
+          if (!self._running) return;
+          self._emit(evt.type, evt.data);
+        }, evt.delay);
+        self._timers.push(timer);
+      });
+    },
+
+    stop: function() {
+      this._running = false;
+      this._currentScenario = null;
+      this._timers.forEach(function(t) { clearTimeout(t); });
+      this._timers = [];
+    },
+
+    onEvent: function(callback) {
+      this._listeners.push(callback);
+    },
+
+    _emit: function(type, data) {
+      var event = { type: type, data: data, timestamp: Date.now() };
+      this._listeners.forEach(function(cb) {
+        try { cb(event); } catch(e) { console.error('이벤트 핸들러 오류:', e); }
+      });
+    }
+  };
+
+  // 전역 노출
+  window.SimulationEngine = SimulationEngine;
+
+  // ===== UI 컨트롤러 =====
+  var UI = {
+    init: function() {
+      this.bindTabs();
+      this.bindStart();
+      this.bindChat();
+      this.bindEvents();
+      this.bindExport();
+    },
+
+    // 탭 전환
+    bindTabs: function() {
+      var tabs = document.querySelectorAll('.tab-btn');
+      var zones = {
+        brainmap: document.getElementById('zone-brainmap'),
+        cortex: document.getElementById('zone-cortex'),
+        deepstats: document.getElementById('zone-deepstats'),
+        chat: document.getElementById('zone-chat')
+      };
+      var isMobile = function() { return window.innerWidth <= 768; };
+
+      tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+          tabs.forEach(function(t) { t.classList.remove('active'); });
+          tab.classList.add('active');
+
+          if (isMobile()) {
+            Object.values(zones).forEach(function(z) { z.classList.remove('mobile-active'); });
+            var target = zones[tab.getAttribute('data-zone')];
+            if (target) target.classList.add('mobile-active');
+          }
+        });
+      });
+    },
+
+    // 시뮬레이션 시작 버튼
+    bindStart: function() {
+      var btn = document.getElementById('btn-start');
+      var select = document.getElementById('scenario-select');
+
+      btn.addEventListener('click', function() {
+        var scenarioId = select.value;
+        if (SimulationEngine._running) {
+          SimulationEngine.stop();
+          btn.textContent = '시뮬레이션 시작';
+          return;
+        }
+        btn.textContent = '중지';
+        UI.clearThoughtFeed();
+        SimulationEngine.start(scenarioId);
+      });
+    },
+
+    // 채팅
+    bindChat: function() {
+      var input = document.getElementById('chat-input');
+      var btn = document.getElementById('chat-send-btn');
+      var messages = document.getElementById('chat-messages');
+      var scenarioKeys = Object.keys(SCENARIOS);
+
+      function send() {
+        var text = input.value.trim();
+        if (!text) return;
+
+        // 사용자 메시지 추가
+        var msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg user';
+        msgDiv.innerHTML = '<div class="msg-sender">사용자</div><div>' + escapeHtml(text) + '</div>';
+        messages.appendChild(msgDiv);
+        input.value = '';
+        messages.scrollTop = messages.scrollHeight;
+
+        // 랜덤 시나리오 시작
+        var randomId = scenarioKeys[Math.floor(Math.random() * scenarioKeys.length)];
+        var scenario = SCENARIOS[randomId];
+
+        var agentMsg = document.createElement('div');
+        agentMsg.className = 'chat-msg agent';
+        agentMsg.innerHTML = '<div class="msg-sender">클로드 에이전트</div><div>"' + scenario.name + '" 시나리오를 시작합니다...</div>';
+        messages.appendChild(agentMsg);
+        messages.scrollTop = messages.scrollHeight;
+
+        document.getElementById('scenario-select').value = randomId;
+        document.getElementById('btn-start').textContent = '중지';
+        UI.clearThoughtFeed();
+        SimulationEngine.start(randomId);
+      }
+
+      btn.addEventListener('click', send);
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') send();
+      });
+    },
+
+    // 이벤트 핸들러 등록
+    bindEvents: function() {
+      var self = this;
+      var toolLogCount = 0;
+
+      SimulationEngine.onEvent(function(event) {
+        switch (event.type) {
+          case 'thought':
+            self.addThoughtCard(event.data);
+            self.activateNode(event.data.node);
+            break;
+
+          case 'status_change':
+            self.updateAgentStatus(event.data.status, event.data.label);
+            if (event.data.status === 'idle') {
+              document.getElementById('btn-start').textContent = '시뮬레이션 시작';
+            }
+            break;
+
+          case 'tool_call':
+            self.addToolLog(event.data);
+            self.activateNode('tools');
+            break;
+
+          case 'memory_access':
+            self.activateNode(event.data.node || 'memory');
+            self.addThoughtCard({
+              phase: 2,
+              text: '[메모리 ' + event.data.action + '] ' + event.data.key,
+              node: event.data.node
+            });
+            break;
+
+          case 'token_update':
+            self.updateTokenStats(event.data);
+            break;
+
+          case 'decision':
+            self.addDecisionCard(event.data);
+            self.activateNode(event.data.node || 'decision');
+            break;
+        }
+      });
+    },
+
+    // 사고 피드 초기화
+    clearThoughtFeed: function() {
+      document.getElementById('thought-feed').innerHTML = '';
+    },
+
+    // 사고 카드 추가
+    addThoughtCard: function(data) {
+      var feed = document.getElementById('thought-feed');
+      var phaseLabels = {
+        1: '입력 분석', 2: '추론', 3: '심층 분석',
+        4: '컨텍스트', 5: '출력 생성', 6: '완료'
+      };
+
+      var card = document.createElement('div');
+      card.className = 'thought-card cascade-phase-' + data.phase;
+      card.innerHTML =
+        '<span class="phase-label">' + (phaseLabels[data.phase] || '처리') + '</span>' +
+        '<div class="thought-text">' + escapeHtml(data.text) + '</div>' +
+        '<div class="thought-meta">' + new Date().toLocaleTimeString('ko-KR') + '</div>';
+
+      feed.appendChild(card);
+      feed.scrollTop = feed.scrollHeight;
+    },
+
+    // 의사결정 카드
+    addDecisionCard: function(data) {
+      var feed = document.getElementById('thought-feed');
+      var card = document.createElement('div');
+      card.className = 'thought-card cascade-phase-4';
+
+      var altHtml = data.alternatives.map(function(a) {
+        return '<span style="background:rgba(148,163,184,0.1);padding:2px 6px;border-radius:4px;font-size:11px;">' + escapeHtml(a) + '</span>';
+      }).join(' ');
+
+      card.innerHTML =
+        '<span class="phase-label">결정</span>' +
+        '<div class="thought-text" style="font-weight:600;">' + escapeHtml(data.decision) + '</div>' +
+        '<div style="margin-top:6px;font-size:12px;color:var(--text-secondary);">' +
+          '신뢰도: <span style="color:var(--accent-emerald);">' + Math.round(data.confidence * 100) + '%</span>' +
+          ' &middot; 대안: ' + altHtml +
+        '</div>' +
+        '<div class="thought-meta">' + new Date().toLocaleTimeString('ko-KR') + '</div>';
+
+      feed.appendChild(card);
+      feed.scrollTop = feed.scrollHeight;
+    },
+
+    // 에이전트 상태 업데이트
+    updateAgentStatus: function(status, label) {
+      var avatar = document.getElementById('agent-avatar');
+      var labelEl = document.getElementById('agent-status-label');
+
+      avatar.className = 'agent-avatar ' + status;
+      labelEl.textContent = label;
+    },
+
+    // 토큰 통계 업데이트
+    updateTokenStats: function(data) {
+      document.getElementById('stat-input-tokens').textContent = data.input.toLocaleString('ko-KR');
+      document.getElementById('stat-output-tokens').textContent = data.output.toLocaleString('ko-KR');
+      document.getElementById('stat-total-tokens').textContent = (data.input + data.output).toLocaleString('ko-KR');
+      document.getElementById('stat-context-score').textContent = data.context + '%';
+    },
+
+    // 도구 로그 추가
+    addToolLog: function(data) {
+      var tbody = document.getElementById('tool-log-body');
+      // 첫 번째 로그일 때 "로그 없음" 제거
+      if (tbody.querySelector('td[colspan]')) {
+        tbody.innerHTML = '';
+      }
+
+      var row = document.createElement('tr');
+      var statusColor = data.status === '완료' ? 'var(--accent-emerald)' : 'var(--accent-amber)';
+      row.innerHTML =
+        '<td>' + new Date().toLocaleTimeString('ko-KR') + '</td>' +
+        '<td><span style="color:var(--accent-cyan);">' + escapeHtml(data.tool) + '</span> ' +
+            '<span style="font-size:10px;color:var(--text-secondary);">' + escapeHtml(data.desc) + '</span></td>' +
+        '<td style="color:' + statusColor + ';">' + escapeHtml(data.status) + '</td>' +
+        '<td>' + data.duration + '</td>';
+      tbody.appendChild(row);
+    },
+
+    // 브레인맵 노드 활성화
+    activateNode: function(nodeName) {
+      var node = document.querySelector('.neural-node[data-node="' + nodeName + '"]');
+      if (!node) return;
+
+      var circle = node.querySelector('circle');
+      var origStroke = circle.getAttribute('stroke');
+      var origWidth = circle.getAttribute('stroke-width');
+
+      circle.setAttribute('stroke-width', '4');
+      node.classList.add('glow');
+
+      // 연결선 활성화
+      var svg = document.getElementById('brainmap-svg');
+      var nodePos = node.getAttribute('transform');
+      var match = nodePos && nodePos.match(/translate\((\d+),(\d+)\)/);
+
+      if (match) {
+        var nx = match[1], ny = match[2];
+        var lines = svg.querySelectorAll('.synapse-line');
+        lines.forEach(function(line) {
+          if (line.getAttribute('x1') === nx && line.getAttribute('y1') === ny ||
+              line.getAttribute('x2') === nx && line.getAttribute('y2') === ny) {
+            line.setAttribute('stroke-width', '3');
+            line.classList.add('pulse');
+            setTimeout(function() {
+              line.setAttribute('stroke-width', '1.5');
+              line.classList.remove('pulse');
+            }, 1200);
+          }
+        });
+      }
+
+      setTimeout(function() {
+        circle.setAttribute('stroke-width', origWidth || '2');
+        node.classList.remove('glow');
+      }, 1500);
+    },
+
+    // 내보내기 버튼
+    bindExport: function() {
+      var controls = document.getElementById('export-controls');
+      controls.addEventListener('click', function(e) {
+        var btn = e.target.closest('.export-btn');
+        if (!btn) return;
+
+        var format = btn.getAttribute('data-format');
+        var rows = document.querySelectorAll('#tool-log-body tr');
+        var data = [];
+
+        rows.forEach(function(row) {
+          var cells = row.querySelectorAll('td');
+          if (cells.length >= 4 && !cells[0].hasAttribute('colspan')) {
+            data.push({
+              time: cells[0].textContent,
+              tool: cells[1].textContent.trim(),
+              status: cells[2].textContent,
+              duration: cells[3].textContent
+            });
+          }
+        });
+
+        var output, mime, ext;
+        if (format === 'json') {
+          output = JSON.stringify(data, null, 2);
+          mime = 'application/json';
+          ext = 'json';
+        } else {
+          var csvLines = ['시간,도구,상태,소요(ms)'];
+          data.forEach(function(d) {
+            csvLines.push([d.time, '"' + d.tool.replace(/"/g, '""') + '"', d.status, d.duration].join(','));
+          });
+          output = csvLines.join('\n');
+          mime = 'text/csv';
+          ext = 'csv';
+        }
+
+        var blob = new Blob([output], { type: mime + ';charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'neural-map-log.' + ext;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+  };
+
+  // ===== 유틸리티 =====
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ===== 초기화 =====
+  document.addEventListener('DOMContentLoaded', function() {
+    UI.init();
+  });
+
+})();
+</script>
+
+<!-- 외부 데이터 시각화 스크립트 -->
+<script src="data-viz.js"></script>
+
+</body>
+</html>

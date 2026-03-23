@@ -1,0 +1,1570 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>맞고 고스톱 v3</title>
+<style>
+/* === THEME & BASE === */
+:root {
+  --bg-color: #1a5c2a;
+  --bg-gradient: linear-gradient(135deg, #1a5c2a 0%, #0d3d1a 100%);
+  --text-color: #fff;
+  --card-bg: #fff;
+  --card-border: #ccc;
+  --card-shadow: rgba(0,0,0,0.3);
+  --panel-bg: rgba(0,0,0,0.25);
+  --panel-border: rgba(255,255,255,0.15);
+  --btn-bg: #e74c3c;
+  --btn-hover: #c0392b;
+  --btn-secondary: #3498db;
+  --btn-secondary-hover: #2980b9;
+  --captured-bg: rgba(0,0,0,0.2);
+  --floor-bg: rgba(0,0,0,0.15);
+  --notify-bg: rgba(0,0,0,0.85);
+  --accent: #f1c40f;
+  --danger: #e74c3c;
+  --success: #2ecc71;
+  --warning: #f39c12;
+  --info: #3498db;
+}
+
+[data-theme="dark"] {
+  --bg-color: #0f0f23;
+  --bg-gradient: linear-gradient(135deg, #0f0f23 0%, #1a1a3e 100%);
+  --text-color: #e0e0e0;
+  --card-bg: #2a2a4a;
+  --card-border: #444;
+  --card-shadow: rgba(0,0,0,0.5);
+  --panel-bg: rgba(0,0,0,0.4);
+  --panel-border: rgba(255,255,255,0.1);
+  --captured-bg: rgba(255,255,255,0.05);
+  --floor-bg: rgba(255,255,255,0.05);
+  --notify-bg: rgba(20,20,50,0.92);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg-gradient);
+  color: var(--text-color);
+  min-height: 100vh;
+  overflow-x: hidden;
+  user-select: none;
+}
+
+/* === LAYOUT === */
+#game-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 8px;
+  position: relative;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--panel-bg);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  border: 1px solid var(--panel-border);
+}
+
+.header h1 {
+  font-size: 1.2em;
+  background: linear-gradient(90deg, #f1c40f, #e74c3c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-buttons { display: flex; gap: 8px; }
+
+.btn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85em;
+  font-weight: 600;
+  transition: all 0.2s;
+  color: #fff;
+}
+
+.btn-primary { background: var(--btn-bg); }
+.btn-primary:hover { background: var(--btn-hover); transform: scale(1.05); }
+.btn-secondary { background: var(--btn-secondary); }
+.btn-secondary:hover { background: var(--btn-secondary-hover); transform: scale(1.05); }
+.btn-small { padding: 4px 10px; font-size: 0.75em; }
+.btn-success { background: var(--success); }
+.btn-warning { background: var(--warning); color: #333; }
+
+/* === PLAYER AREAS === */
+.player-area {
+  background: var(--panel-bg);
+  border-radius: 10px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+  border: 1px solid var(--panel-border);
+  transition: border-color 0.3s;
+}
+
+.player-area.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 15px rgba(241,196,15,0.3);
+}
+
+.player-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.player-name {
+  font-weight: 700;
+  font-size: 0.95em;
+}
+
+.player-stats {
+  display: flex;
+  gap: 10px;
+  font-size: 0.8em;
+}
+
+.stat {
+  background: var(--captured-bg);
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.stat-label { opacity: 0.7; margin-right: 3px; }
+.stat-value { font-weight: 700; }
+
+/* === CARDS === */
+.cards-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 60px;
+  align-items: flex-start;
+}
+
+.card {
+  width: 48px;
+  height: 72px;
+  border-radius: 5px;
+  border: 2px solid var(--card-border);
+  background: var(--card-bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  font-size: 0.65em;
+  color: #333;
+  box-shadow: 1px 2px 4px var(--card-shadow);
+  flex-shrink: 0;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 2px 6px 12px var(--card-shadow);
+}
+
+.card.selected {
+  transform: translateY(-8px);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(241,196,15,0.5);
+}
+
+.card.face-down {
+  background: linear-gradient(135deg, #c0392b 0%, #8e2323 100%);
+  border-color: #7f1d1d;
+  cursor: default;
+}
+
+.card.face-down::after {
+  content: '🎴';
+  font-size: 1.8em;
+}
+
+.card.disabled { opacity: 0.5; pointer-events: none; }
+
+.card-month {
+  font-size: 1.1em;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.card-type {
+  font-size: 0.85em;
+  margin-top: 2px;
+}
+
+.card-icon {
+  font-size: 1.4em;
+  margin-bottom: 1px;
+}
+
+/* Card type colors */
+.card.gwang { border-color: #e74c3c; background: linear-gradient(135deg, #fff5f5, #ffe0e0); }
+.card.tti { border-color: #3498db; background: linear-gradient(135deg, #f0f7ff, #dbeeff); }
+.card.dan { border-color: #e67e22; background: linear-gradient(135deg, #fff8f0, #ffe8cc); }
+.card.pi { border-color: #95a5a6; background: linear-gradient(135deg, #f8f9fa, #ecf0f1); }
+.card.ssang-pi { border-color: #7f8c8d; background: linear-gradient(135deg, #f0f0f0, #ddd); }
+
+/* Small cards for captured area */
+.card.small {
+  width: 32px;
+  height: 48px;
+  font-size: 0.5em;
+  cursor: default;
+}
+
+.card.small:hover { transform: none; box-shadow: 1px 2px 4px var(--card-shadow); }
+
+/* === FLOOR === */
+.floor-area {
+  background: var(--floor-bg);
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 6px;
+  border: 2px dashed var(--panel-border);
+  min-height: 90px;
+}
+
+.floor-label {
+  font-size: 0.75em;
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+
+.floor-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* Floor card stacks by month */
+.floor-stack {
+  position: relative;
+  margin-right: 2px;
+}
+
+/* === CAPTURED AREA === */
+.captured-area {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: var(--captured-bg);
+  border-radius: 6px;
+}
+
+.captured-section {
+  margin-bottom: 4px;
+}
+
+.captured-label {
+  font-size: 0.65em;
+  opacity: 0.6;
+  margin-bottom: 2px;
+}
+
+.captured-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+/* === DECK & INFO === */
+.game-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 10px;
+  background: var(--panel-bg);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 0.8em;
+}
+
+/* === NOTIFICATION === */
+.notification-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.notification-overlay.show {
+  opacity: 1;
+}
+
+.notification-box {
+  background: var(--notify-bg);
+  border-radius: 16px;
+  padding: 24px 48px;
+  text-align: center;
+  transform: scale(0.5);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border: 2px solid;
+}
+
+.notification-overlay.show .notification-box {
+  transform: scale(1);
+}
+
+.notification-box.danger { border-color: var(--danger); }
+.notification-box.warning { border-color: var(--warning); }
+.notification-box.success { border-color: var(--success); }
+.notification-box.info { border-color: var(--info); }
+
+.notification-text {
+  font-size: 2em;
+  font-weight: 900;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.notification-sub {
+  font-size: 0.9em;
+  opacity: 0.8;
+  margin-top: 6px;
+}
+
+/* === GO/STOP MODAL === */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+}
+
+.modal {
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 30px 40px;
+  text-align: center;
+  border: 2px solid var(--accent);
+}
+
+.modal h2 { font-size: 1.5em; margin-bottom: 12px; }
+.modal p { margin-bottom: 16px; opacity: 0.9; }
+.modal .btn { margin: 0 8px; padding: 10px 24px; font-size: 1em; }
+
+/* === MATCH SELECT MODAL === */
+.match-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 8px;
+}
+
+.match-option {
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 2px solid var(--accent);
+  background: var(--panel-bg);
+  color: var(--text-color);
+  transition: all 0.2s;
+}
+
+.match-option:hover {
+  background: var(--accent);
+  color: #333;
+}
+
+/* === ANIMATIONS === */
+@keyframes bomb-explode {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.4) rotate(90deg); }
+  50% { transform: scale(1.6) rotate(180deg); background: #e74c3c; }
+  75% { transform: scale(1.3) rotate(270deg); }
+  100% { transform: scale(1) rotate(360deg); }
+}
+
+@keyframes ppuk-flip {
+  0% { transform: translateY(0) rotateY(0); }
+  50% { transform: translateY(-30px) rotateY(180deg); }
+  100% { transform: translateY(0) rotateY(360deg); }
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-8px); }
+  20%, 40%, 60%, 80% { transform: translateX(8px); }
+}
+
+@keyframes chongtong-glow {
+  0% { box-shadow: 0 0 5px #f1c40f; }
+  50% { box-shadow: 0 0 30px #f1c40f, 0 0 60px #e74c3c; }
+  100% { box-shadow: 0 0 5px #f1c40f; }
+}
+
+@keyframes card-capture {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+  100% { transform: scale(0.8); opacity: 0; }
+}
+
+@keyframes slide-in {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes go-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.bomb-anim { animation: bomb-explode 0.8s ease-in-out; }
+.ppuk-anim { animation: ppuk-flip 0.6s ease-in-out; }
+.shake-anim { animation: shake 0.5s ease-in-out; }
+.chongtong-anim { animation: chongtong-glow 1s ease-in-out infinite; }
+.slide-in { animation: slide-in 0.3s ease-out; }
+.go-pulse { animation: go-pulse 0.6s ease-in-out 3; }
+
+/* === SCORE PANEL === */
+.score-panel {
+  background: var(--panel-bg);
+  border-radius: 10px;
+  padding: 12px;
+  margin-top: 8px;
+  border: 1px solid var(--panel-border);
+}
+
+.score-breakdown {
+  font-size: 0.8em;
+  line-height: 1.6;
+}
+
+.score-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+}
+
+.score-total {
+  font-size: 1.2em;
+  font-weight: 700;
+  border-top: 1px solid var(--panel-border);
+  padding-top: 6px;
+  margin-top: 6px;
+}
+
+.multiplier-badge {
+  display: inline-block;
+  background: var(--warning);
+  color: #333;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.85em;
+  animation: go-pulse 0.6s ease-in-out 3;
+}
+
+/* === PPUK MARKERS === */
+.ppuk-marker {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--danger);
+  color: #fff;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  font-size: 0.55em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+/* === HEUNDEULGI INDICATOR === */
+.heundeulgi-indicator {
+  display: inline-block;
+  background: var(--info);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.7em;
+  margin-left: 6px;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 600px) {
+  .card { width: 40px; height: 60px; }
+  .card.small { width: 26px; height: 40px; }
+  .notification-text { font-size: 1.5em; }
+  .modal { padding: 20px; }
+}
+
+/* === GAME OVER SCREEN === */
+.game-over {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+}
+
+.game-over-content {
+  background: var(--panel-bg);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 30px 40px;
+  text-align: center;
+  border: 3px solid var(--accent);
+  max-width: 400px;
+  width: 90%;
+}
+
+.game-over h2 {
+  font-size: 2em;
+  margin-bottom: 8px;
+  background: linear-gradient(90deg, #f1c40f, #e74c3c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* === HIDDEN === */
+.hidden { display: none !important; }
+
+/* === ACTION BUTTONS ROW === */
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+</style>
+</head>
+<body>
+<div id="game-container">
+  <div class="header">
+    <h1>🎴 맞고 고스톱 v3</h1>
+    <div class="header-buttons">
+      <button class="btn btn-secondary btn-small" onclick="game.toggleTheme()">🌙 테마</button>
+      <button class="btn btn-primary btn-small" onclick="game.newGame()">새 게임</button>
+    </div>
+  </div>
+
+  <!-- Opponent (CPU) -->
+  <div id="cpu-area" class="player-area">
+    <div class="player-header">
+      <span class="player-name">🤖 상대방 (CPU)</span>
+      <div class="player-stats">
+        <span class="stat"><span class="stat-label">점수</span><span class="stat-value" id="cpu-score">0</span></span>
+        <span class="stat"><span class="stat-label">고</span><span class="stat-value" id="cpu-go">0</span></span>
+      </div>
+    </div>
+    <div class="cards-row" id="cpu-hand"></div>
+    <div class="captured-area" id="cpu-captured">
+      <div class="captured-section">
+        <div class="captured-label">광</div>
+        <div class="captured-cards" id="cpu-gwang"></div>
+      </div>
+      <div class="captured-section">
+        <div class="captured-label">띠</div>
+        <div class="captured-cards" id="cpu-tti"></div>
+      </div>
+      <div class="captured-section">
+        <div class="captured-label">동물</div>
+        <div class="captured-cards" id="cpu-dan"></div>
+      </div>
+      <div class="captured-section">
+        <div class="captured-label">피</div>
+        <div class="captured-cards" id="cpu-pi"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game Info -->
+  <div class="game-info">
+    <span>🃏 덱: <span id="deck-count">0</span>장</span>
+    <span id="turn-info">게임 시작!</span>
+    <span>턴: <span id="turn-count">0</span></span>
+  </div>
+
+  <!-- Floor -->
+  <div class="floor-area">
+    <div class="floor-label">바닥</div>
+    <div class="floor-cards" id="floor-cards"></div>
+  </div>
+
+  <!-- Player -->
+  <div id="player-area" class="player-area">
+    <div class="player-header">
+      <span class="player-name">👤 나 <span id="player-heundeulgi-badge"></span></span>
+      <div class="player-stats">
+        <span class="stat"><span class="stat-label">점수</span><span class="stat-value" id="player-score">0</span></span>
+        <span class="stat"><span class="stat-label">고</span><span class="stat-value" id="player-go">0</span></span>
+      </div>
+    </div>
+    <div class="cards-row" id="player-hand"></div>
+    <div class="action-buttons" id="action-buttons"></div>
+    <div class="captured-area" id="player-captured">
+      <div class="captured-section">
+        <div class="captured-label">광</div>
+        <div class="captured-cards" id="player-gwang"></div>
+      </div>
+      <div class="captured-section">
+        <div class="captured-label">띠</div>
+        <div class="captured-cards" id="player-tti"></div>
+      </div>
+      <div class="captured-section">
+        <div class="captured-label">동물</div>
+        <div class="captured-cards" id="player-dan"></div>
+      </div>
+      <div class="captured-section">
+        <div class="captured-label">피</div>
+        <div class="captured-cards" id="player-pi"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Notification -->
+<div class="notification-overlay" id="notification">
+  <div class="notification-box" id="notification-box">
+    <div class="notification-text" id="notification-text"></div>
+    <div class="notification-sub" id="notification-sub"></div>
+  </div>
+</div>
+
+<!-- Modal container -->
+<div id="modal-container"></div>
+
+<script>
+// ============================================================
+// 고스톱 v3 - Complete Implementation
+// ============================================================
+
+// === CARD DATA ===
+const MONTH_NAMES = ['','1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const MONTH_FLOWERS = ['','🌸','🐦','🌺','🦅','🌿','🦋','🍂','🌕','🏵️','🍁','🌧️','🌳'];
+
+// Card types: gwang, dan, tti, pi, ssang-pi
+// Each month has 4 cards
+const ALL_CARDS = [];
+
+const CARD_DATA = {
+  1:  [{type:'gwang',icon:'🌞',name:'송학'},{type:'tti',icon:'🎀',name:'홍단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  2:  [{type:'dan',icon:'🐦',name:'매조'},{type:'tti',icon:'🎀',name:'홍단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  3:  [{type:'gwang',icon:'🌞',name:'벚꽃'},{type:'tti',icon:'🎀',name:'홍단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  4:  [{type:'dan',icon:'🐦',name:'흑싸리'},{type:'tti',icon:'🟦',name:'초단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  5:  [{type:'dan',icon:'🐦',name:'난초'},{type:'tti',icon:'🟦',name:'초단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  6:  [{type:'dan',icon:'🦋',name:'목단'},{type:'tti',icon:'🟦',name:'초단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  7:  [{type:'dan',icon:'🐗',name:'홍싸리'},{type:'tti',icon:'🟥',name:'청단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  8:  [{type:'gwang',icon:'🌕',name:'공산'},{type:'dan',icon:'🦢',name:'기러기'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  9:  [{type:'dan',icon:'🍶',name:'국진'},{type:'tti',icon:'🟥',name:'청단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  10: [{type:'dan',icon:'🦌',name:'단풍'},{type:'tti',icon:'🟥',name:'청단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  11: [{type:'gwang',icon:'🌞',name:'오동'},{type:'dan',icon:'🐦',name:'봉황'},{type:'pi',icon:'·',name:'피'},{type:'ssang-pi',icon:'··',name:'쌍피'}],
+  12: [{type:'gwang',icon:'🌞',name:'비광'},{type:'dan',icon:'🐦',name:'제비'},{type:'pi',icon:'·',name:'피'},{type:'ssang-pi',icon:'··',name:'쌍피'}],
+};
+
+// Build card list
+let cardId = 0;
+for (let month = 1; month <= 12; month++) {
+  CARD_DATA[month].forEach((cd, idx) => {
+    ALL_CARDS.push({
+      id: cardId++,
+      month: month,
+      type: cd.type,
+      icon: cd.icon,
+      name: cd.name,
+      flower: MONTH_FLOWERS[month],
+      monthName: MONTH_NAMES[month],
+    });
+  });
+}
+
+// === UTILITY ===
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// === NOTIFICATION MANAGER ===
+const NotificationManager = {
+  queue: [],
+  showing: false,
+
+  async show(text, sub, type, duration = 1200) {
+    this.queue.push({ text, sub, type, duration });
+    if (!this.showing) this._next();
+  },
+
+  async _next() {
+    if (this.queue.length === 0) { this.showing = false; return; }
+    this.showing = true;
+    const { text, sub, type, duration } = this.queue.shift();
+    const overlay = document.getElementById('notification');
+    const box = document.getElementById('notification-box');
+    const textEl = document.getElementById('notification-text');
+    const subEl = document.getElementById('notification-sub');
+
+    textEl.textContent = text;
+    subEl.textContent = sub || '';
+    box.className = 'notification-box ' + (type || '');
+    overlay.classList.add('show');
+
+    await delay(duration);
+    overlay.classList.remove('show');
+    await delay(300);
+    this._next();
+  },
+
+  showBomb() { this.show('💣 폭탄!', '4장 모두 획득 + 피 1장', 'danger'); },
+  showPpuk(count) { this.show('🔄 뻑!', count >= 3 ? '삼연뻑!' : `${count}뻑`, 'warning'); },
+  showJabppuk() { this.show('😱 자뻑!', '피 2장 빼앗김', 'danger'); },
+  showHeundeulgi() { this.show('👋 흔들기!', '승리시 점수 2배', 'info'); },
+  showChongtong() { this.show('🎉 총통!', '즉시 승리! 10점', 'success', 2000); },
+  showGo(count) { this.show(`${count}고!`, count >= 3 ? '점수 폭발!' : '계속 도전!', 'warning'); },
+  showPiBak() { this.show('💥 피박!', '점수 2배', 'danger'); },
+  showGwangBak() { this.show('💥 광박!', '점수 2배', 'danger'); },
+  showMultiplier(mult) { this.show(`💰 x${mult}배!`, '최종 배수 적용', 'warning'); },
+  showFirstPpuk() { this.show('🔥 첫뻑!', '첫 턴 뻑 보너스', 'danger'); },
+};
+
+// === THEME ===
+class ThemeManager {
+  constructor() {
+    this.theme = localStorage.getItem('gostop-theme') || 'light';
+    this.apply();
+  }
+  toggle() {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('gostop-theme', this.theme);
+    this.apply();
+  }
+  apply() {
+    document.documentElement.setAttribute('data-theme', this.theme);
+  }
+}
+
+// === MAIN GAME ===
+class GoStopGame {
+  constructor() {
+    this.themeManager = new ThemeManager();
+    this.newGame();
+  }
+
+  toggleTheme() { this.themeManager.toggle(); }
+
+  newGame() {
+    this.deck = shuffle([...ALL_CARDS]);
+    this.floor = [];
+    this.ppukStacks = {}; // month -> { cards:[], creator: playerIdx }
+    this.players = [
+      { name: '나', hand: [], captured: { gwang:[], tti:[], dan:[], pi:[] }, goCount: 0, score: 0, heundeulgi: false, heundeulgiMonths: [], ppukCount: 0, bombs: 0 },
+      { name: 'CPU', hand: [], captured: { gwang:[], tti:[], dan:[], pi:[] }, goCount: 0, score: 0, heundeulgi: false, heundeulgiMonths: [], ppukCount: 0, bombs: 0 },
+    ];
+    this.currentPlayer = 0; // 0 = player, 1 = cpu
+    this.turnCount = 0;
+    this.gameOver = false;
+    this.waitingForInput = false;
+    this.phase = 'deal'; // deal, play, draw, resolve
+    this.pendingActions = [];
+
+    this.deal();
+  }
+
+  deal() {
+    // Deal 10 cards each, 8 to floor
+    for (let i = 0; i < 10; i++) {
+      this.players[0].hand.push(this.deck.pop());
+      this.players[1].hand.push(this.deck.pop());
+    }
+    for (let i = 0; i < 8; i++) {
+      this.floor.push(this.deck.pop());
+    }
+
+    // Sort hands by month
+    this.players[0].hand.sort((a, b) => a.month - b.month || a.id - b.id);
+    this.players[1].hand.sort((a, b) => a.month - b.month || a.id - b.id);
+
+    this.render();
+
+    // Check for chongtong
+    this.checkInitialSpecials();
+  }
+
+  async checkInitialSpecials() {
+    // Check chongtong for both players
+    for (let p = 0; p < 2; p++) {
+      const hand = this.players[p].hand;
+      for (let m = 1; m <= 12; m++) {
+        if (hand.filter(c => c.month === m).length === 4) {
+          await NotificationManager.showChongtong();
+          this.players[p].score = 10;
+          this.endGame(p, '총통');
+          return;
+        }
+      }
+    }
+
+    // Check heundeulgi for player
+    const playerHand = this.players[0].hand;
+    const heundeulgiMonths = [];
+    for (let m = 1; m <= 12; m++) {
+      if (playerHand.filter(c => c.month === m).length >= 3) {
+        heundeulgiMonths.push(m);
+      }
+    }
+    if (heundeulgiMonths.length > 0) {
+      this.showHeundeulgiChoice(heundeulgiMonths);
+      return;
+    }
+
+    // CPU auto-heundeulgi
+    this.checkCpuHeundeulgi();
+
+    this.phase = 'play';
+    this.startTurn();
+  }
+
+  checkCpuHeundeulgi() {
+    const cpuHand = this.players[1].hand;
+    for (let m = 1; m <= 12; m++) {
+      if (cpuHand.filter(c => c.month === m).length >= 3) {
+        this.players[1].heundeulgi = true;
+        this.players[1].heundeulgiMonths.push(m);
+      }
+    }
+    if (this.players[1].heundeulgi) {
+      NotificationManager.show('🤖 흔들기!', 'CPU가 흔들기 선언', 'info');
+    }
+  }
+
+  showHeundeulgiChoice(months) {
+    const monthNames = months.map(m => `${MONTH_NAMES[m]}(${MONTH_FLOWERS[m]})`).join(', ');
+    const modal = document.getElementById('modal-container');
+    modal.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal">
+          <h2>👋 흔들기</h2>
+          <p>${monthNames} - 같은 월 3장 보유!<br>흔들기를 선언하시겠습니까?<br>(승리시 점수 2배)</p>
+          <button class="btn btn-success" onclick="game.declareHeundeulgi(${JSON.stringify(months)})">흔들기!</button>
+          <button class="btn btn-secondary" onclick="game.declineHeundeulgi()">안함</button>
+        </div>
+      </div>`;
+  }
+
+  declareHeundeulgi(months) {
+    this.players[0].heundeulgi = true;
+    this.players[0].heundeulgiMonths = months;
+    document.getElementById('modal-container').innerHTML = '';
+    NotificationManager.showHeundeulgi();
+
+    // Shake animation on matching cards
+    setTimeout(() => {
+      document.querySelectorAll('#player-hand .card').forEach(el => {
+        const cardMonth = parseInt(el.dataset.month);
+        if (months.includes(cardMonth)) {
+          el.classList.add('shake-anim');
+          setTimeout(() => el.classList.remove('shake-anim'), 500);
+        }
+      });
+    }, 100);
+
+    this.checkCpuHeundeulgi();
+    this.phase = 'play';
+    this.render();
+    this.startTurn();
+  }
+
+  declineHeundeulgi() {
+    document.getElementById('modal-container').innerHTML = '';
+    this.checkCpuHeundeulgi();
+    this.phase = 'play';
+    this.render();
+    this.startTurn();
+  }
+
+  // === TURN LOGIC ===
+  startTurn() {
+    if (this.gameOver) return;
+    this.turnCount++;
+    this.render();
+
+    if (this.currentPlayer === 1) {
+      // CPU turn
+      setTimeout(() => this.cpuPlay(), 800);
+    } else {
+      // Player turn - check for bomb first
+      this.checkPlayerBomb();
+    }
+  }
+
+  checkPlayerBomb() {
+    const hand = this.players[0].hand;
+    const bombMonths = [];
+    for (let m = 1; m <= 12; m++) {
+      const inHand = hand.filter(c => c.month === m).length;
+      const onFloor = this.floor.filter(c => c.month === m).length;
+      if (inHand >= 3 && onFloor >= 1) {
+        bombMonths.push(m);
+      }
+    }
+
+    if (bombMonths.length > 0) {
+      this.showBombChoice(bombMonths);
+    } else {
+      this.waitingForInput = true;
+      this.render();
+    }
+  }
+
+  showBombChoice(months) {
+    const btns = document.getElementById('action-buttons');
+    let html = '<span style="font-size:0.8em;opacity:0.7">폭탄 가능: </span>';
+    months.forEach(m => {
+      html += `<button class="btn btn-warning btn-small" onclick="game.executeBomb(${m})">💣 ${MONTH_NAMES[m]}</button>`;
+    });
+    html += `<button class="btn btn-secondary btn-small" onclick="game.skipBomb()">패스</button>`;
+    btns.innerHTML = html;
+    this.waitingForInput = true;
+    this.render();
+  }
+
+  async executeBomb(month) {
+    const p = this.players[this.currentPlayer];
+    const handCards = p.hand.filter(c => c.month === month);
+    const floorCards = this.floor.filter(c => c.month === month);
+    const allCards = [...handCards, ...floorCards];
+
+    // Remove from hand and floor
+    p.hand = p.hand.filter(c => c.month !== month);
+    this.floor = this.floor.filter(c => c.month !== month);
+
+    // Capture all
+    allCards.forEach(c => this.captureCard(this.currentPlayer, c));
+    p.bombs++;
+
+    // Take 1 pi from opponent
+    this.stealPi(this.currentPlayer, 1 - this.currentPlayer, 1);
+
+    await NotificationManager.showBomb();
+    document.getElementById('action-buttons').innerHTML = '';
+
+    // Bomb animation
+    this.render();
+
+    // Continue with normal play
+    this.waitingForInput = true;
+    this.render();
+  }
+
+  skipBomb() {
+    document.getElementById('action-buttons').innerHTML = '';
+    this.waitingForInput = true;
+    this.render();
+  }
+
+  // Player plays a card
+  async playCard(cardId) {
+    if (!this.waitingForInput || this.currentPlayer !== 0) return;
+    this.waitingForInput = false;
+
+    const card = this.players[0].hand.find(c => c.id === cardId);
+    if (!card) return;
+
+    await this.executePlay(0, card);
+  }
+
+  async executePlay(playerIdx, card) {
+    const player = this.players[playerIdx];
+    player.hand = player.hand.filter(c => c.id !== card.id);
+
+    const matches = this.floor.filter(c => c.month === card.month);
+
+    if (matches.length === 0) {
+      // No match - card goes to floor
+      this.floor.push(card);
+      this.render();
+      await delay(400);
+      await this.drawFromDeck(playerIdx);
+    } else if (matches.length === 1) {
+      // One match - capture both
+      this.floor = this.floor.filter(c => c.id !== matches[0].id);
+      this.pendingCapture = [card, matches[0]];
+      this.render();
+      await delay(400);
+      await this.drawFromDeck(playerIdx);
+    } else if (matches.length === 2) {
+      // Two matches - player picks
+      if (playerIdx === 0) {
+        this.showMatchChoice(card, matches);
+        return;
+      } else {
+        // CPU picks first match
+        const pick = matches[0];
+        this.floor = this.floor.filter(c => c.id !== pick.id);
+        this.pendingCapture = [card, pick];
+        this.render();
+        await delay(400);
+        await this.drawFromDeck(playerIdx);
+      }
+    } else if (matches.length === 3) {
+      // Three matches - take all (ppuk-related situation)
+      // Check if this is a ppuk stack
+      const ppukKey = card.month;
+      if (this.ppukStacks[ppukKey]) {
+        // Someone had a ppuk here. If current player clears it and they are NOT the creator, creator pays pi
+        const ppukCreator = this.ppukStacks[ppukKey].creator;
+        if (ppukCreator === playerIdx) {
+          // Jabppuk! Can't eat own ppuk
+          await NotificationManager.showJabppuk();
+          this.stealPi(1 - playerIdx, playerIdx, 2);
+        }
+        delete this.ppukStacks[ppukKey];
+      }
+      const all = this.floor.filter(c => c.month === card.month);
+      this.floor = this.floor.filter(c => c.month !== card.month);
+      this.pendingCapture = [card, ...all];
+      this.render();
+      await delay(400);
+      await this.drawFromDeck(playerIdx);
+    }
+  }
+
+  showMatchChoice(playedCard, matches) {
+    const modal = document.getElementById('modal-container');
+    let html = `<div class="modal-overlay"><div class="modal"><h2>카드 선택</h2><p>${MONTH_NAMES[playedCard.month]} 중 가져갈 카드를 선택하세요</p><div class="match-options">`;
+    matches.forEach(m => {
+      html += `<div class="match-option" onclick="game.selectMatch(${playedCard.id}, ${m.id})">${m.icon} ${m.name}</div>`;
+    });
+    html += `</div></div></div>`;
+    modal.innerHTML = html;
+  }
+
+  async selectMatch(playedCardId, matchCardId) {
+    document.getElementById('modal-container').innerHTML = '';
+    const playedCard = ALL_CARDS.find(c => c.id === playedCardId);
+    const matchCard = this.floor.find(c => c.id === matchCardId);
+    this.floor = this.floor.filter(c => c.id !== matchCardId);
+    this.pendingCapture = [playedCard, matchCard];
+    this.render();
+    await delay(400);
+    await this.drawFromDeck(0);
+  }
+
+  async drawFromDeck(playerIdx) {
+    if (this.deck.length === 0) {
+      // Finalize captures
+      if (this.pendingCapture) {
+        this.pendingCapture.forEach(c => this.captureCard(playerIdx, c));
+        this.pendingCapture = null;
+      }
+      this.render();
+      this.checkEndOfGame();
+      return;
+    }
+
+    const drawn = this.deck.pop();
+    const drawnMatches = this.floor.filter(c => c.month === drawn.month);
+
+    if (drawnMatches.length === 0) {
+      // No match on floor
+      this.floor.push(drawn);
+      // Finalize pending captures
+      if (this.pendingCapture) {
+        this.pendingCapture.forEach(c => this.captureCard(playerIdx, c));
+        this.pendingCapture = null;
+      }
+    } else if (drawnMatches.length === 1) {
+      // Match found
+      this.floor = this.floor.filter(c => c.id !== drawnMatches[0].id);
+      if (this.pendingCapture) {
+        this.pendingCapture.forEach(c => this.captureCard(playerIdx, c));
+        this.pendingCapture = null;
+      }
+      this.captureCard(playerIdx, drawn);
+      this.captureCard(playerIdx, drawnMatches[0]);
+    } else if (drawnMatches.length === 2) {
+      // Ppuk! Drawn card matches 2 on floor = 3 cards same month on floor
+      this.floor.push(drawn);
+      this.players[playerIdx].ppukCount++;
+      const ppukCount = this.players[playerIdx].ppukCount;
+
+      // Store ppuk info
+      this.ppukStacks[drawn.month] = { creator: playerIdx, count: 3 };
+
+      if (this.turnCount <= 1 && ppukCount === 1) {
+        await NotificationManager.showFirstPpuk();
+      }
+
+      await NotificationManager.showPpuk(ppukCount);
+
+      // Check for 삼연뻑 (3 consecutive ppuks)
+      if (ppukCount >= 3) {
+        await NotificationManager.show('💥 삼연뻑!', '게임 즉시 종료!', 'danger', 1500);
+        this.players[playerIdx].score = 7;
+        if (this.pendingCapture) {
+          this.pendingCapture.forEach(c => this.captureCard(playerIdx, c));
+          this.pendingCapture = null;
+        }
+        this.endGame(playerIdx, '삼연뻑');
+        return;
+      }
+
+      if (this.pendingCapture) {
+        this.pendingCapture.forEach(c => this.captureCard(playerIdx, c));
+        this.pendingCapture = null;
+      }
+    } else if (drawnMatches.length === 3) {
+      // Drawn card + 3 on floor = take all 4
+      const all = this.floor.filter(c => c.month === drawn.month);
+      this.floor = this.floor.filter(c => c.month !== drawn.month);
+      if (this.pendingCapture) {
+        this.pendingCapture.forEach(c => this.captureCard(playerIdx, c));
+        this.pendingCapture = null;
+      }
+      [drawn, ...all].forEach(c => this.captureCard(playerIdx, c));
+
+      // Check if ppuk stack was cleared
+      if (this.ppukStacks[drawn.month]) {
+        const ppukCreator = this.ppukStacks[drawn.month].creator;
+        if (ppukCreator === playerIdx) {
+          // Jabppuk
+          await NotificationManager.showJabppuk();
+          this.stealPi(1 - playerIdx, playerIdx, 2);
+        } else {
+          // Took someone else's ppuk - they pay 1 pi
+          this.stealPi(playerIdx, ppukCreator, 1);
+        }
+        delete this.ppukStacks[drawn.month];
+      }
+    }
+
+    this.render();
+    await delay(300);
+
+    // Check score
+    const score = this.calculateScore(playerIdx);
+    if (score >= 7) {
+      this.players[playerIdx].score = score;
+      await this.showGoStopChoice(playerIdx);
+      return;
+    }
+
+    this.endTurn();
+  }
+
+  captureCard(playerIdx, card) {
+    const p = this.players[playerIdx];
+    const type = card.type;
+    if (type === 'gwang') p.captured.gwang.push(card);
+    else if (type === 'tti') p.captured.tti.push(card);
+    else if (type === 'dan') p.captured.dan.push(card);
+    else if (type === 'pi') p.captured.pi.push(card);
+    else if (type === 'ssang-pi') {
+      // Ssang-pi counts as 2 pi
+      p.captured.pi.push(card);
+    }
+  }
+
+  stealPi(toPlayer, fromPlayer, count) {
+    const from = this.players[fromPlayer].captured.pi;
+    const stolen = from.splice(0, Math.min(count, from.length));
+    this.players[toPlayer].captured.pi.push(...stolen);
+  }
+
+  getPiCount(playerIdx) {
+    let count = 0;
+    this.players[playerIdx].captured.pi.forEach(c => {
+      count += c.type === 'ssang-pi' ? 2 : 1;
+    });
+    return count;
+  }
+
+  calculateScore(playerIdx) {
+    const p = this.players[playerIdx];
+    let score = 0;
+
+    // Gwang (광)
+    const gwangCount = p.captured.gwang.length;
+    const hasBiGwang = p.captured.gwang.some(c => c.month === 12); // 비광
+    if (gwangCount === 5) score += 15;
+    else if (gwangCount === 4) score += 4;
+    else if (gwangCount === 3) {
+      score += hasBiGwang ? 2 : 3; // 비광 포함시 2점
+    }
+
+    // Tti (띠)
+    const ttiCount = p.captured.tti.length;
+    if (ttiCount >= 5) score += ttiCount - 4;
+
+    // Check tti combos
+    const hongdan = p.captured.tti.filter(c => c.icon === '🎀').length >= 3;
+    const chodan = p.captured.tti.filter(c => c.icon === '🟦').length >= 3;
+    const cheongdan = p.captured.tti.filter(c => c.icon === '🟥').length >= 3;
+    if (hongdan) score += 3;
+    if (chodan) score += 3;
+    if (cheongdan) score += 3;
+
+    // Dan (동물)
+    const danCount = p.captured.dan.length;
+    if (danCount >= 5) score += danCount - 4;
+
+    // Pi (피)
+    const piCount = this.getPiCount(playerIdx);
+    if (piCount >= 10) score += piCount - 9;
+
+    return score;
+  }
+
+  async showGoStopChoice(playerIdx) {
+    if (playerIdx === 1) {
+      // CPU auto-decides
+      const score = this.calculateScore(1);
+      if (score >= 10 || this.players[1].goCount >= 2) {
+        this.players[1].score = score;
+        this.endGame(1, '스톱');
+      } else {
+        this.players[1].goCount++;
+        await NotificationManager.showGo(this.players[1].goCount);
+        this.endTurn();
+      }
+      return;
+    }
+
+    const score = this.calculateScore(0);
+    const goCount = this.players[0].goCount;
+    const modal = document.getElementById('modal-container');
+    modal.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal">
+          <h2 class="go-pulse">🎯 ${score}점!</h2>
+          <p>현재 ${goCount}고 상태<br>고를 외치면 점수가 올라갑니다!</p>
+          <button class="btn btn-warning" onclick="game.declareGo()">고! (계속)</button>
+          <button class="btn btn-success" onclick="game.declareStop()">스톱! (승리)</button>
+        </div>
+      </div>`;
+  }
+
+  async declareGo() {
+    document.getElementById('modal-container').innerHTML = '';
+    this.players[0].goCount++;
+    await NotificationManager.showGo(this.players[0].goCount);
+    this.endTurn();
+  }
+
+  declareStop() {
+    document.getElementById('modal-container').innerHTML = '';
+    this.players[0].score = this.calculateScore(0);
+    this.endGame(0, '스톱');
+  }
+
+  endTurn() {
+    if (this.gameOver) return;
+
+    // Check if hands are empty
+    if (this.players[0].hand.length === 0 && this.players[1].hand.length === 0) {
+      this.checkEndOfGame();
+      return;
+    }
+
+    this.currentPlayer = 1 - this.currentPlayer;
+    this.startTurn();
+  }
+
+  checkEndOfGame() {
+    // Both hands empty - highest score wins
+    const s0 = this.calculateScore(0);
+    const s1 = this.calculateScore(1);
+    this.players[0].score = s0;
+    this.players[1].score = s1;
+
+    if (s0 > s1) this.endGame(0, '점수');
+    else if (s1 > s0) this.endGame(1, '점수');
+    else this.endGame(-1, '무승부');
+  }
+
+  // === CPU AI ===
+  async cpuPlay() {
+    if (this.gameOver) return;
+    const cpu = this.players[1];
+    if (cpu.hand.length === 0) { this.endTurn(); return; }
+
+    // Check for bomb
+    for (let m = 1; m <= 12; m++) {
+      const inHand = cpu.hand.filter(c => c.month === m).length;
+      const onFloor = this.floor.filter(c => c.month === m).length;
+      if (inHand >= 3 && onFloor >= 1) {
+        // Execute bomb
+        const handCards = cpu.hand.filter(c => c.month === m);
+        const floorCards = this.floor.filter(c => c.month === m);
+        cpu.hand = cpu.hand.filter(c => c.month !== m);
+        this.floor = this.floor.filter(c => c.month !== m);
+        [...handCards, ...floorCards].forEach(c => this.captureCard(1, c));
+        cpu.bombs++;
+        this.stealPi(1, 0, 1);
+        await NotificationManager.showBomb();
+        this.render();
+        await delay(500);
+      }
+    }
+
+    if (cpu.hand.length === 0) { this.endTurn(); return; }
+
+    // Simple AI: prefer matching cards, prefer higher value
+    let bestCard = null;
+    let bestScore = -1;
+
+    cpu.hand.forEach(card => {
+      const matches = this.floor.filter(c => c.month === card.month);
+      let score = 0;
+      if (matches.length > 0) {
+        score += 10;
+        matches.forEach(m => {
+          if (m.type === 'gwang') score += 20;
+          else if (m.type === 'dan') score += 5;
+          else if (m.type === 'tti') score += 4;
+          else score += 1;
+        });
+        if (card.type === 'gwang') score += 20;
+        else if (card.type === 'dan') score += 5;
+        else if (card.type === 'tti') score += 4;
+      }
+      if (score > bestScore || (score === bestScore && !bestCard)) {
+        bestScore = score;
+        bestCard = card;
+      }
+    });
+
+    if (!bestCard) bestCard = cpu.hand[0];
+    await this.executePlay(1, bestCard);
+  }
+
+  // === GAME END ===
+  async endGame(winnerIdx, reason) {
+    this.gameOver = true;
+
+    if (winnerIdx === -1) {
+      this.showGameOver('무승부', 0, 0, {}, reason);
+      return;
+    }
+
+    const winner = this.players[winnerIdx];
+    const loser = this.players[1 - winnerIdx];
+    let baseScore = winner.score;
+    let multiplier = 1;
+    const bonuses = {};
+
+    // Heundeulgi
+    if (winner.heundeulgi) {
+      multiplier *= 2;
+      bonuses['흔들기'] = 'x2';
+    }
+
+    // Go multiplier
+    if (winner.goCount >= 1) {
+      const goMult = Math.pow(2, Math.max(0, winner.goCount - 1));
+      multiplier *= goMult;
+      bonuses[`${winner.goCount}고`] = `x${goMult}`;
+    }
+
+    // Bomb multiplier
+    if (winner.bombs > 0) {
+      multiplier *= Math.pow(2, winner.bombs);
+      bonuses[`폭탄 ${winner.bombs}회`] = `x${Math.pow(2, winner.bombs)}`;
+    }
+
+    // Pi-bak
+    const loserPi = this.getPiCount(1 - winnerIdx);
+    if (loserPi <= 6 && this.getPiCount(winnerIdx) >= 10) {
+      multiplier *= 2;
+      bonuses['피박'] = 'x2';
+      await NotificationManager.showPiBak();
+    }
+
+    // Gwang-bak
+    if (loser.captured.gwang.length === 0 && winner.captured.gwang.length >= 3) {
+      multiplier *= 2;
+      bonuses['광박'] = 'x2';
+      await NotificationManager.showGwangBak();
+    }
+
+    if (multiplier > 1) {
+      await NotificationManager.showMultiplier(multiplier);
+    }
+
+    const finalScore = baseScore * multiplier;
+    const winnerName = winnerIdx === 0 ? '나' : 'CPU';
+
+    this.showGameOver(winnerName, baseScore, finalScore, bonuses, reason);
+  }
+
+  showGameOver(winnerName, baseScore, finalScore, bonuses, reason) {
+    const modal = document.getElementById('modal-container');
+    let bonusHtml = '';
+    Object.entries(bonuses).forEach(([k, v]) => {
+      bonusHtml += `<div class="score-line"><span>${k}</span><span class="multiplier-badge">${v}</span></div>`;
+    });
+
+    modal.innerHTML = `
+      <div class="game-over">
+        <div class="game-over-content">
+          <h2>${winnerName === '무승부' ? '🤝 무승부' : `🏆 ${winnerName} 승리!`}</h2>
+          <p style="opacity:0.7">${reason}</p>
+          <div class="score-panel">
+            <div class="score-breakdown">
+              ${baseScore > 0 ? `<div class="score-line"><span>기본 점수</span><span>${baseScore}점</span></div>` : ''}
+              ${bonusHtml}
+              ${finalScore > 0 ? `<div class="score-line score-total"><span>최종 점수</span><span>${finalScore}점</span></div>` : ''}
+            </div>
+          </div>
+          <br>
+          <button class="btn btn-primary" onclick="game.newGame(); document.getElementById('modal-container').innerHTML=''">새 게임</button>
+        </div>
+      </div>`;
+  }
+
+  // === RENDER ===
+  render() {
+    // Deck count
+    document.getElementById('deck-count').textContent = this.deck.length;
+    document.getElementById('turn-count').textContent = this.turnCount;
+    document.getElementById('turn-info').textContent =
+      this.currentPlayer === 0 ? '👤 내 차례' : '🤖 CPU 차례';
+
+    // Player areas active state
+    document.getElementById('player-area').classList.toggle('active', this.currentPlayer === 0);
+    document.getElementById('cpu-area').classList.toggle('active', this.currentPlayer === 1);
+
+    // Scores
+    document.getElementById('player-score').textContent = this.calculateScore(0);
+    document.getElementById('cpu-score').textContent = this.calculateScore(1);
+    document.getElementById('player-go').textContent = this.players[0].goCount;
+    document.getElementById('cpu-go').textContent = this.players[1].goCount;
+
+    // Heundeulgi badge
+    const badge = document.getElementById('player-heundeulgi-badge');
+    badge.innerHTML = this.players[0].heundeulgi ?
+      '<span class="heundeulgi-indicator">👋 흔들기</span>' : '';
+
+    // Player hand
+    this.renderHand(0);
+    // CPU hand
+    this.renderCpuHand();
+    // Floor
+    this.renderFloor();
+    // Captured
+    this.renderCaptured(0);
+    this.renderCaptured(1);
+  }
+
+  renderHand(playerIdx) {
+    const el = document.getElementById('player-hand');
+    el.innerHTML = '';
+    this.players[playerIdx].hand.forEach(card => {
+      const div = this.createCardEl(card, false);
+      if (this.waitingForInput && this.currentPlayer === 0) {
+        div.onclick = () => this.playCard(card.id);
+      } else {
+        div.classList.add('disabled');
+      }
+      el.appendChild(div);
+    });
+  }
+
+  renderCpuHand() {
+    const el = document.getElementById('cpu-hand');
+    el.innerHTML = '';
+    this.players[1].hand.forEach(() => {
+      const div = document.createElement('div');
+      div.className = 'card face-down';
+      el.appendChild(div);
+    });
+  }
+
+  renderFloor() {
+    const el = document.getElementById('floor-cards');
+    el.innerHTML = '';
+
+    // Group by month
+    const groups = {};
+    this.floor.forEach(c => {
+      if (!groups[c.month]) groups[c.month] = [];
+      groups[c.month].push(c);
+    });
+
+    Object.keys(groups).sort((a, b) => a - b).forEach(month => {
+      groups[month].forEach(card => {
+        const div = this.createCardEl(card, false);
+        div.style.cursor = 'default';
+
+        // Ppuk marker
+        if (this.ppukStacks[card.month]) {
+          const marker = document.createElement('div');
+          marker.className = 'ppuk-marker';
+          marker.textContent = '뻑';
+          div.appendChild(marker);
+        }
+
+        el.appendChild(div);
+      });
+    });
+  }
+
+  renderCaptured(playerIdx) {
+    const prefix = playerIdx === 0 ? 'player' : 'cpu';
+    const p = this.players[playerIdx];
+
+    ['gwang', 'tti', 'dan', 'pi'].forEach(type => {
+      const el = document.getElementById(`${prefix}-${type}`);
+      el.innerHTML = '';
+      p.captured[type].forEach(card => {
+        const div = this.createCardEl(card, true);
+        el.appendChild(div);
+      });
+    });
+  }
+
+  createCardEl(card, small) {
+    const div = document.createElement('div');
+    div.className = `card ${card.type} ${small ? 'small' : ''} slide-in`;
+    div.dataset.month = card.month;
+    div.dataset.id = card.id;
+    div.innerHTML = `
+      <div class="card-icon">${card.flower}</div>
+      <div class="card-month">${card.month}</div>
+      <div class="card-type">${card.icon}</div>
+    `;
+    return div;
+  }
+}
+
+// === INIT ===
+let game;
+document.addEventListener('DOMContentLoaded', () => {
+  game = new GoStopGame();
+});
+</script>
+</body>
+</html>

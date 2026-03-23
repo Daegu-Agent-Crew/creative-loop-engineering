@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Agent Core — 마더보드 회로도</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050505;color:#c0c0c0;font-family:'Courier New',monospace;overflow-x:hidden;min-height:100vh}
+.main-container{display:flex;height:100vh;gap:0}
+.board-area{flex:1;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+.monitor-panel{width:280px;background:#0a0a0a;border-left:2px solid #1a3a1a;padding:16px;overflow-y:auto;flex-shrink:0}
+
+/* PCB Board */
+.pcb{position:relative;width:820px;height:620px;background:#0a1a0a;border:3px solid #1a3a1a;border-radius:8px;box-shadow:0 0 40px rgba(0,255,0,0.05),inset 0 0 60px rgba(0,0,0,0.5)}
+.pcb::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 19px,rgba(0,255,0,0.02) 19px,rgba(0,255,0,0.02) 20px),repeating-linear-gradient(90deg,transparent,transparent 19px,rgba(0,255,0,0.02) 19px,rgba(0,255,0,0.02) 20px);pointer-events:none}
+.pcb-label{position:absolute;top:8px;left:12px;font-size:10px;color:#2a5a2a;letter-spacing:2px}
+.pcb-rev{position:absolute;top:8px;right:12px;font-size:9px;color:#2a5a2a}
+/* Mounting holes */
+.mount{position:absolute;width:14px;height:14px;border-radius:50%;border:2px solid #2a4a2a;background:#080808}
+.mount.tl{top:10px;left:10px}.mount.tr{top:10px;right:10px}.mount.bl{bottom:10px;left:10px}.mount.br{bottom:10px;right:10px}
+
+/* Chip base */
+.chip{position:absolute;background:#111;border:2px solid #333;cursor:pointer;transition:all 0.3s;z-index:10;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.chip:hover{border-color:#0f0;box-shadow:0 0 15px rgba(0,255,0,0.3)}
+.chip.active{border-color:#0f0;box-shadow:0 0 20px rgba(0,255,0,0.4)}
+.chip-label{font-size:9px;color:#888;text-align:center;letter-spacing:1px;margin-top:2px}
+.chip-name{font-size:11px;color:#0f0;font-weight:bold;text-align:center}
+.chip-led{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:#1a1a1a;border:1px solid #333;transition:all 0.3s}
+.chip-led.on{background:#0f0;box-shadow:0 0 8px #0f0}
+.chip-led.amber{background:#f80;box-shadow:0 0 8px #f80}
+
+/* Pins on chips */
+.pins{position:absolute;display:flex;gap:4px}
+.pins.top{top:-5px;left:50%;transform:translateX(-50%);flex-direction:row}
+.pins.bottom{bottom:-5px;left:50%;transform:translateX(-50%);flex-direction:row}
+.pins.left{left:-5px;top:50%;transform:translateY(-50%);flex-direction:column}
+.pins.right{right:-5px;top:50%;transform:translateY(-50%);flex-direction:column}
+.pin{width:4px;height:8px;background:#b8860b;border-radius:1px}
+.pins.left .pin,.pins.right .pin{width:8px;height:4px}
+
+/* CPU special */
+.cpu-chip{width:160px;height:120px;top:40px;left:50px;background:linear-gradient(135deg,#111 0%,#1a1a1a 100%);border:2px solid #444}
+.cpu-chip .chip-name{font-size:14px}
+.cpu-cores{display:flex;gap:6px;margin-top:6px}
+.cpu-core{width:36px;height:28px;background:#0a0a0a;border:1px solid #333;display:flex;align-items:center;justify-content:center;font-size:7px;color:#666;position:relative}
+.cpu-core.active{border-color:#0f0;color:#0f0}
+.cpu-core .core-led{position:absolute;top:2px;right:2px;width:3px;height:3px;border-radius:50%;background:#1a1a1a}
+.cpu-core.active .core-led{background:#0f0;box-shadow:0 0 4px #0f0}
+.cpu-heatsink{position:absolute;inset:-4px;border:1px dashed #222;border-radius:2px;pointer-events:none}
+
+/* Bus traces */
+.bus{position:absolute;height:6px;background:linear-gradient(90deg,#3a2a00,#b8860b,#3a2a00);border:1px solid #5a4a00;z-index:5;display:flex;align-items:center;overflow:hidden}
+.bus-label{position:absolute;top:-14px;left:50%;transform:translateX(-50%);font-size:8px;color:#b8860b;white-space:nowrap;letter-spacing:1px}
+.bus-vertical{position:absolute;width:6px;background:linear-gradient(180deg,#3a2a00,#b8860b,#3a2a00);border:1px solid #5a4a00;z-index:5}
+
+/* Traces (thin copper lines) */
+.trace{position:absolute;background:#5a3a00;z-index:3}
+.trace.h{height:2px}
+.trace.v{width:2px}
+
+/* Signal dots */
+.signal{position:absolute;width:6px;height:6px;border-radius:50%;background:#0f0;box-shadow:0 0 10px #0f0,0 0 20px rgba(0,255,0,0.3);z-index:20;opacity:0;pointer-events:none}
+.signal.amber{background:#f80;box-shadow:0 0 10px #f80,0 0 20px rgba(255,136,0,0.3)}
+
+/* Data packets on bus */
+.data-packet{position:absolute;font-size:7px;color:#0f0;font-family:monospace;z-index:20;opacity:0;pointer-events:none;text-shadow:0 0 4px #0f0;white-space:nowrap}
+
+/* NIC chips */
+.nic-chip{width:80px;height:60px}
+.nic-slot{position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);width:60px;height:6px;background:#2a2a2a;border:1px solid #444;border-radius:0 0 3px 3px}
+.nic-port{position:absolute;right:-10px;top:50%;transform:translateY(-50%);width:10px;height:16px;background:#222;border:1px solid #555;border-radius:0 2px 2px 0}
+.nic-port-led{position:absolute;width:3px;height:3px;border-radius:50%;background:#1a1a1a}
+.nic-port-led.top{top:2px;left:3px}
+.nic-port-led.bot{bottom:2px;left:3px}
+.nic-port-led.link{background:#0f0;box-shadow:0 0 4px #0f0}
+.nic-port-led.activity{background:#f80}
+
+/* RAM chip */
+.ram-chip{width:140px;height:50px;background:linear-gradient(90deg,#111,#1a1a1a,#111)}
+.ram-notch{position:absolute;bottom:-2px;left:40%;width:20px;height:4px;background:#0a1a0a;border-top:1px solid #333}
+
+/* HDD chip */
+.hdd-chip{width:80px;height:70px}
+.hdd-platter{position:absolute;width:30px;height:30px;border-radius:50%;border:1px solid #333;bottom:8px;left:50%;transform:translateX(-50%)}
+.hdd-platter-inner{position:absolute;width:8px;height:8px;border-radius:50%;border:1px solid #444;top:50%;left:50%;transform:translate(-50%,-50%)}
+
+/* Firmware */
+.fw-chip{width:80px;height:50px;background:#111;border:2px solid #333}
+.fw-chip::after{content:'';position:absolute;top:4px;left:4px;width:8px;height:4px;background:#0a0a0a;border:1px solid #333}
+
+/* USB */
+.usb-chip{width:80px;height:50px}
+.usb-port{position:absolute;bottom:-10px;left:50%;transform:translateX(-50%);width:16px;height:10px;background:#222;border:1px solid #555;border-radius:0 0 2px 2px}
+
+/* SATA */
+.sata-chip{width:80px;height:50px}
+.sata-port{position:absolute;right:-12px;top:50%;transform:translateY(-50%);width:12px;height:20px;background:#1a1a1a;border:1px solid #444;border-radius:0 2px 2px 0}
+
+/* Detail overlay */
+.detail-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:none;align-items:center;justify-content:center}
+.detail-overlay.show{display:flex}
+.detail-card{background:#0a1a0a;border:2px solid #0f0;border-radius:8px;padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 0 40px rgba(0,255,0,0.2)}
+.detail-card h2{color:#0f0;font-size:16px;margin-bottom:12px;border-bottom:1px solid #1a3a1a;padding-bottom:8px}
+.detail-card h3{color:#b8860b;font-size:12px;margin:10px 0 4px;letter-spacing:1px}
+.detail-card p,.detail-card li{font-size:11px;color:#aaa;line-height:1.6}
+.detail-card ul{list-style:none;padding-left:12px}
+.detail-card ul li::before{content:'▸ ';color:#0f0}
+.detail-card .close-btn{position:absolute;top:8px;right:12px;color:#666;cursor:pointer;font-size:18px}
+.detail-card .close-btn:hover{color:#0f0}
+.detail-card .spec-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px}
+.detail-card .spec-label{color:#666;font-size:10px}
+.detail-card .spec-value{color:#0f0;font-size:11px}
+
+/* Monitor panel */
+.monitor-title{color:#0f0;font-size:12px;letter-spacing:2px;margin-bottom:12px;text-align:center;border-bottom:1px solid #1a3a1a;padding-bottom:8px}
+.monitor-section{margin-bottom:16px}
+.monitor-label{font-size:10px;color:#666;letter-spacing:1px;margin-bottom:4px}
+.monitor-bar-wrap{height:14px;background:#111;border:1px solid #222;border-radius:2px;overflow:hidden;margin-bottom:2px}
+.monitor-bar{height:100%;transition:width 0.5s;border-radius:1px}
+.monitor-bar.green{background:linear-gradient(90deg,#040,#0f0)}
+.monitor-bar.amber{background:linear-gradient(90deg,#440,#f80)}
+.monitor-bar.red{background:linear-gradient(90deg,#400,#f00)}
+.monitor-value{font-size:10px;color:#0f0;text-align:right}
+.monitor-graph{height:40px;background:#0a0a0a;border:1px solid #1a1a1a;border-radius:2px;position:relative;overflow:hidden;margin-bottom:4px}
+.monitor-graph canvas{width:100%;height:100%}
+
+/* Activity log */
+.log-area{margin-top:8px;max-height:160px;overflow-y:auto;border:1px solid #1a1a1a;border-radius:2px;padding:4px;background:#050505}
+.log-entry{font-size:9px;color:#666;line-height:1.5;border-bottom:1px solid #0a0a0a;padding:2px 0}
+.log-entry .time{color:#444}
+.log-entry .component{color:#b8860b}
+.log-entry .action{color:#0f0}
+
+/* Simulation controls */
+.sim-controls{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:30}
+.sim-btn{background:#111;border:1px solid #333;color:#0f0;padding:6px 16px;font-family:monospace;font-size:11px;cursor:pointer;border-radius:3px;transition:all 0.3s}
+.sim-btn:hover{border-color:#0f0;box-shadow:0 0 10px rgba(0,255,0,0.2)}
+.sim-btn.active{background:#0a2a0a;border-color:#0f0}
+.sim-btn.stop{color:#f00;border-color:#400}
+.sim-btn.stop:hover{border-color:#f00;box-shadow:0 0 10px rgba(255,0,0,0.2)}
+
+/* Responsive */
+@media(max-width:1100px){.monitor-panel{width:220px}}
+@media(max-width:900px){
+  .main-container{flex-direction:column}
+  .monitor-panel{width:100%;border-left:none;border-top:2px solid #1a3a1a;max-height:240px;display:flex;flex-wrap:wrap;gap:8px;padding:8px}
+  .monitor-section{flex:1;min-width:140px}
+  .pcb{transform:scale(0.65);transform-origin:center}
+}
+@media(max-width:600px){
+  .pcb{transform:scale(0.45);transform-origin:center}
+  .monitor-panel{max-height:200px}
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:#0a0a0a}
+::-webkit-scrollbar-thumb{background:#1a3a1a;border-radius:2px}
+</style>
+</head>
+<body>
+<div class="main-container">
+<div class="board-area">
+<div class="pcb" id="pcb">
+  <span class="pcb-label">OPENCLAW AGENT CORE v1.0</span>
+  <span class="pcb-rev">REV 2026.03 — pi-mono</span>
+  <div class="mount tl"></div><div class="mount tr"></div><div class="mount bl"></div><div class="mount br"></div>
+
+  <!-- ===== CPU: Agent Runtime ===== -->
+  <div class="chip cpu-chip" id="chip-cpu" data-chip="cpu">
+    <div class="cpu-heatsink"></div>
+    <div class="chip-led" id="led-cpu"></div>
+    <div class="chip-name">AGENT RUNTIME</div>
+    <div class="chip-label">pi-mono CPU</div>
+    <div class="cpu-cores">
+      <div class="cpu-core" id="core-llm"><span>LLM</span><div class="core-led"></div></div>
+      <div class="cpu-core" id="core-loop"><span>LOOP</span><div class="core-led"></div></div>
+      <div class="cpu-core" id="core-tool"><span>TOOL</span><div class="core-led"></div></div>
+    </div>
+    <div class="pins top"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+    <div class="pins bottom"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+    <div class="pins left"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+    <div class="pins right"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== FSB (Front Side Bus) ===== -->
+  <div class="bus" id="bus-fsb" style="top:175px;left:40px;width:740px">
+    <span class="bus-label">FSB — Front Side Bus (Context Assembly)</span>
+  </div>
+
+  <!-- ===== NIC 1: Telegram ===== -->
+  <div class="chip nic-chip" id="chip-nic-tg" data-chip="nic-tg" style="top:200px;left:40px">
+    <div class="chip-led" id="led-nic-tg"></div>
+    <div class="chip-name">NIC:TG</div>
+    <div class="chip-label">Telegram</div>
+    <div class="nic-port"><div class="nic-port-led top link"></div><div class="nic-port-led bot" id="nic-tg-act"></div></div>
+    <div class="pins top"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== NIC 2: Discord ===== -->
+  <div class="chip nic-chip" id="chip-nic-dc" data-chip="nic-dc" style="top:200px;left:150px">
+    <div class="chip-led" id="led-nic-dc"></div>
+    <div class="chip-name">NIC:DC</div>
+    <div class="chip-label">Discord</div>
+    <div class="nic-port"><div class="nic-port-led top link"></div><div class="nic-port-led bot" id="nic-dc-act"></div></div>
+    <div class="pins top"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== NIC 3: WhatsApp ===== -->
+  <div class="chip nic-chip" id="chip-nic-wa" data-chip="nic-wa" style="top:200px;left:260px">
+    <div class="chip-led" id="led-nic-wa"></div>
+    <div class="chip-name">NIC:WA</div>
+    <div class="chip-label">WhatsApp</div>
+    <div class="nic-port"><div class="nic-port-led top link"></div><div class="nic-port-led bot" id="nic-wa-act"></div></div>
+    <div class="pins top"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== NIC 4: Slack ===== -->
+  <div class="chip nic-chip" id="chip-nic-slack" data-chip="nic-slack" style="top:200px;left:370px">
+    <div class="chip-led" id="led-nic-slack"></div>
+    <div class="chip-name">NIC:SL</div>
+    <div class="chip-label">Slack</div>
+    <div class="nic-port"><div class="nic-port-led top link"></div><div class="nic-port-led bot" id="nic-sl-act"></div></div>
+    <div class="pins top"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== RAM: Session Manager ===== -->
+  <div class="chip ram-chip" id="chip-ram" data-chip="ram" style="top:200px;left:500px">
+    <div class="chip-led" id="led-ram"></div>
+    <div class="chip-name">RAM — Session Manager</div>
+    <div class="chip-label">Context Window 128K</div>
+    <div class="ram-notch"></div>
+    <div class="pins top"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+    <div class="pins bottom"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== HDD: Memory System ===== -->
+  <div class="chip hdd-chip" id="chip-hdd" data-chip="hdd" style="top:195px;left:680px">
+    <div class="chip-led" id="led-hdd"></div>
+    <div class="chip-name">HDD</div>
+    <div class="chip-label">Memory</div>
+    <div class="hdd-platter"><div class="hdd-platter-inner"></div></div>
+    <div class="pins left"><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== PCI Bus (Queue) ===== -->
+  <div class="bus" id="bus-pci" style="top:310px;left:40px;width:740px">
+    <span class="bus-label">PCI Bus — Queue (수신-실행 분리, Exactly-once)</span>
+  </div>
+
+  <!-- ===== Traces: CPU to FSB ===== -->
+  <div class="trace h" style="top:168px;left:80px;width:2px;height:8px" id="t-cpu-fsb-1"></div>
+  <div class="trace h" style="top:168px;left:120px;width:2px;height:8px"></div>
+  <div class="trace h" style="top:168px;left:160px;width:2px;height:8px"></div>
+
+  <!-- ===== Traces: NICs to FSB ===== -->
+  <div class="trace v" style="top:182px;left:80px;width:2px;height:18px"></div>
+  <div class="trace v" style="top:182px;left:190px;width:2px;height:18px"></div>
+  <div class="trace v" style="top:182px;left:300px;width:2px;height:18px"></div>
+  <div class="trace v" style="top:182px;left:410px;width:2px;height:18px"></div>
+  <div class="trace v" style="top:182px;left:570px;width:2px;height:18px"></div>
+  <div class="trace v" style="top:182px;left:720px;width:2px;height:18px"></div>
+
+  <!-- Traces: Components to PCI -->
+  <div class="trace v" style="top:260px;left:80px;width:2px;height:50px"></div>
+  <div class="trace v" style="top:260px;left:190px;width:2px;height:50px"></div>
+  <div class="trace v" style="top:260px;left:300px;width:2px;height:50px"></div>
+  <div class="trace v" style="top:260px;left:410px;width:2px;height:50px"></div>
+  <div class="trace v" style="top:252px;left:570px;width:2px;height:58px"></div>
+  <div class="trace v" style="top:265px;left:720px;width:2px;height:45px"></div>
+
+  <!-- ===== Firmware: Tool Policy Pipeline ===== -->
+  <div class="chip fw-chip" id="chip-fw" data-chip="fw" style="top:340px;left:40px">
+    <div class="chip-led" id="led-fw"></div>
+    <div class="chip-name">FIRMWARE</div>
+    <div class="chip-label">Tool Policy</div>
+    <div class="pins top"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+    <div class="pins right"><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== USB: Plugin Hooks ===== -->
+  <div class="chip usb-chip" id="chip-usb" data-chip="usb" style="top:340px;left:180px">
+    <div class="chip-led" id="led-usb"></div>
+    <div class="chip-name">USB HUB</div>
+    <div class="chip-label">Plugin Hooks</div>
+    <div class="usb-port"></div>
+    <div class="pins top"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== SATA: File I/O ===== -->
+  <div class="chip sata-chip" id="chip-sata" data-chip="sata" style="top:340px;left:320px">
+    <div class="chip-led" id="led-sata"></div>
+    <div class="chip-name">SATA</div>
+    <div class="chip-label">File I/O</div>
+    <div class="sata-port"></div>
+    <div class="pins top"><div class="pin"></div><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== BIOS: Bootstrap ===== -->
+  <div class="chip" id="chip-bios" data-chip="bios" style="top:350px;left:480px;width:80px;height:45px">
+    <div class="chip-led" id="led-bios"></div>
+    <div class="chip-name">BIOS</div>
+    <div class="chip-label">Bootstrap</div>
+    <div class="pins top"><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+    <div class="pins bottom"><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== Compaction Engine ===== -->
+  <div class="chip" id="chip-compact" data-chip="compact" style="top:350px;left:600px;width:80px;height:45px">
+    <div class="chip-led" id="led-compact"></div>
+    <div class="chip-name">DMA</div>
+    <div class="chip-label">Compaction</div>
+    <div class="pins top"><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+    <div class="pins left"><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- ===== Clock Generator ===== -->
+  <div class="chip" id="chip-clock" data-chip="clock" style="top:50px;left:280px;width:70px;height:35px;border-radius:4px">
+    <div class="chip-led" id="led-clock"></div>
+    <div class="chip-name" style="font-size:9px">CLK 600s</div>
+    <div class="chip-label">Timeout</div>
+  </div>
+
+  <!-- ===== Multi-Agent Controller ===== -->
+  <div class="chip" id="chip-multi" data-chip="multi" style="top:50px;left:420px;width:90px;height:35px">
+    <div class="chip-led" id="led-multi"></div>
+    <div class="chip-name" style="font-size:9px">MULTI-AGENT</div>
+    <div class="chip-label">Router</div>
+    <div class="pins bottom"><div class="pin"></div><div class="pin"></div><div class="pin"></div></div>
+  </div>
+
+  <!-- Trace: Clock to CPU -->
+  <div class="trace h" style="top:68px;left:250px;width:30px"></div>
+  <!-- Trace: Multi-Agent to FSB -->
+  <div class="trace v" style="top:85px;left:465px;width:2px;height:90px"></div>
+
+  <!-- Traces: Bottom chips to PCI -->
+  <div class="trace v" style="top:316px;left:80px;width:2px;height:24px"></div>
+  <div class="trace v" style="top:316px;left:220px;width:2px;height:24px"></div>
+  <div class="trace v" style="top:316px;left:360px;width:2px;height:24px"></div>
+  <div class="trace v" style="top:316px;left:520px;width:2px;height:34px"></div>
+  <div class="trace v" style="top:316px;left:640px;width:2px;height:34px"></div>
+
+  <!-- ===== Silk Screen Labels ===== -->
+  <div style="position:absolute;bottom:30px;left:40px;font-size:8px;color:#1a3a1a">
+    D1 D2 D3 D4 — CHANNEL SLOTS
+  </div>
+  <div style="position:absolute;bottom:18px;left:40px;font-size:8px;color:#1a3a1a">
+    OpenClaw™ — Single Process Architecture
+  </div>
+  <div style="position:absolute;bottom:30px;right:30px;font-size:8px;color:#1a3a1a">
+    FCC ID: OC-PIMONO-2026
+  </div>
+
+  <!-- ===== Signal animation layer (populated by JS) ===== -->
+  <div id="signal-layer"></div>
+</div>
+
+<!-- Simulation controls -->
+<div class="sim-controls">
+  <button class="sim-btn" id="btn-sim" onclick="startSimulation()">▶ 시뮬레이션 시작</button>
+  <button class="sim-btn" id="btn-auto" onclick="toggleAuto()">⟳ 자동 반복</button>
+  <button class="sim-btn stop" id="btn-stop" onclick="stopSimulation()">■ 정지</button>
+</div>
+</div>
+
+<!-- ===== Monitor Panel ===== -->
+<div class="monitor-panel">
+  <div class="monitor-title">시스템 모니터</div>
+
+  <div class="monitor-section">
+    <div class="monitor-label">CPU 사용률 — Agent Runtime</div>
+    <div class="monitor-bar-wrap"><div class="monitor-bar green" id="mon-cpu" style="width:12%"></div></div>
+    <div class="monitor-value" id="mon-cpu-val">12%</div>
+  </div>
+
+  <div class="monitor-section">
+    <div class="monitor-label">RAM — Context Window</div>
+    <div class="monitor-bar-wrap"><div class="monitor-bar green" id="mon-ram" style="width:35%"></div></div>
+    <div class="monitor-value" id="mon-ram-val">35% (44.8K / 128K 토큰)</div>
+  </div>
+
+  <div class="monitor-section">
+    <div class="monitor-label">디스크 I/O — Memory 읽기/쓰기</div>
+    <div class="monitor-bar-wrap"><div class="monitor-bar amber" id="mon-disk" style="width:5%"></div></div>
+    <div class="monitor-value" id="mon-disk-val">IDLE</div>
+  </div>
+
+  <div class="monitor-section">
+    <div class="monitor-label">네트워크 — 메시지 송수신</div>
+    <div class="monitor-bar-wrap"><div class="monitor-bar green" id="mon-net" style="width:0%"></div></div>
+    <div class="monitor-value" id="mon-net-val">대기중</div>
+  </div>
+
+  <div class="monitor-section">
+    <div class="monitor-label">온도 — 툴호출 빈도</div>
+    <div class="monitor-bar-wrap"><div class="monitor-bar green" id="mon-temp" style="width:22%"></div></div>
+    <div class="monitor-value" id="mon-temp-val">38°C (정상)</div>
+  </div>
+
+  <div class="monitor-section">
+    <div class="monitor-label">CPU 히스토리</div>
+    <div class="monitor-graph"><canvas id="graph-cpu" width="240" height="40"></canvas></div>
+  </div>
+
+  <div class="monitor-section">
+    <div class="monitor-label">활동 로그</div>
+    <div class="log-area" id="log-area"></div>
+  </div>
+</div>
+</div>
+
+<!-- ===== Detail Overlay ===== -->
+<div class="detail-overlay" id="detail-overlay" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-card" id="detail-card" style="position:relative">
+    <span class="close-btn" onclick="closeDetail()">✕</span>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<script>
+// ===== Chip Data =====
+const chipData = {
+  cpu: {
+    title: 'CPU — Agent Runtime (pi-mono)',
+    specs: {
+      '아키텍처': 'Single Process, Five Subsystems',
+      '코어 수': '3 (LLM, Loop, Tool)',
+      '타임아웃': '600초 (Agent), 30초 (Wait)',
+      '직렬화': '세션 레인 (1 세션 = 1 턴)',
+    },
+    pins: [
+      'context_assembly_in', 'model_inference_out',
+      'tool_call_dispatch', 'tool_result_in',
+      'final_reply_out', 'stream_out',
+      'compaction_trigger', 'session_lock'
+    ],
+    buses: ['FSB (Context Assembly)', 'PCI Bus (Queue)'],
+    desc: 'Agent Loop의 핵심. 메시지 수신 → Context Assembly → Model Inference → Tool Call 여부 판단 → 최종 응답 생성. 한 세션에 한 턴만 직렬 실행.'
+  },
+  'nic-tg': {
+    title: 'NIC:TG — Telegram Channel Adapter',
+    specs: {'프로토콜':'Telegram Bot API','슬롯':'D1','상태':'LINK UP','지원':'텍스트/이미지/파일/음성'},
+    pins: ['message_received','message_sent','webhook_in','gateway_start','gateway_stop'],
+    buses: ['FSB','PCI Bus'],
+    desc: 'Telegram 메시지를 OpenClaw 내부 형식으로 변환. 수신 메시지를 Queue에 넣고 응답을 채널로 전송.'
+  },
+  'nic-dc': {
+    title: 'NIC:DC — Discord Channel Adapter',
+    specs: {'프로토콜':'Discord.js Gateway','슬롯':'D2','상태':'LINK UP','지원':'텍스트/임베드/파일'},
+    pins: ['message_received','message_sent','interaction_create','gateway_start'],
+    buses: ['FSB','PCI Bus'],
+    desc: 'Discord 서버/DM 메시지 처리. 슬래시 커맨드, 리액션 이벤트도 수신.'
+  },
+  'nic-wa': {
+    title: 'NIC:WA — WhatsApp Channel Adapter',
+    specs: {'프로토콜':'WhatsApp Business API','슬롯':'D3','상태':'STANDBY','지원':'텍스트/이미지'},
+    pins: ['message_received','message_sent','webhook_verify'],
+    buses: ['FSB','PCI Bus'],
+    desc: 'WhatsApp 비즈니스 메시지 어댑터. Webhook 기반 수신/발신.'
+  },
+  'nic-slack': {
+    title: 'NIC:SL — Slack Channel Adapter',
+    specs: {'프로토콜':'Slack Events API','슬롯':'D4','상태':'LINK UP','지원':'텍스트/블록'},
+    pins: ['message_received','message_sent','app_mention','gateway_start'],
+    buses: ['FSB','PCI Bus'],
+    desc: 'Slack 워크스페이스 메시지 처리. Events API, Socket Mode 지원.'
+  },
+  ram: {
+    title: 'RAM — Session Manager',
+    specs: {'용량':'128K 토큰','타입':'JSONL 직렬화','압축':'자동 Compaction','플러시':'메모리 자동 저장'},
+    pins: ['context_load','context_save','session_start','session_end','compaction_in','compaction_out','history_append'],
+    buses: ['FSB'],
+    bootstrap: ['SOUL.md (인격/톤)','AGENTS.md (동작 규칙)','IDENTITY.md (이름/이모지)','USER.md (사용자 정보)','TOOLS.md (툴 가이드)','HEARTBEAT.md (하트비트)','BOOTSTRAP.md (최초 1회)','MEMORY.md (개인 DM만)'],
+    desc: 'Context Window 관리. System Prompt + Bootstrap Files + Skills + Tool Schemas + 대화 기록을 조립. 20,000자 제한 자동 잘림.'
+  },
+  hdd: {
+    title: 'HDD — Memory System',
+    specs: {'일일 로그':'memory/YYYY-MM-DD.md','장기 기억':'MEMORY.md','검색':'BM25 + Vector 하이브리드','임베딩':'openai/gemini/voyage/local'},
+    pins: ['memory_search','memory_get','memory_write','embedding_encode'],
+    buses: ['FSB','PCI Bus'],
+    desc: '에이전트의 장기 기억 저장소. 일일 로그(append-only)와 MEMORY.md(큐레이션) 이중 구조. 압축 전 자동 메모리 플러시.'
+  },
+  fw: {
+    title: 'FIRMWARE — Tool Policy Pipeline',
+    specs: {'검사':'허가/거부/샌드박스','Hook':'before_tool_call / after_tool_call','지속성':'tool_result_persist','실행':'LLM → JSON → 검증 → 실행'},
+    pins: ['tool_call_in','policy_check','sandbox_exec','tool_result_out','before_hook','after_hook'],
+    buses: ['PCI Bus'],
+    desc: 'LLM이 생성한 tool_call(JSON)을 검증하고 정책에 따라 허가/거부/샌드박스 환경에서 실행. 결과를 다시 LLM에 반환.'
+  },
+  usb: {
+    title: 'USB HUB — Plugin Hooks (생명주기)',
+    specs: {'타입':'Event-driven Lifecycle','인터페이스':'Hook Registration','확장성':'무제한 플러그인'},
+    pins: ['gateway_start','session_start','message_received','before_model_resolve','before_prompt_build','before_agent_start','agent_end','message_sent','session_end','gateway_stop'],
+    buses: ['PCI Bus'],
+    desc: '에이전트 생명주기의 모든 단계에 Hook을 등록. gateway_start → session_start → message_received → ... → gateway_stop 순서로 이벤트 발화.'
+  },
+  sata: {
+    title: 'SATA — File I/O',
+    specs: {'읽기':'read / glob / grep','쓰기':'write / edit','모드':'샌드박스 기반','경로':'워크스페이스 내'},
+    pins: ['file_read','file_write','file_edit','glob_search','grep_search'],
+    buses: ['PCI Bus','FSB'],
+    desc: '파일 시스템 읽기/쓰기 인터페이스. 샌드박스 정책에 따라 접근 제어.'
+  },
+  bios: {
+    title: 'BIOS — Bootstrap System',
+    specs: {'로드 순서':'SOUL → AGENTS → IDENTITY → USER → TOOLS','최대':'20,000자/파일','MEMORY.md':'개인 DM만 로드','최초 1회':'BOOTSTRAP.md'},
+    pins: ['boot_sequence','file_load','config_read'],
+    buses: ['FSB'],
+    desc: 'Context Assembly 시 Bootstrap Files를 순서대로 로드. System Prompt + 파일 내용으로 에이전트 인격과 동작 규칙 초기화.'
+  },
+  compact: {
+    title: 'DMA — Compaction Engine',
+    specs: {'트리거':'윈도우 꽉 참','방식':'오래된 대화 → 요약 압축','플러시':'압축 전 메모리 자동 저장','유지':'최근 대화'},
+    pins: ['compaction_trigger','summary_out','memory_flush','context_trim'],
+    buses: ['FSB'],
+    desc: 'Context Window가 가득 차면 오래된 대화를 요약으로 압축. 압축 전 "기억해!" 자동 플러시로 중요 정보를 MEMORY.md에 저장.'
+  },
+  clock: {
+    title: 'CLK — Clock / Timeout Generator',
+    specs: {'Agent Runtime':'600초','agent.wait':'30초','Compaction':'자동'},
+    pins: ['clk_out','timeout_signal'],
+    buses: ['CPU Direct'],
+    desc: '에이전트 런타임의 타임아웃 클럭 생성. 600초 초과 시 강제 종료, 30초 대기 타임아웃.'
+  },
+  multi: {
+    title: 'MULTI-AGENT — Router Controller',
+    specs: {'라우팅':'peer.id → accountId → channel → 기본','독립성':'워크스페이스/세션/인격 별도','Gateway':'단일 프로세스 내 다중 에이전트'},
+    pins: ['route_in','agent_select','workspace_bind'],
+    buses: ['FSB'],
+    desc: '한 Gateway에서 여러 에이전트를 라우팅. 각 에이전트는 독립 워크스페이스/세션/인격 보유.'
+  }
+};
+
+// ===== Detail View =====
+function showDetail(chipId) {
+  const data = chipData[chipId];
+  if (!data) return;
+  let html = `<h2>${data.title}</h2><p>${data.desc}</p>`;
+  html += '<h3>사양</h3><div class="spec-grid">';
+  for (const [k,v] of Object.entries(data.specs)) {
+    html += `<span class="spec-label">${k}</span><span class="spec-value">${v}</span>`;
+  }
+  html += '</div>';
+  html += '<h3>핀아웃 (Hook 포인트)</h3><ul>';
+  data.pins.forEach(p => html += `<li>${p}</li>`);
+  html += '</ul>';
+  html += '<h3>연결 버스</h3><ul>';
+  data.buses.forEach(b => html += `<li>${b}</li>`);
+  html += '</ul>';
+  if (data.bootstrap) {
+    html += '<h3>Bootstrap Files</h3><ul>';
+    data.bootstrap.forEach(b => html += `<li>${b}</li>`);
+    html += '</ul>';
+  }
+  document.getElementById('detail-content').innerHTML = html;
+  document.getElementById('detail-overlay').classList.add('show');
+}
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('show');
+}
+
+// Chip click handlers
+document.querySelectorAll('.chip').forEach(chip => {
+  chip.addEventListener('click', () => {
+    const id = chip.dataset.chip;
+    if (id) showDetail(id);
+  });
+});
+
+// ===== LED Control =====
+function setLed(id, state) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.remove('on','amber');
+  if (state === 'on') el.classList.add('on');
+  else if (state === 'amber') el.classList.add('amber');
+}
+function setCore(id, active) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (active) el.classList.add('active');
+  else el.classList.remove('active');
+}
+
+// ===== Monitor =====
+function setMonitor(id, pct, label, color) {
+  const bar = document.getElementById('mon-' + id);
+  const val = document.getElementById('mon-' + id + '-val');
+  if (bar) {
+    bar.style.width = pct + '%';
+    bar.className = 'monitor-bar ' + (color || (pct > 80 ? 'red' : pct > 50 ? 'amber' : 'green'));
+  }
+  if (val && label) val.textContent = label;
+}
+
+// CPU history graph
+const cpuHistory = new Array(60).fill(0);
+const graphCanvas = document.getElementById('graph-cpu');
+const graphCtx = graphCanvas.getContext('2d');
+function drawGraph() {
+  const w = graphCanvas.width, h = graphCanvas.height;
+  graphCtx.fillStyle = '#0a0a0a';
+  graphCtx.fillRect(0, 0, w, h);
+  // Grid
+  graphCtx.strokeStyle = '#1a1a1a';
+  graphCtx.lineWidth = 0.5;
+  for (let y = 0; y < h; y += 10) {
+    graphCtx.beginPath(); graphCtx.moveTo(0, y); graphCtx.lineTo(w, y); graphCtx.stroke();
+  }
+  // Line
+  graphCtx.strokeStyle = '#0f0';
+  graphCtx.lineWidth = 1;
+  graphCtx.shadowColor = '#0f0';
+  graphCtx.shadowBlur = 3;
+  graphCtx.beginPath();
+  const step = w / (cpuHistory.length - 1);
+  cpuHistory.forEach((v, i) => {
+    const x = i * step, y = h - (v / 100) * h;
+    if (i === 0) graphCtx.moveTo(x, y);
+    else graphCtx.lineTo(x, y);
+  });
+  graphCtx.stroke();
+  graphCtx.shadowBlur = 0;
+}
+drawGraph();
+
+// ===== Activity Log =====
+function addLog(component, action) {
+  const area = document.getElementById('log-area');
+  const now = new Date();
+  const time = now.toTimeString().slice(0,8);
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="time">${time}</span> <span class="component">[${component}]</span> <span class="action">${action}</span>`;
+  area.prepend(entry);
+  if (area.children.length > 50) area.lastChild.remove();
+}
+
+// ===== Signal Animation =====
+function createSignal(fromEl, toEl, color, duration) {
+  return new Promise(resolve => {
+    const pcb = document.getElementById('pcb');
+    const pcbRect = pcb.getBoundingClientRect();
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = toEl.getBoundingClientRect();
+    const sx = fromRect.left + fromRect.width/2 - pcbRect.left;
+    const sy = fromRect.top + fromRect.height/2 - pcbRect.top;
+    const ex = toRect.left + toRect.width/2 - pcbRect.left;
+    const ey = toRect.top + toRect.height/2 - pcbRect.top;
+
+    const dot = document.createElement('div');
+    dot.className = 'signal' + (color === 'amber' ? ' amber' : '');
+    dot.style.left = sx + 'px';
+    dot.style.top = sy + 'px';
+    dot.style.opacity = '1';
+    document.getElementById('signal-layer').appendChild(dot);
+
+    const start = performance.now();
+    const dur = duration || 600;
+    function animate(ts) {
+      const t = Math.min((ts - start) / dur, 1);
+      const ease = t < 0.5 ? 2*t*t : -1+(4-2*t)*t;
+      dot.style.left = (sx + (ex - sx) * ease) + 'px';
+      dot.style.top = (sy + (ey - sy) * ease) + 'px';
+      if (t < 1) requestAnimationFrame(animate);
+      else { dot.remove(); resolve(); }
+    }
+    requestAnimationFrame(animate);
+  });
+}
+
+function createBusPacket(busEl, direction) {
+  const pcb = document.getElementById('pcb');
+  const pcbRect = pcb.getBoundingClientRect();
+  const busRect = busEl.getBoundingClientRect();
+  const bits = Array.from({length:8}, () => Math.random() > 0.5 ? '1' : '0').join('');
+  const pkt = document.createElement('div');
+  pkt.className = 'data-packet';
+  pkt.textContent = bits;
+  const startX = direction > 0 ? busRect.left - pcbRect.left : busRect.right - pcbRect.left;
+  pkt.style.top = (busRect.top - pcbRect.top - 10) + 'px';
+  pkt.style.left = startX + 'px';
+  pkt.style.opacity = '1';
+  document.getElementById('signal-layer').appendChild(pkt);
+  const endX = direction > 0 ? busRect.right - pcbRect.left : busRect.left - pcbRect.left;
+  const start = performance.now();
+  function animate(ts) {
+    const t = Math.min((ts - start) / 800, 1);
+    pkt.style.left = (startX + (endX - startX) * t) + 'px';
+    pkt.style.opacity = String(1 - t * 0.5);
+    if (t < 1) requestAnimationFrame(animate);
+    else pkt.remove();
+  }
+  requestAnimationFrame(animate);
+}
+
+// ===== Simulation =====
+let simRunning = false;
+let autoMode = false;
+let simTimer = null;
+
+async function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function runSimulation() {
+  if (simRunning) return;
+  simRunning = true;
+  document.getElementById('btn-sim').classList.add('active');
+  addLog('SYS', '시뮬레이션 시작');
+
+  const nic = document.getElementById('chip-nic-tg');
+  const cpu = document.getElementById('chip-cpu');
+  const ram = document.getElementById('chip-ram');
+  const hdd = document.getElementById('chip-hdd');
+  const fw = document.getElementById('chip-fw');
+  const sata = document.getElementById('chip-sata');
+  const usb = document.getElementById('chip-usb');
+  const bios = document.getElementById('chip-bios');
+  const fsb = document.getElementById('bus-fsb');
+  const pci = document.getElementById('bus-pci');
+
+  // 1. NIC receives signal
+  addLog('NIC:TG', '메시지 수신');
+  setLed('led-nic-tg', 'on');
+  document.getElementById('nic-tg-act').classList.add('activity');
+  setMonitor('net', 60, '수신중...', 'green');
+  await sleep(400);
+
+  // USB hook: message_received
+  addLog('USB', 'Hook: message_received 발화');
+  setLed('led-usb', 'amber');
+  await createSignal(nic, usb, 'amber', 400);
+  setLed('led-usb', 'off');
+  await sleep(200);
+
+  // 2. NIC → PCI Bus → CPU
+  addLog('QUEUE', 'PCI Bus로 메시지 전달');
+  createBusPacket(pci, 1);
+  await createSignal(nic, cpu, 'green', 700);
+  setMonitor('net', 30, '전달 완료');
+  setLed('led-nic-tg', 'off');
+  document.getElementById('nic-tg-act').classList.remove('activity');
+
+  // 3. BIOS loads bootstrap
+  addLog('BIOS', 'Bootstrap Files 로드');
+  setLed('led-bios', 'on');
+  await createSignal(bios, ram, 'amber', 500);
+  setLed('led-bios', 'off');
+  await sleep(100);
+
+  // 4. RAM context load
+  addLog('RAM', 'Context Window 로드');
+  setLed('led-ram', 'on');
+  setMonitor('ram', 55, '55% (70.4K / 128K 토큰)');
+  createBusPacket(fsb, -1);
+  await createSignal(ram, cpu, 'green', 500);
+  setLed('led-ram', 'amber');
+
+  // 5. CPU processing - LLM inference
+  addLog('CPU', 'LLM 추론 시작');
+  setLed('led-cpu', 'on');
+  setCore('core-loop', true);
+  setMonitor('cpu', 75, '75%');
+  cpuHistory.push(75); cpuHistory.shift(); drawGraph();
+  await sleep(300);
+  setCore('core-llm', true);
+  setMonitor('cpu', 92, '92%', 'amber');
+  setMonitor('temp', 55, '55°C (부하)', 'amber');
+  cpuHistory.push(92); cpuHistory.shift(); drawGraph();
+  await sleep(600);
+
+  // 6. CPU decides tool_call → Firmware policy check
+  addLog('CPU', 'Tool Call 감지 → 정책 검사');
+  setCore('core-tool', true);
+  setLed('led-fw', 'amber');
+  createBusPacket(pci, 1);
+  await createSignal(cpu, fw, 'amber', 500);
+  addLog('FIRMWARE', '정책 검사: 허가');
+  setLed('led-fw', 'on');
+  await sleep(300);
+  setLed('led-fw', 'off');
+
+  // 7. SATA file read
+  addLog('SATA', '파일 읽기 실행');
+  setLed('led-sata', 'on');
+  setMonitor('disk', 60, 'READ', 'amber');
+  await createSignal(fw, sata, 'green', 400);
+  await sleep(400);
+  addLog('SATA', '파일 읽기 완료');
+  setMonitor('disk', 10, 'IDLE');
+  setLed('led-sata', 'off');
+
+  // Result back to CPU
+  createBusPacket(pci, -1);
+  await createSignal(sata, cpu, 'green', 500);
+
+  // 8. HDD memory search
+  addLog('HDD', 'memory_search (BM25 + Vector)');
+  setLed('led-hdd', 'on');
+  setMonitor('disk', 45, 'SEARCH', 'amber');
+  await createSignal(cpu, hdd, 'amber', 500);
+  await sleep(500);
+  addLog('HDD', '검색 결과 반환');
+  setMonitor('disk', 5, 'IDLE');
+  createBusPacket(fsb, -1);
+  await createSignal(hdd, cpu, 'green', 400);
+  setLed('led-hdd', 'off');
+
+  // 9. CPU second inference
+  addLog('CPU', '2차 LLM 추론 (결과 포함)');
+  setMonitor('cpu', 88, '88%', 'amber');
+  cpuHistory.push(88); cpuHistory.shift(); drawGraph();
+  await sleep(800);
+  setMonitor('cpu', 60, '60%');
+  cpuHistory.push(60); cpuHistory.shift(); drawGraph();
+  addLog('CPU', 'Final Reply 생성');
+
+  // 10. Compaction check
+  addLog('DMA', 'Compaction 체크');
+  setLed('led-compact', 'amber');
+  await sleep(300);
+  setLed('led-compact', 'off');
+  addLog('DMA', '압축 불필요');
+
+  // 11. Response back to NIC
+  addLog('CPU', '응답 스트리밍 → NIC:TG');
+  setLed('led-nic-tg', 'on');
+  document.getElementById('nic-tg-act').classList.add('activity');
+  setMonitor('net', 70, '전송중...');
+  createBusPacket(pci, -1);
+  createBusPacket(fsb, -1);
+  await createSignal(cpu, nic, 'green', 700);
+
+  // USB hook: message_sent
+  addLog('USB', 'Hook: message_sent 발화');
+  setLed('led-usb', 'amber');
+  await sleep(200);
+  setLed('led-usb', 'off');
+
+  addLog('NIC:TG', '응답 전송 완료');
+  setMonitor('net', 10, '전송 완료');
+
+  // 12. RAM persistence
+  addLog('RAM', 'Session History 저장 (JSONL)');
+  setLed('led-ram', 'on');
+  await sleep(300);
+  setMonitor('ram', 60, '60% (76.8K / 128K 토큰)');
+  setLed('led-ram', 'off');
+
+  // Wind down
+  await sleep(300);
+  setCore('core-llm', false);
+  setCore('core-loop', false);
+  setCore('core-tool', false);
+  setLed('led-cpu', 'off');
+  setLed('led-nic-tg', 'off');
+  document.getElementById('nic-tg-act').classList.remove('activity');
+  setMonitor('cpu', 8, '8%');
+  setMonitor('net', 0, '대기중');
+  setMonitor('temp', 22, '38°C (정상)', 'green');
+  cpuHistory.push(8); cpuHistory.shift(); drawGraph();
+
+  addLog('SYS', '시뮬레이션 완료');
+  simRunning = false;
+  document.getElementById('btn-sim').classList.remove('active');
+
+  if (autoMode) {
+    simTimer = setTimeout(runSimulation, 2000);
+  }
+}
+
+function startSimulation() {
+  if (!simRunning) runSimulation();
+}
+
+function toggleAuto() {
+  autoMode = !autoMode;
+  const btn = document.getElementById('btn-auto');
+  if (autoMode) {
+    btn.classList.add('active');
+    btn.textContent = '⟳ 자동 ON';
+    if (!simRunning) runSimulation();
+  } else {
+    btn.classList.remove('active');
+    btn.textContent = '⟳ 자동 반복';
+    if (simTimer) { clearTimeout(simTimer); simTimer = null; }
+  }
+}
+
+function stopSimulation() {
+  autoMode = false;
+  document.getElementById('btn-auto').classList.remove('active');
+  document.getElementById('btn-auto').textContent = '⟳ 자동 반복';
+  if (simTimer) { clearTimeout(simTimer); simTimer = null; }
+  // Reset all LEDs
+  document.querySelectorAll('.chip-led').forEach(l => l.classList.remove('on','amber'));
+  document.querySelectorAll('.cpu-core').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('.nic-port-led.activity').forEach(l => l.classList.remove('activity'));
+  setMonitor('cpu', 5, '5%', 'green');
+  setMonitor('ram', 35, '35% (44.8K / 128K 토큰)', 'green');
+  setMonitor('disk', 0, 'IDLE', 'green');
+  setMonitor('net', 0, '대기중', 'green');
+  setMonitor('temp', 22, '38°C (정상)', 'green');
+  document.getElementById('signal-layer').innerHTML = '';
+  addLog('SYS', '시뮬레이션 정지');
+  simRunning = false;
+  document.getElementById('btn-sim').classList.remove('active');
+}
+
+// ===== Ambient: Clock LED blink =====
+setInterval(() => {
+  const cl = document.getElementById('led-clock');
+  if (cl) { cl.classList.toggle('on'); }
+}, 1000);
+
+// ===== Idle CPU graph updates =====
+setInterval(() => {
+  if (!simRunning) {
+    const idle = 5 + Math.random() * 10;
+    cpuHistory.push(idle); cpuHistory.shift(); drawGraph();
+  }
+}, 2000);
+
+// Initial log
+addLog('SYS', 'OpenClaw Agent Core 초기화 완료');
+addLog('BIOS', 'Bootstrap Files 로드 완료');
+addLog('NIC:TG', 'Telegram 연결 완료 (LINK UP)');
+addLog('NIC:DC', 'Discord 연결 완료 (LINK UP)');
+addLog('NIC:SL', 'Slack 연결 완료 (LINK UP)');
+addLog('RAM', 'Context Window 준비 완료 (128K)');
+addLog('HDD', 'Memory System 초기화 완료');
+</script>
+</body>
+</html>

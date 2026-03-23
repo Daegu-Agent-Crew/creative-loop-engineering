@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Agent Core - 뉴럴 네트워크 뇌</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0a0a2e;
+  --frontal:#00e5ff;
+  --parietal:#ff6ec7;
+  --temporal:#ffd600;
+  --occipital:#76ff03;
+  --brainstem:#ff3d00;
+  --panel-bg:rgba(10,10,46,0.95);
+  --text:#e0e0ff;
+  --dim:#5a5a8a;
+}
+html,body{height:100%;overflow:hidden;font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text)}
+#app{display:flex;height:100%;flex-direction:row}
+#brain-area{flex:1;position:relative;overflow:hidden;min-width:0}
+#info-panel{width:340px;background:var(--panel-bg);border-left:1px solid rgba(255,255,255,0.08);display:flex;flex-direction:column;overflow-y:auto;padding:20px;gap:16px;flex-shrink:0}
+#info-panel::-webkit-scrollbar{width:4px}
+#info-panel::-webkit-scrollbar-thumb{background:var(--dim);border-radius:2px}
+canvas{width:100%;height:100%;display:block}
+.panel-section{background:rgba(255,255,255,0.04);border-radius:12px;padding:16px;border:1px solid rgba(255,255,255,0.06)}
+.panel-section h3{font-size:13px;text-transform:uppercase;letter-spacing:1.5px;color:var(--dim);margin-bottom:12px;font-weight:600}
+.panel-title{font-size:18px;font-weight:700;margin-bottom:4px;background:linear-gradient(135deg,var(--frontal),var(--parietal));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.panel-subtitle{font-size:11px;color:var(--dim);margin-bottom:16px}
+.loop-step{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:12px;line-height:1.5}
+.loop-step:last-child{border-bottom:none}
+.loop-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0;opacity:0.4;transition:opacity 0.3s,box-shadow 0.3s}
+.loop-dot.active{opacity:1;box-shadow:0 0 8px currentColor}
+.loop-label{color:var(--text);opacity:0.7;transition:opacity 0.3s}
+.loop-label.active{opacity:1;font-weight:600}
+#donut-container{position:relative;width:160px;height:160px;margin:0 auto}
+#donut-canvas{width:160px;height:160px}
+.donut-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.donut-center .num{font-size:22px;font-weight:700;color:#fff}
+.donut-center .lbl{font-size:10px;color:var(--dim)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px}
+.legend-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--dim)}
+.legend-dot{width:8px;height:8px;border-radius:50%}
+.hook-item{font-size:11px;padding:5px 10px;border-radius:6px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);color:var(--dim);transition:all 0.3s}
+.hook-item.active{border-color:var(--frontal);color:var(--frontal);background:rgba(0,229,255,0.08)}
+.hooks-grid{display:flex;flex-wrap:wrap;gap:6px}
+#controls{position:absolute;bottom:0;left:0;right:0;display:flex;align-items:center;justify-content:center;gap:16px;padding:14px 20px;background:linear-gradient(transparent,rgba(10,10,46,0.95));z-index:10}
+.ctrl-btn{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--text);padding:8px 18px;border-radius:8px;cursor:pointer;font-size:12px;transition:all 0.2s;font-family:inherit}
+.ctrl-btn:hover{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.2)}
+.ctrl-btn.active{background:rgba(0,229,255,0.15);border-color:var(--frontal);color:var(--frontal)}
+.ctrl-btn.primary{background:linear-gradient(135deg,rgba(0,229,255,0.2),rgba(255,110,199,0.2));border-color:var(--frontal)}
+.speed-control{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--dim)}
+.speed-control input{width:80px;accent-color:var(--frontal)}
+#tooltip{position:absolute;pointer-events:none;background:rgba(10,10,46,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:10px;padding:12px 16px;font-size:12px;max-width:220px;opacity:0;transition:opacity 0.2s;z-index:20;backdrop-filter:blur(10px)}
+#tooltip .tt-title{font-weight:700;font-size:13px;margin-bottom:4px}
+#tooltip .tt-body{color:var(--dim);line-height:1.5}
+#detail-modal{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(10,10,46,0.97);border:1px solid rgba(255,255,255,0.12);border-radius:16px;padding:24px;width:380px;max-height:80vh;overflow-y:auto;z-index:30;display:none;backdrop-filter:blur(20px)}
+#detail-modal h2{font-size:16px;margin-bottom:6px}
+#detail-modal .role{font-size:12px;color:var(--dim);margin-bottom:14px}
+#detail-modal .detail-section{margin-bottom:14px}
+#detail-modal .detail-section h4{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:6px}
+#detail-modal .detail-section p,.detail-section li{font-size:12px;line-height:1.6;color:var(--text);opacity:0.8}
+#detail-modal ul{padding-left:16px}
+#detail-modal .close-btn{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--dim);font-size:18px;cursor:pointer}
+#overlay{position:absolute;inset:0;background:rgba(0,0,0,0.5);z-index:25;display:none;cursor:pointer}
+.status-bar{position:absolute;top:16px;left:50%;transform:translateX(-50%);background:rgba(10,10,46,0.9);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:8px 20px;font-size:12px;color:var(--dim);z-index:10;white-space:nowrap;backdrop-filter:blur(10px)}
+.status-bar .msg{color:var(--frontal);font-weight:600}
+@media(max-width:800px){
+  #app{flex-direction:column}
+  #info-panel{width:100%;max-height:40vh;border-left:none;border-top:1px solid rgba(255,255,255,0.08)}
+  #brain-area{min-height:50vh}
+  #detail-modal{width:90%;max-width:380px}
+}
+@media(max-width:500px){
+  #controls{flex-wrap:wrap;gap:8px;padding:10px}
+  .ctrl-btn{padding:6px 12px;font-size:11px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="brain-area">
+    <canvas id="brain"></canvas>
+    <div class="status-bar" id="status">
+      <span class="msg" id="status-msg">대기 중</span> — <span id="status-detail">시뮬레이션을 시작하세요</span>
+    </div>
+    <div id="tooltip"><div class="tt-title"></div><div class="tt-body"></div></div>
+    <div id="overlay"></div>
+    <div id="detail-modal">
+      <button class="close-btn" id="close-detail">&times;</button>
+      <h2 id="dm-title"></h2>
+      <div class="role" id="dm-role"></div>
+      <div id="dm-content"></div>
+    </div>
+    <div id="controls">
+      <button class="ctrl-btn primary" id="btn-play">▶ 시뮬레이션 시작</button>
+      <select class="ctrl-btn" id="scenario-select">
+        <option value="weather">💬 "날씨 알려줘"</option>
+        <option value="memory">🧠 "어제 뭐했지?"</option>
+        <option value="tool">🔧 "파일 분석해줘"</option>
+      </select>
+      <div class="speed-control">
+        <span>속도</span>
+        <input type="range" id="speed" min="0.3" max="3" step="0.1" value="1">
+        <span id="speed-val">1.0x</span>
+      </div>
+      <button class="ctrl-btn" id="btn-reset">↻ 리셋</button>
+    </div>
+  </div>
+  <div id="info-panel">
+    <div>
+      <div class="panel-title">OpenClaw Agent Core</div>
+      <div class="panel-subtitle">뉴럴 네트워크 시각화 · 5 서브시스템</div>
+    </div>
+    <div class="panel-section">
+      <h3>🔄 Agent Loop</h3>
+      <div id="loop-steps"></div>
+    </div>
+    <div class="panel-section">
+      <h3>📊 Context Window 구성</h3>
+      <div id="donut-container">
+        <canvas id="donut-canvas" width="320" height="320"></canvas>
+        <div class="donut-center"><div class="num">128K</div><div class="lbl">토큰</div></div>
+      </div>
+      <div class="legend" id="donut-legend"></div>
+    </div>
+    <div class="panel-section">
+      <h3>⚡ Plugin Hooks</h3>
+      <div class="hooks-grid" id="hooks-grid"></div>
+    </div>
+  </div>
+</div>
+<script>
+(function(){
+// === DATA ===
+const REGIONS = [
+  {id:'frontal',name:'전두엽',sub:'Channel Adapters',color:'#00e5ff',
+   desc:'TG/DC/WA/Slack/Email/Webhook 메시지를 통합 포맷으로 변환',
+   role:'입력 처리 및 출력 전달',
+   details:['멀티 채널 메시지 수신','통합 포맷 변환 (normalize)','응답 스트리밍 전송','채널별 포맷 복원'],
+   hooks:['gateway_start','message_received','message_sent','gateway_stop']},
+  {id:'parietal',name:'두정엽',sub:'Session Manager',color:'#ff6ec7',
+   desc:'Context Window 관리, 세션 직렬화, JSONL 기반 영속 저장',
+   role:'기억과 인지 관리',
+   details:['Context Assembly (System Prompt + Bootstrap + History)','세션 레인 직렬화 (Race Condition 방지)','JSONL 기반 대화 저장','Compaction: 오래된 대화 요약 압축'],
+   hooks:['session_start','before_prompt_build','session_end']},
+  {id:'temporal',name:'측두엽',sub:'Queue',color:'#ffd600',
+   desc:'수신-실행 분리, 순서 보장, Exactly-once 처리',
+   role:'순서와 리듬 제어',
+   details:['메시지 큐잉 (FIFO)','Exactly-once 전달 보장','수신-실행 분리','백프레셔 제어'],
+   hooks:['message_received']},
+  {id:'occipital',name:'후두엽',sub:'Tool Policy Pipeline',color:'#76ff03',
+   desc:'툴호출 허가/거부/샌드박스 검사 파이프라인',
+   role:'필터링 및 보안 검사',
+   details:['tool_call JSON 검증','허가/거부/샌드박스 판정','before_tool_call Hook','after_tool_call Hook','tool_result_persist'],
+   hooks:['before_tool_call','after_tool_call','tool_result_persist']},
+  {id:'brainstem',name:'뇌간',sub:'Agent Runtime (pi-mono)',color:'#ff3d00',
+   desc:'LLM 추론 + 툴호출 루프 — Agent Core의 핵심 엔진',
+   role:'핵심 추론 엔진',
+   details:['Context Assembly → Model Inference','Tool Call 판단 및 실행 루프','Final Reply 생성','Streaming 출력','타임아웃: 600초'],
+   hooks:['before_model_resolve','before_agent_start','agent_end']}
+];
+
+const LOOP_STEPS = [
+  {label:'메시지 수신',color:'#00e5ff'},
+  {label:'Context Assembly',color:'#ff6ec7'},
+  {label:'Model Inference',color:'#ff3d00'},
+  {label:'Tool Call 판단',color:'#76ff03'},
+  {label:'Tool 실행',color:'#76ff03'},
+  {label:'결과 추가 → 재추론',color:'#ff3d00'},
+  {label:'Final Reply 생성',color:'#ff3d00'},
+  {label:'Streaming 전송',color:'#00e5ff'},
+  {label:'Persistence 저장',color:'#ff6ec7'}
+];
+
+const DONUT_DATA = [
+  {label:'System Prompt',value:9600,color:'#00e5ff'},
+  {label:'Tool Schemas',value:8000,color:'#76ff03'},
+  {label:'Bootstrap Files',value:6000,color:'#ff6ec7'},
+  {label:'대화 기록',value:80000,color:'#ffd600'},
+  {label:'툴호출 결과',value:20000,color:'#ff3d00'},
+  {label:'첨부파일',value:4400,color:'#8c6bef'}
+];
+
+const ALL_HOOKS = ['gateway_start','session_start','message_received','before_model_resolve',
+  'before_prompt_build','before_agent_start','before_tool_call','after_tool_call',
+  'tool_result_persist','agent_end','message_sent','session_end','gateway_stop'];
+
+const SCENARIOS = {
+  weather:{name:'"날씨 알려줘"',steps:[
+    {region:'frontal',msg:'메시지 수신: "날씨 알려줘"',loop:0,hooks:['message_received']},
+    {region:'temporal',msg:'큐에 등록, 순서 대기',loop:0,hooks:[]},
+    {region:'parietal',msg:'Context Assembly 실행',loop:1,hooks:['session_start','before_prompt_build']},
+    {region:'brainstem',msg:'LLM 추론 시작...',loop:2,hooks:['before_model_resolve','before_agent_start']},
+    {region:'occipital',msg:'weather_tool 호출 검증',loop:3,hooks:['before_tool_call']},
+    {region:'occipital',msg:'Tool 실행: get_weather()',loop:4,hooks:['after_tool_call','tool_result_persist']},
+    {region:'brainstem',msg:'결과로 재추론 중...',loop:5,hooks:[]},
+    {region:'brainstem',msg:'응답 생성 완료',loop:6,hooks:['agent_end']},
+    {region:'frontal',msg:'스트리밍 전송 → 채널',loop:7,hooks:['message_sent']},
+    {region:'parietal',msg:'대화 기록 영속 저장',loop:8,hooks:['session_end']}
+  ]},
+  memory:{name:'"어제 뭐했지?"',steps:[
+    {region:'frontal',msg:'메시지 수신: "어제 뭐했지?"',loop:0,hooks:['message_received']},
+    {region:'temporal',msg:'큐 등록',loop:0,hooks:[]},
+    {region:'parietal',msg:'Context + Memory 로드',loop:1,hooks:['session_start','before_prompt_build']},
+    {region:'brainstem',msg:'LLM 추론: memory_search 필요',loop:2,hooks:['before_model_resolve','before_agent_start']},
+    {region:'occipital',msg:'memory_search 호출 검증',loop:3,hooks:['before_tool_call']},
+    {region:'occipital',msg:'BM25+Vector 하이브리드 검색',loop:4,hooks:['after_tool_call']},
+    {region:'brainstem',msg:'검색 결과로 응답 생성',loop:5,hooks:[]},
+    {region:'brainstem',msg:'"어제는 API 리팩토링을..."',loop:6,hooks:['agent_end']},
+    {region:'frontal',msg:'응답 전송',loop:7,hooks:['message_sent']},
+    {region:'parietal',msg:'저장',loop:8,hooks:['session_end']}
+  ]},
+  tool:{name:'"파일 분석해줘"',steps:[
+    {region:'frontal',msg:'메시지 수신 + 첨부파일',loop:0,hooks:['message_received']},
+    {region:'temporal',msg:'큐 등록, 파일 포함',loop:0,hooks:[]},
+    {region:'parietal',msg:'Context + 파일 임베딩',loop:1,hooks:['session_start','before_prompt_build']},
+    {region:'brainstem',msg:'파일 분석 추론 시작',loop:2,hooks:['before_model_resolve','before_agent_start']},
+    {region:'occipital',msg:'file_read 허가 검사',loop:3,hooks:['before_tool_call']},
+    {region:'occipital',msg:'파일 읽기 실행',loop:4,hooks:['after_tool_call']},
+    {region:'brainstem',msg:'분석 결과로 재추론',loop:5,hooks:[]},
+    {region:'brainstem',msg:'분석 리포트 생성',loop:6,hooks:['agent_end']},
+    {region:'frontal',msg:'스트리밍 전송',loop:7,hooks:['message_sent']},
+    {region:'parietal',msg:'기록 저장',loop:8,hooks:['session_end']}
+  ]}
+};
+
+// === CANVAS SETUP ===
+const cvs = document.getElementById('brain');
+const ctx = cvs.getContext('2d');
+let W, H, cx, cy, brainRx, brainRy;
+let dpr = window.devicePixelRatio || 1;
+
+function resize(){
+  const r = cvs.parentElement.getBoundingClientRect();
+  W = r.width; H = r.height;
+  cvs.width = W * dpr; cvs.height = H * dpr;
+  cvs.style.width = W+'px'; cvs.style.height = H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  cx = W * 0.48; cy = H * 0.46;
+  brainRx = Math.min(W * 0.38, H * 0.42);
+  brainRy = brainRx * 0.82;
+  layoutNodes();
+}
+
+// === NODES ===
+let nodes = [];
+function layoutNodes(){
+  const s = brainRx;
+  nodes = [
+    {r:REGIONS[0],x:cx - s*0.45, y:cy - s*0.35, rad:s*0.18},  // frontal
+    {r:REGIONS[1],x:cx + s*0.15, y:cy - s*0.55, rad:s*0.15},  // parietal
+    {r:REGIONS[2],x:cx - s*0.55, y:cy + s*0.15, rad:s*0.14},  // temporal
+    {r:REGIONS[3],x:cx + s*0.45, y:cy + s*0.1,  rad:s*0.15},  // occipital
+    {r:REGIONS[4],x:cx,          y:cy + s*0.1,   rad:s*0.22}   // brainstem
+  ];
+}
+
+// === CONNECTIONS ===
+function getConnections(){
+  return [
+    [0,4],[4,0], // frontal <-> brainstem
+    [1,4],[4,1], // parietal <-> brainstem
+    [2,4],[4,2], // temporal <-> brainstem
+    [3,4],[4,3], // occipital <-> brainstem
+    [0,2],       // frontal -> temporal
+    [1,3],       // parietal -> occipital
+  ];
+}
+
+// === PARTICLES ===
+let particles = [];
+class Particle {
+  constructor(fromIdx, toIdx, color, speed){
+    this.fi = fromIdx; this.ti = toIdx;
+    this.color = color;
+    this.t = 0;
+    this.speed = (0.008 + Math.random()*0.006) * speed;
+    this.size = 2 + Math.random()*2;
+    this.alive = true;
+  }
+  update(){
+    this.t += this.speed * simSpeed;
+    if(this.t >= 1) this.alive = false;
+  }
+  getPos(){
+    const a = nodes[this.fi], b = nodes[this.ti];
+    const mx = (a.x+b.x)/2 + (a.y-b.y)*0.3;
+    const my = (a.y+b.y)/2 + (b.x-a.x)*0.3;
+    const t = this.t;
+    const it = 1-t;
+    return {
+      x: it*it*a.x + 2*it*t*mx + t*t*b.x,
+      y: it*it*a.y + 2*it*t*my + t*t*b.y
+    };
+  }
+}
+
+function spawnParticles(fromIdx, toIdx, color, count=5){
+  for(let i=0;i<count;i++){
+    setTimeout(()=>{
+      particles.push(new Particle(fromIdx, toIdx, color, 1));
+    }, i * 60);
+  }
+}
+
+// === DRAWING ===
+let time = 0;
+let activeRegion = null;
+let hoverNode = null;
+let nodeGlows = {};
+REGIONS.forEach(r => nodeGlows[r.id] = 0);
+
+function drawBrainOutline(){
+  ctx.save();
+  // Brain shape - organic ellipse with bumps
+  ctx.beginPath();
+  for(let a=0;a<Math.PI*2;a+=0.02){
+    const bump = Math.sin(a*3)*brainRx*0.06 + Math.sin(a*5)*brainRx*0.03 + Math.cos(a*2)*brainRx*0.04;
+    // Frontal lobe bump
+    const frontalBump = a > Math.PI*1.2 && a < Math.PI*1.8 ? Math.sin((a-Math.PI*1.2)/(Math.PI*0.6)*Math.PI)*brainRx*0.08 : 0;
+    const rx = brainRx + bump + frontalBump;
+    const ry = brainRy + bump*0.7;
+    const x = cx + Math.cos(a)*rx;
+    const y = cy + Math.sin(a)*ry;
+    if(a===0) ctx.moveTo(x,y);
+    else ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  const g = ctx.createRadialGradient(cx,cy,0,cx,cy,brainRx);
+  g.addColorStop(0,'rgba(20,20,60,0.6)');
+  g.addColorStop(0.7,'rgba(15,15,50,0.3)');
+  g.addColorStop(1,'rgba(10,10,46,0.1)');
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(100,100,180,0.15)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Sulci lines (brain folds)
+  ctx.strokeStyle = 'rgba(80,80,150,0.08)';
+  ctx.lineWidth = 1;
+  for(let i=0;i<6;i++){
+    ctx.beginPath();
+    const sa = Math.PI*0.3 + i*0.4;
+    const sx = cx + Math.cos(sa)*brainRx*0.2;
+    const sy = cy + Math.sin(sa)*brainRy*0.2;
+    const ex = cx + Math.cos(sa)*brainRx*0.85;
+    const ey = cy + Math.sin(sa)*brainRy*0.85;
+    const cmx = (sx+ex)/2 + (Math.sin(sa+i))*brainRx*0.15;
+    const cmy = (sy+ey)/2 + (Math.cos(sa+i))*brainRy*0.15;
+    ctx.moveTo(sx,sy);
+    ctx.quadraticCurveTo(cmx,cmy,ex,ey);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawConnections(){
+  const conns = getConnections();
+  conns.forEach(([fi,ti])=>{
+    const a = nodes[fi], b = nodes[ti];
+    const mx = (a.x+b.x)/2 + (a.y-b.y)*0.3;
+    const my = (a.y+b.y)/2 + (b.x-a.x)*0.3;
+    ctx.beginPath();
+    ctx.moveTo(a.x,a.y);
+    ctx.quadraticCurveTo(mx,my,b.x,b.y);
+
+    const isActive = (activeRegion === a.r.id || activeRegion === b.r.id);
+    ctx.strokeStyle = isActive ? 'rgba(255,255,255,0.15)' : 'rgba(100,100,180,0.06)';
+    ctx.lineWidth = isActive ? 1.5 : 0.8;
+    ctx.stroke();
+  });
+}
+
+function drawParticles(){
+  particles.forEach(p=>{
+    p.update();
+    if(!p.alive) return;
+    const pos = p.getPos();
+    ctx.beginPath();
+    ctx.arc(pos.x, pos.y, p.size, 0, Math.PI*2);
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 8;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Trail
+    const t2 = Math.max(0, p.t - 0.05);
+    const it2 = 1-t2;
+    const a = nodes[p.fi], b = nodes[p.ti];
+    const mx = (a.x+b.x)/2 + (a.y-b.y)*0.3;
+    const my = (a.y+b.y)/2 + (b.x-a.x)*0.3;
+    const px2 = it2*it2*a.x + 2*it2*t2*mx + t2*t2*b.x;
+    const py2 = it2*it2*a.y + 2*it2*t2*my + t2*t2*b.y;
+    ctx.beginPath();
+    ctx.moveTo(px2,py2);
+    ctx.lineTo(pos.x,pos.y);
+    ctx.strokeStyle = p.color+'60';
+    ctx.lineWidth = p.size*0.8;
+    ctx.stroke();
+  });
+  particles = particles.filter(p=>p.alive);
+}
+
+function drawNodes(){
+  nodes.forEach((n,i)=>{
+    const isHover = hoverNode === i;
+    const glow = nodeGlows[n.r.id];
+    const pulse = Math.sin(time*2 + i)*0.1 + 0.9;
+    const baseAlpha = 0.15 + glow*0.6;
+
+    // Outer glow
+    if(glow > 0.01 || isHover){
+      const glowRad = n.rad * (1.6 + glow*0.5);
+      const gg = ctx.createRadialGradient(n.x,n.y,n.rad*0.5,n.x,n.y,glowRad);
+      gg.addColorStop(0, n.r.color + Math.floor((glow*0.3+0.05)*255).toString(16).padStart(2,'0'));
+      gg.addColorStop(1, n.r.color + '00');
+      ctx.beginPath();
+      ctx.arc(n.x,n.y,glowRad,0,Math.PI*2);
+      ctx.fillStyle = gg;
+      ctx.fill();
+    }
+
+    // Node circle
+    ctx.beginPath();
+    ctx.arc(n.x, n.y, n.rad * pulse, 0, Math.PI*2);
+    const ng = ctx.createRadialGradient(n.x-n.rad*0.2,n.y-n.rad*0.2,0,n.x,n.y,n.rad);
+    ng.addColorStop(0, n.r.color + Math.floor(baseAlpha*255).toString(16).padStart(2,'0'));
+    ng.addColorStop(1, n.r.color + '08');
+    ctx.fillStyle = ng;
+    ctx.fill();
+    ctx.strokeStyle = n.r.color + Math.floor((0.3+glow*0.5)*255).toString(16).padStart(2,'0');
+    ctx.lineWidth = isHover ? 2.5 : 1.5;
+    ctx.stroke();
+
+    // Inner neurons (small dots)
+    const neuronCount = 4 + i*2;
+    for(let j=0;j<neuronCount;j++){
+      const na = (Math.PI*2/neuronCount)*j + time*0.5 + i;
+      const nr = n.rad * (0.3 + Math.sin(time+j)*0.15);
+      const nx = n.x + Math.cos(na)*nr;
+      const ny = n.y + Math.sin(na)*nr;
+      const ns = 1.5 + glow*1.5;
+      ctx.beginPath();
+      ctx.arc(nx,ny,ns,0,Math.PI*2);
+      ctx.fillStyle = n.r.color + Math.floor((0.2+glow*0.6)*255).toString(16).padStart(2,'0');
+      ctx.fill();
+    }
+
+    // Label
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `bold ${Math.max(11, n.rad*0.22)}px 'Segoe UI',sans-serif`;
+    ctx.fillStyle = n.r.color + (glow > 0.3 ? 'ff' : '99');
+    ctx.fillText(n.r.name, n.x, n.y - n.rad*0.15);
+    ctx.font = `${Math.max(9, n.rad*0.17)}px 'Segoe UI',sans-serif`;
+    ctx.fillStyle = '#ffffff' + (glow > 0.3 ? 'cc' : '55');
+    ctx.fillText(n.r.sub, n.x, n.y + n.rad*0.15);
+  });
+}
+
+function drawBackgroundNeurons(){
+  ctx.save();
+  for(let i=0;i<30;i++){
+    const x = ((i*137.5)%W);
+    const y = ((i*97.3+50)%H);
+    const dist = Math.hypot(x-cx, y-cy);
+    if(dist > brainRx*1.1 || dist < brainRx*0.2) continue;
+    const a = 0.03 + Math.sin(time+i)*0.02;
+    ctx.beginPath();
+    ctx.arc(x,y,1.5,0,Math.PI*2);
+    ctx.fillStyle = `rgba(100,100,200,${a})`;
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// === SIMULATION ===
+let simRunning = false;
+let simStepIdx = -1;
+let simTimer = null;
+let simSpeed = 1;
+let currentScenario = 'weather';
+
+function runSimStep(){
+  const scenario = SCENARIOS[currentScenario];
+  simStepIdx++;
+  if(simStepIdx >= scenario.steps.length){
+    endSim();
+    return;
+  }
+  const step = scenario.steps[simStepIdx];
+
+  // Activate region
+  activeRegion = step.region;
+  const rIdx = REGIONS.findIndex(r=>r.id===step.region);
+
+  // Glow animation
+  REGIONS.forEach(r => { if(r.id !== step.region) nodeGlows[r.id] *= 0.5; });
+  nodeGlows[step.region] = 1;
+
+  // Spawn particles to/from brainstem
+  if(rIdx !== 4){
+    spawnParticles(rIdx, 4, REGIONS[rIdx].color, 4);
+    setTimeout(()=> spawnParticles(4, rIdx, REGIONS[4].color, 3), 300/simSpeed);
+  }
+
+  // Update UI
+  document.getElementById('status-msg').textContent = step.msg;
+  document.getElementById('status-msg').style.color = REGIONS[rIdx].color;
+  document.getElementById('status-detail').textContent = `단계 ${simStepIdx+1}/${scenario.steps.length}`;
+
+  // Update loop steps
+  updateLoopStep(step.loop);
+
+  // Update hooks
+  updateHooks(step.hooks);
+
+  const delay = (800 + Math.random()*400) / simSpeed;
+  simTimer = setTimeout(runSimStep, delay);
+}
+
+function startSim(){
+  if(simRunning) return;
+  simRunning = true;
+  simStepIdx = -1;
+  document.getElementById('btn-play').textContent = '⏸ 일시정지';
+  document.getElementById('btn-play').classList.add('active');
+  runSimStep();
+}
+
+function pauseSim(){
+  simRunning = false;
+  clearTimeout(simTimer);
+  document.getElementById('btn-play').textContent = '▶ 계속';
+  document.getElementById('btn-play').classList.remove('active');
+}
+
+function endSim(){
+  simRunning = false;
+  clearTimeout(simTimer);
+  document.getElementById('btn-play').textContent = '▶ 다시 시작';
+  document.getElementById('btn-play').classList.remove('active');
+  document.getElementById('status-msg').textContent = '완료';
+  document.getElementById('status-detail').textContent = '시뮬레이션이 끝났습니다';
+  setTimeout(()=>{
+    REGIONS.forEach(r => nodeGlows[r.id] *= 0.3);
+    activeRegion = null;
+  }, 1500);
+}
+
+function resetSim(){
+  clearTimeout(simTimer);
+  simRunning = false;
+  simStepIdx = -1;
+  activeRegion = null;
+  particles = [];
+  REGIONS.forEach(r => nodeGlows[r.id] = 0);
+  document.getElementById('btn-play').textContent = '▶ 시뮬레이션 시작';
+  document.getElementById('btn-play').classList.remove('active');
+  document.getElementById('status-msg').textContent = '대기 중';
+  document.getElementById('status-detail').textContent = '시뮬레이션을 시작하세요';
+  resetLoopSteps();
+  resetHooks();
+}
+
+// === INFO PANEL ===
+function initLoopSteps(){
+  const el = document.getElementById('loop-steps');
+  el.innerHTML = LOOP_STEPS.map((s,i)=>`
+    <div class="loop-step" data-idx="${i}">
+      <div class="loop-dot" style="background:${s.color};color:${s.color}"></div>
+      <div class="loop-label">${s.label}</div>
+    </div>
+  `).join('');
+}
+
+function updateLoopStep(idx){
+  document.querySelectorAll('.loop-dot').forEach((d,i)=>{
+    d.classList.toggle('active', i<=idx);
+  });
+  document.querySelectorAll('.loop-label').forEach((l,i)=>{
+    l.classList.toggle('active', i<=idx);
+  });
+}
+
+function resetLoopSteps(){
+  document.querySelectorAll('.loop-dot').forEach(d=>d.classList.remove('active'));
+  document.querySelectorAll('.loop-label').forEach(l=>l.classList.remove('active'));
+}
+
+function initDonut(){
+  const c = document.getElementById('donut-canvas');
+  const dc = c.getContext('2d');
+  const total = DONUT_DATA.reduce((s,d)=>s+d.value,0);
+  const cx=160,cy=160,or=140,ir=90;
+  let angle = -Math.PI/2;
+
+  DONUT_DATA.forEach(d=>{
+    const sweep = (d.value/total)*Math.PI*2;
+    dc.beginPath();
+    dc.arc(cx,cy,or,angle,angle+sweep);
+    dc.arc(cx,cy,ir,angle+sweep,angle,true);
+    dc.closePath();
+    dc.fillStyle = d.color+'cc';
+    dc.fill();
+    angle += sweep;
+  });
+
+  const legend = document.getElementById('donut-legend');
+  legend.innerHTML = DONUT_DATA.map(d=>`
+    <div class="legend-item"><div class="legend-dot" style="background:${d.color}"></div>${d.label}</div>
+  `).join('');
+}
+
+function initHooks(){
+  const el = document.getElementById('hooks-grid');
+  el.innerHTML = ALL_HOOKS.map(h=>`<div class="hook-item" data-hook="${h}">${h}</div>`).join('');
+}
+
+function updateHooks(activeHooks){
+  document.querySelectorAll('.hook-item').forEach(el=>{
+    el.classList.toggle('active', activeHooks.includes(el.dataset.hook));
+  });
+}
+
+function resetHooks(){
+  document.querySelectorAll('.hook-item').forEach(el=>el.classList.remove('active'));
+}
+
+// === INTERACTION ===
+const tooltip = document.getElementById('tooltip');
+let mouseX=0, mouseY=0;
+
+function getHoveredNode(x,y){
+  for(let i=nodes.length-1;i>=0;i--){
+    const n = nodes[i];
+    if(Math.hypot(x-n.x, y-n.y) < n.rad) return i;
+  }
+  return -1;
+}
+
+cvs.addEventListener('mousemove', e=>{
+  const rect = cvs.getBoundingClientRect();
+  mouseX = e.clientX - rect.left;
+  mouseY = e.clientY - rect.top;
+  const idx = getHoveredNode(mouseX, mouseY);
+
+  if(idx >= 0){
+    hoverNode = idx;
+    cvs.style.cursor = 'pointer';
+    const n = nodes[idx];
+    tooltip.querySelector('.tt-title').textContent = `${n.r.name} — ${n.r.sub}`;
+    tooltip.querySelector('.tt-body').textContent = n.r.desc;
+    tooltip.style.left = (mouseX+15)+'px';
+    tooltip.style.top = (mouseY-10)+'px';
+    // Keep tooltip within bounds
+    const tr = tooltip.getBoundingClientRect();
+    const pr = cvs.parentElement.getBoundingClientRect();
+    if(tr.right > pr.right - 10) tooltip.style.left = (mouseX - tr.width - 15)+'px';
+    if(tr.bottom > pr.bottom - 60) tooltip.style.top = (mouseY - tr.height - 10)+'px';
+    tooltip.style.opacity = '1';
+    tooltip.style.borderColor = n.r.color + '44';
+    tooltip.querySelector('.tt-title').style.color = n.r.color;
+  } else {
+    hoverNode = null;
+    cvs.style.cursor = 'default';
+    tooltip.style.opacity = '0';
+  }
+});
+
+cvs.addEventListener('mouseleave', ()=>{
+  hoverNode = null;
+  tooltip.style.opacity = '0';
+});
+
+cvs.addEventListener('click', e=>{
+  const rect = cvs.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const idx = getHoveredNode(x,y);
+  if(idx >= 0) showDetail(idx);
+});
+
+// Touch support
+cvs.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const t = e.touches[0];
+  const rect = cvs.getBoundingClientRect();
+  const x = t.clientX - rect.left;
+  const y = t.clientY - rect.top;
+  const idx = getHoveredNode(x,y);
+  if(idx >= 0) showDetail(idx);
+}, {passive:false});
+
+function showDetail(idx){
+  const r = REGIONS[idx];
+  document.getElementById('dm-title').textContent = `${r.name} — ${r.sub}`;
+  document.getElementById('dm-title').style.color = r.color;
+  document.getElementById('dm-role').textContent = r.role;
+
+  let html = `<div class="detail-section"><h4>역할</h4><p>${r.desc}</p></div>`;
+  html += `<div class="detail-section"><h4>구성</h4><ul>${r.details.map(d=>`<li>${d}</li>`).join('')}</ul></div>`;
+  html += `<div class="detail-section"><h4>Hook 포인트</h4><ul>${r.hooks.map(h=>`<li>${h}</li>`).join('')}</ul></div>`;
+  document.getElementById('dm-content').innerHTML = html;
+
+  document.getElementById('detail-modal').style.display = 'block';
+  document.getElementById('overlay').style.display = 'block';
+}
+
+function hideDetail(){
+  document.getElementById('detail-modal').style.display = 'none';
+  document.getElementById('overlay').style.display = 'none';
+}
+
+document.getElementById('close-detail').addEventListener('click', hideDetail);
+document.getElementById('overlay').addEventListener('click', hideDetail);
+
+// Controls
+document.getElementById('btn-play').addEventListener('click', ()=>{
+  if(simRunning) pauseSim();
+  else { if(simStepIdx >= SCENARIOS[currentScenario].steps.length-1) resetSim(); startSim(); }
+});
+
+document.getElementById('btn-reset').addEventListener('click', resetSim);
+
+document.getElementById('scenario-select').addEventListener('change', e=>{
+  currentScenario = e.target.value;
+  resetSim();
+});
+
+document.getElementById('speed').addEventListener('input', e=>{
+  simSpeed = parseFloat(e.target.value);
+  document.getElementById('speed-val').textContent = simSpeed.toFixed(1)+'x';
+});
+
+// === RENDER LOOP ===
+function frame(){
+  time += 0.016;
+  ctx.clearRect(0,0,W,H);
+
+  // Decay glows
+  REGIONS.forEach(r=>{
+    if(nodeGlows[r.id] > 0.01) nodeGlows[r.id] *= 0.985;
+    else nodeGlows[r.id] = 0;
+  });
+
+  drawBackgroundNeurons();
+  drawBrainOutline();
+  drawConnections();
+  drawParticles();
+  drawNodes();
+
+  requestAnimationFrame(frame);
+}
+
+// === INIT ===
+window.addEventListener('resize', resize);
+resize();
+initLoopSteps();
+initDonut();
+initHooks();
+frame();
+
+// Ambient particles
+setInterval(()=>{
+  if(!simRunning){
+    const i = Math.floor(Math.random()*5);
+    const j = (i===4) ? Math.floor(Math.random()*4) : 4;
+    spawnParticles(i,j, nodes[i].r.color+'88', 2);
+  }
+}, 2000);
+
+})();
+</script>
+</body>
+</html>

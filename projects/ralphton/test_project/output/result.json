@@ -1,0 +1,21 @@
+{
+  "success": true,
+  "duration": 42.198177,
+  "rounds": 0,
+  "tests": 6,
+  "code_lines": 97,
+  "code": "\"\"\"\ncalculator.py\n\nThis module provides basic arithmetic operations including addition, \nsubtraction, multiplication, and division with type safety and error handling.\n\"\"\"\n\nfrom typing import Union\n\n# Define a type alias for numeric inputs\nNumber = Union[int, float]\n\n\ndef _validate_inputs(a: Number, b: Number) -> None:\n    \"\"\"\n    Internal helper to ensure inputs are numeric.\n    \n    Args:\n        a: First operand.\n        b: Second operand.\n        \n    Raises:\n        TypeError: If either operand is not an int or float.\n    \"\"\"\n    # Note: isinstance(True, int) is True in Python, \n    # but for standard calculators, we usually strictly check for numbers.\n    if not isinstance(a, (int, float)) or isinstance(a, bool):\n        raise TypeError(f\"Operand 'a' must be numeric, not {type(a).__name__}\")\n    if not isinstance(b, (int, float)) or isinstance(b, bool):\n        raise TypeError(f\"Operand 'b' must be numeric, not {type(b).__name__}\")\n\n\ndef add(a: Number, b: Number) -> float:\n    \"\"\"\n    Returns the sum of two numbers.\n\n    Args:\n        a: The first number.\n        b: The second number.\n\n    Returns:\n        The sum of a and b as a float.\n    \"\"\"\n    _validate_inputs(a, b)\n    return float(a + b)\n\n\ndef subtract(a: Number, b: Number) -> float:\n    \"\"\"\n    Returns the difference between two numbers.\n\n    Args:\n        a: The number to be subtracted from.\n        b: The number to subtract.\n\n    Returns:\n        The difference as a float.\n    \"\"\"\n    _validate_inputs(a, b)\n    return float(a - b)\n\n\ndef multiply(a: Number, b: Number) -> float:\n    \"\"\"\n    Returns the product of two numbers.\n\n    Args:\n        a: The first factor.\n        b: The second factor.\n\n    Returns:\n        The product as a float.\n    \"\"\"\n    _validate_inputs(a, b)\n    return float(a * b)\n\n\ndef divide(a: Number, b: Number) -> float:\n    \"\"\"\n    Returns the quotient of two numbers.\n\n    Args:\n        a: The dividend.\n        b: The divisor.\n\n    Returns:\n        The quotient as a float.\n\n    Raises:\n        ValueError: If the divisor is zero.\n    \"\"\"\n    _validate_inputs(a, b)\n    if b == 0:\n        raise ValueError(\"Cannot divide by zero\")\n    return float(a / b)\n\n",
+  "log": [
+    "\ud83d\udccb PRD loaded (186 chars)",
+    "\n\ud83d\udd0d Stage 1: Analyzing requirements...",
+    "   Found 6 requirements",
+    "\n\ud83e\uddea Stage 2: Generating tests (TDD)...",
+    "   Generated 6 tests",
+    "\n\ud83d\udcbb Stage 3: Implementing...",
+    "   Generated 97 lines of code",
+    "\n\ud83d\udc41\ufe0f Stage 4: Reviewing...",
+    "   \u2705 Approved",
+    "\n\u2705 Stage 5: Final check...",
+    "   \u2705 PASS"
+  ]
+}

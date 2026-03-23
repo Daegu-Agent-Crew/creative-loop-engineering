@@ -1,0 +1,1705 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Hub - 오피스</title>
+<style>
+/* ===== CSS Variables ===== */
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0d1117;
+  --bg-tertiary: #161b22;
+  --bg-card: rgba(22, 27, 34, 0.8);
+  --border-color: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --accent-blue: #58a6ff;
+  --accent-green: #3fb950;
+  --accent-purple: #d2a8ff;
+  --accent-orange: #f0883e;
+  --accent-yellow: #d29922;
+  --accent-red: #f85149;
+  --glass-bg: rgba(13, 17, 23, 0.7);
+  --glass-border: rgba(48, 54, 61, 0.6);
+  --nav-height: 56px;
+}
+
+[data-theme="light"] {
+  --bg-primary: #f0f3f6;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f6f8fa;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --border-color: #d0d7de;
+  --text-primary: #1f2328;
+  --text-secondary: #656d76;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(208, 215, 222, 0.6);
+}
+
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+
+/* ===== Navigation Bar ===== */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--nav-height);
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  z-index: 1000;
+}
+
+.navbar__logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-blue);
+  margin-right: 32px;
+  white-space: nowrap;
+}
+
+.navbar__tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.navbar__tab {
+  padding: 8px 20px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.navbar__tab:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.navbar__tab--active {
+  background: var(--accent-blue);
+  color: #fff;
+}
+
+.navbar__spacer { flex: 1; }
+
+.theme-toggle {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent-blue);
+}
+
+/* ===== Main Content ===== */
+.main {
+  margin-top: var(--nav-height);
+  padding: 24px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ===== Dashboard Overview ===== */
+.dashboard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px 20px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.stat-card:nth-child(2) { animation-delay: 0.1s; }
+.stat-card:nth-child(3) { animation-delay: 0.2s; }
+.stat-card:nth-child(4) { animation-delay: 0.3s; }
+
+.stat-card__label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.stat-card__value {
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.stat-card__value--blue { color: var(--accent-blue); }
+.stat-card__value--green { color: var(--accent-green); }
+.stat-card__value--purple { color: var(--accent-purple); }
+.stat-card__value--orange { color: var(--accent-orange); }
+
+/* ===== Room Tabs ===== */
+.room-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.room-tab {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.room-tab:hover {
+  border-color: var(--accent-blue);
+  color: var(--text-primary);
+}
+
+.room-tab--active {
+  border-color: var(--accent-blue);
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--accent-blue);
+}
+
+/* ===== Office Container ===== */
+.office-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+/* ===== Isometric Scene ===== */
+.isometric-scene {
+  perspective: 1200px;
+  perspective-origin: 50% 50%;
+  height: 420px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.isometric-world {
+  transform-style: preserve-3d;
+  transform: rotateX(60deg) rotateZ(-45deg);
+  position: relative;
+  width: 300px;
+  height: 250px;
+}
+
+/* ===== Room ===== */
+.room {
+  position: absolute;
+  transform-style: preserve-3d;
+  transition: opacity 0.4s, transform 0.4s;
+}
+
+.room--hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.9);
+}
+
+.room__floor {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image:
+    repeating-linear-gradient(0deg, rgba(48, 54, 61, 0.3) 0px, rgba(48, 54, 61, 0.3) 1px, transparent 1px, transparent 40px),
+    repeating-linear-gradient(90deg, rgba(48, 54, 61, 0.3) 0px, rgba(48, 54, 61, 0.3) 1px, transparent 1px, transparent 40px);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.room__wall--back {
+  position: absolute;
+  width: 100%;
+  height: 80px;
+  top: 0;
+  left: 0;
+  transform: rotateX(-90deg);
+  transform-origin: top center;
+  background: linear-gradient(180deg, #1a1f2e, #0d1117);
+  border: 1px solid var(--border-color);
+  opacity: 0.7;
+}
+
+[data-theme="light"] .room__wall--back {
+  background: linear-gradient(180deg, #e8ecf0, #d0d7de);
+}
+
+.room__wall--left {
+  position: absolute;
+  width: 80px;
+  height: 100%;
+  top: 0;
+  left: 0;
+  transform: rotateY(90deg);
+  transform-origin: left center;
+  background: linear-gradient(180deg, #151a28, #0a0e1a);
+  border: 1px solid var(--border-color);
+  opacity: 0.7;
+}
+
+[data-theme="light"] .room__wall--left {
+  background: linear-gradient(180deg, #dce1e6, #c8cfd6);
+}
+
+.room__label {
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%) rotateZ(45deg) rotateX(-60deg);
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Room sizes and positions */
+.room--mission-control {
+  width: 280px;
+  height: 200px;
+  left: 10px;
+  top: 10px;
+}
+
+.room--workflow-lab {
+  width: 280px;
+  height: 200px;
+  left: 10px;
+  top: 10px;
+}
+
+.room--comm-hub {
+  width: 280px;
+  height: 200px;
+  left: 10px;
+  top: 10px;
+}
+
+/* ===== Desk Unit ===== */
+.desk {
+  position: absolute;
+  transform-style: preserve-3d;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.desk:hover {
+  transform: translateZ(3px);
+}
+
+.desk__top {
+  width: 60px;
+  height: 40px;
+  background: #2d333b;
+  transform: translateZ(25px);
+  border-radius: 3px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  position: absolute;
+}
+
+[data-theme="light"] .desk__top {
+  background: #8b6f5e;
+}
+
+.desk__leg {
+  position: absolute;
+  width: 4px;
+  height: 25px;
+  background: #21262d;
+  transform-origin: top;
+}
+
+[data-theme="light"] .desk__leg {
+  background: #6b5545;
+}
+
+.desk__leg--fl { left: 4px; top: 36px; }
+.desk__leg--fr { left: 52px; top: 36px; }
+.desk__leg--bl { left: 4px; top: 4px; }
+.desk__leg--br { left: 52px; top: 4px; }
+
+.desk__monitor {
+  width: 36px;
+  height: 26px;
+  background: #0a0e1a;
+  border: 2px solid var(--border-color);
+  transform: translateZ(46px);
+  border-radius: 2px;
+  position: absolute;
+  left: 12px;
+  top: 2px;
+  transition: all 0.3s;
+}
+
+.desk__monitor--active {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 15px rgba(88, 166, 255, 0.3);
+}
+
+.desk__monitor--active-green {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 15px rgba(63, 185, 80, 0.3);
+}
+
+.desk__monitor--active-purple {
+  border-color: var(--accent-purple);
+  box-shadow: 0 0 15px rgba(210, 168, 255, 0.3);
+}
+
+.desk__monitor-screen {
+  width: 100%;
+  height: 100%;
+  background: #0d1117;
+  border-radius: 1px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6px;
+  color: var(--accent-green);
+  overflow: hidden;
+}
+
+.desk__chair {
+  width: 24px;
+  height: 20px;
+  background: #21262d;
+  border-radius: 4px 4px 0 0;
+  position: absolute;
+  left: 18px;
+  top: 42px;
+  transform: translateZ(12px);
+}
+
+[data-theme="light"] .desk__chair {
+  background: #4a4a5a;
+}
+
+/* Desk positions within rooms */
+.desk--a { left: 60px; top: 60px; }
+.desk--b { left: 60px; top: 60px; }
+.desk--c { left: 60px; top: 60px; }
+
+/* Second furniture: server rack / whiteboard / antenna */
+.furniture {
+  position: absolute;
+  transform-style: preserve-3d;
+}
+
+.server-rack {
+  left: 190px;
+  top: 40px;
+  width: 30px;
+  height: 50px;
+}
+
+.server-rack__body {
+  width: 30px;
+  height: 50px;
+  background: #21262d;
+  border: 1px solid var(--border-color);
+  border-radius: 2px;
+  transform: translateZ(40px);
+  position: relative;
+}
+
+.server-rack__light {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  animation: serverBlink 2s infinite;
+  right: 4px;
+}
+
+.server-rack__light:nth-child(1) { top: 8px; }
+.server-rack__light:nth-child(2) { top: 18px; animation-delay: 0.5s; }
+.server-rack__light:nth-child(3) { top: 28px; animation-delay: 1s; }
+
+@keyframes serverBlink {
+  0%, 90% { opacity: 1; }
+  95% { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+
+.whiteboard {
+  left: 180px;
+  top: 30px;
+  width: 50px;
+  height: 35px;
+}
+
+.whiteboard__surface {
+  width: 50px;
+  height: 35px;
+  background: #f0f3f6;
+  border: 2px solid #d0d7de;
+  border-radius: 2px;
+  transform: translateZ(50px) rotateX(-10deg);
+}
+
+.antenna {
+  left: 190px;
+  top: 50px;
+}
+
+.antenna__pole {
+  width: 4px;
+  height: 60px;
+  background: #6e7681;
+  transform: translateZ(0px);
+  position: absolute;
+}
+
+.antenna__dish {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-purple);
+  transform: translateZ(55px);
+  position: absolute;
+  left: -8px;
+  animation: antennaPulse 3s ease-in-out infinite;
+}
+
+@keyframes antennaPulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(210, 168, 255, 0.3); }
+  50% { box-shadow: 0 0 15px rgba(210, 168, 255, 0.6); }
+}
+
+/* ===== Avatar ===== */
+.avatar {
+  position: absolute;
+  transform-style: preserve-3d;
+  transform: translateZ(25px);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.avatar__head {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--agent-color);
+  margin: 0 auto 2px;
+  position: relative;
+}
+
+.avatar__body {
+  width: 20px;
+  height: 18px;
+  border-radius: 4px 4px 0 0;
+  background: var(--agent-color);
+  opacity: 0.8;
+  margin: 0 auto;
+}
+
+.avatar__name {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  transform: translateX(-50%) rotateZ(45deg) rotateX(-60deg);
+  font-size: 8px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.avatar--ops { --agent-color: #58a6ff; left: 80px; top: 75px; }
+.avatar--flow { --agent-color: #3fb950; left: 80px; top: 75px; }
+.avatar--comm { --agent-color: #d2a8ff; left: 80px; top: 75px; }
+
+/* Error exclamation */
+.avatar__error-icon {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 12px;
+  color: var(--accent-red);
+  display: none;
+}
+
+.avatar--error .avatar__error-icon {
+  display: block;
+  animation: errorBounce 0.5s infinite alternate;
+}
+
+@keyframes errorBounce {
+  from { transform: translateX(-50%) translateY(0); }
+  to { transform: translateX(-50%) translateY(-4px); }
+}
+
+/* Avatar State Animations */
+@keyframes breathing {
+  0%, 100% { transform: translateZ(25px) scale(1); }
+  50% { transform: translateZ(25px) scale(1.02); }
+}
+
+.avatar--idle {
+  animation: breathing 3s ease-in-out infinite;
+}
+
+@keyframes typing {
+  0%, 100% { transform: translateZ(25px) translateY(0); }
+  50% { transform: translateZ(25px) translateY(-2px); }
+}
+
+.avatar--working {
+  animation: typing 0.15s infinite;
+}
+
+@keyframes errorPulse {
+  0%, 100% { box-shadow: 0 0 5px rgba(248, 81, 73, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(248, 81, 73, 0.8); }
+}
+
+.avatar--error {
+  animation: errorPulse 1s infinite;
+}
+
+/* ===== Agent Info Panel ===== */
+.agent-panel {
+  position: absolute;
+  top: 0;
+  right: -320px;
+  width: 300px;
+  height: 100%;
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border-left: 1px solid var(--glass-border);
+  padding: 20px;
+  transition: right 0.3s ease;
+  z-index: 10;
+  overflow-y: auto;
+}
+
+.agent-panel--open {
+  right: 0;
+}
+
+.agent-panel__close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.agent-panel__avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.agent-panel__name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.agent-panel__role {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.agent-panel__field {
+  margin-bottom: 12px;
+}
+
+.agent-panel__field-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.agent-panel__field-value {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.agent-panel__state {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.agent-panel__state--idle {
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent-blue);
+}
+
+.agent-panel__state--working {
+  background: rgba(63, 185, 80, 0.15);
+  color: var(--accent-green);
+}
+
+.agent-panel__state--error {
+  background: rgba(248, 81, 73, 0.15);
+  color: var(--accent-red);
+}
+
+/* ===== Minimap ===== */
+.minimap {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  width: 100px;
+  height: 80px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  padding: 8px;
+  z-index: 5;
+}
+
+.minimap__title {
+  font-size: 8px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.minimap__rooms {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.minimap__room {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 7px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background 0.2s;
+}
+
+.minimap__room:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.minimap__room--active {
+  color: var(--text-primary);
+}
+
+.minimap__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.minimap__dot--blue { background: var(--accent-blue); }
+.minimap__dot--green { background: var(--accent-green); }
+.minimap__dot--purple { background: var(--accent-purple); }
+
+/* ===== Activity Log (right side) ===== */
+.activity-log {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 20px;
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.activity-log__title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text-secondary);
+}
+
+.activity-log__entries {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.activity-log__entries::-webkit-scrollbar {
+  width: 4px;
+}
+
+.activity-log__entries::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 2px;
+}
+
+.log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid transparent;
+  font-size: 12px;
+  opacity: 0;
+  transform: translateX(10px);
+  animation: logSlideIn 0.3s ease forwards;
+}
+
+@keyframes logSlideIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.log-entry__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.log-entry__content {
+  flex: 1;
+}
+
+.log-entry__agent {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.log-entry__task {
+  color: var(--text-secondary);
+  font-size: 11px;
+  margin-top: 2px;
+}
+
+.log-entry__time {
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.log-entry--success { border-left: 3px solid var(--accent-green); }
+.log-entry--error { border-left: 3px solid var(--accent-red); }
+.log-entry--working { border-left: 3px solid var(--accent-blue); }
+
+/* ===== Agent Status Cards ===== */
+.agent-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.agent-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.3s;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.agent-card:nth-child(2) { animation-delay: 0.1s; }
+.agent-card:nth-child(3) { animation-delay: 0.2s; }
+
+.agent-card:hover {
+  border-color: var(--accent-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+.agent-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.agent-card__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.agent-card__name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.agent-card__room {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.agent-card__state-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.agent-card__task {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  min-height: 16px;
+}
+
+.agent-card__stats {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.agent-card__stat-value {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+/* ===== Progress Bar ===== */
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.progress-bar__fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* ===== Animations ===== */
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.fade-in--visible {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+/* ===== System Status ===== */
+.system-status {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.system-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 14px;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeInUp 0.5s ease forwards;
+  animation-delay: 0.4s;
+}
+
+.system-card__label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.system-card__value {
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.system-card__bar {
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.system-card__bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .office-container {
+    grid-template-columns: 1fr;
+  }
+
+  .agent-cards {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .navbar__tabs {
+    gap: 2px;
+  }
+
+  .navbar__tab {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .isometric-scene {
+    height: 320px;
+  }
+
+  .system-status {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard {
+    grid-template-columns: 1fr;
+  }
+
+  .main {
+    padding: 16px;
+  }
+
+  .navbar__logo {
+    font-size: 14px;
+    margin-right: 12px;
+  }
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+</style>
+</head>
+<body>
+
+<!-- Navigation Bar -->
+<nav class="navbar">
+  <div class="navbar__logo">OpenClaw Hub</div>
+  <div class="navbar__tabs">
+    <button class="navbar__tab navbar__tab--active" data-tab="office">Office</button>
+    <button class="navbar__tab" data-tab="workflows">Workflows</button>
+    <button class="navbar__tab" data-tab="communicate">Communicate</button>
+  </div>
+  <div class="navbar__spacer"></div>
+  <button class="theme-toggle" id="themeToggle" title="테마 전환">&#9790;</button>
+</nav>
+
+<!-- Main Content -->
+<div class="main">
+
+  <!-- Dashboard Overview -->
+  <div class="dashboard">
+    <div class="stat-card">
+      <div class="stat-card__label">활성 에이전트</div>
+      <div class="stat-card__value stat-card__value--blue" id="statActiveAgents">3</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">완료된 작업</div>
+      <div class="stat-card__value stat-card__value--green" id="statCompletedTasks">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">툴콜 횟수</div>
+      <div class="stat-card__value stat-card__value--purple" id="statToolCalls">0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card__label">성공률</div>
+      <div class="stat-card__value stat-card__value--orange" id="statSuccessRate">100%</div>
+    </div>
+  </div>
+
+  <!-- Room Tabs -->
+  <div class="room-tabs">
+    <button class="room-tab room-tab--active" data-room="mission-control">Mission Control</button>
+    <button class="room-tab" data-room="workflow-lab">Workflow Lab</button>
+    <button class="room-tab" data-room="comm-hub">Communication Hub</button>
+  </div>
+
+  <!-- Office + Activity Log -->
+  <div class="office-container">
+
+    <!-- Isometric Scene -->
+    <div class="isometric-scene" id="isoScene">
+
+      <div class="isometric-world" id="isoWorld">
+
+        <!-- Room: Mission Control -->
+        <div class="room room--mission-control" id="room-mission-control">
+          <div class="room__floor"></div>
+          <div class="room__wall--back"></div>
+          <div class="room__wall--left"></div>
+
+          <!-- Desk A -->
+          <div class="desk desk--a" data-agent="ops" onclick="openAgentPanel('ops')">
+            <div class="desk__top"></div>
+            <div class="desk__leg desk__leg--fl"></div>
+            <div class="desk__leg desk__leg--fr"></div>
+            <div class="desk__leg desk__leg--bl"></div>
+            <div class="desk__leg desk__leg--br"></div>
+            <div class="desk__monitor" id="monitor-ops">
+              <div class="desk__monitor-screen">
+                <span id="monitorText-ops">&gt;_</span>
+              </div>
+            </div>
+            <div class="desk__chair"></div>
+          </div>
+
+          <!-- Server Rack -->
+          <div class="furniture server-rack">
+            <div class="server-rack__body">
+              <div class="server-rack__light"></div>
+              <div class="server-rack__light"></div>
+              <div class="server-rack__light"></div>
+            </div>
+          </div>
+
+          <!-- Avatar: Ops -->
+          <div class="avatar avatar--ops avatar--idle" id="avatar-ops" onclick="openAgentPanel('ops')">
+            <div class="avatar__error-icon">!</div>
+            <div class="avatar__head"></div>
+            <div class="avatar__body"></div>
+          </div>
+        </div>
+
+        <!-- Room: Workflow Lab -->
+        <div class="room room--workflow-lab room--hidden" id="room-workflow-lab">
+          <div class="room__floor"></div>
+          <div class="room__wall--back"></div>
+          <div class="room__wall--left"></div>
+
+          <!-- Desk B -->
+          <div class="desk desk--b" data-agent="flow" onclick="openAgentPanel('flow')">
+            <div class="desk__top"></div>
+            <div class="desk__leg desk__leg--fl"></div>
+            <div class="desk__leg desk__leg--fr"></div>
+            <div class="desk__leg desk__leg--bl"></div>
+            <div class="desk__leg desk__leg--br"></div>
+            <div class="desk__monitor" id="monitor-flow">
+              <div class="desk__monitor-screen">
+                <span id="monitorText-flow">&gt;_</span>
+              </div>
+            </div>
+            <div class="desk__chair"></div>
+          </div>
+
+          <!-- Whiteboard -->
+          <div class="furniture whiteboard">
+            <div class="whiteboard__surface"></div>
+          </div>
+
+          <!-- Avatar: Flow -->
+          <div class="avatar avatar--flow avatar--idle" id="avatar-flow" onclick="openAgentPanel('flow')">
+            <div class="avatar__error-icon">!</div>
+            <div class="avatar__head"></div>
+            <div class="avatar__body"></div>
+          </div>
+        </div>
+
+        <!-- Room: Communication Hub -->
+        <div class="room room--comm-hub room--hidden" id="room-comm-hub">
+          <div class="room__floor"></div>
+          <div class="room__wall--back"></div>
+          <div class="room__wall--left"></div>
+
+          <!-- Desk C -->
+          <div class="desk desk--c" data-agent="comm" onclick="openAgentPanel('comm')">
+            <div class="desk__top"></div>
+            <div class="desk__leg desk__leg--fl"></div>
+            <div class="desk__leg desk__leg--fr"></div>
+            <div class="desk__leg desk__leg--bl"></div>
+            <div class="desk__leg desk__leg--br"></div>
+            <div class="desk__monitor" id="monitor-comm">
+              <div class="desk__monitor-screen">
+                <span id="monitorText-comm">&gt;_</span>
+              </div>
+            </div>
+            <div class="desk__chair"></div>
+          </div>
+
+          <!-- Antenna -->
+          <div class="furniture antenna">
+            <div class="antenna__pole"></div>
+            <div class="antenna__dish"></div>
+          </div>
+
+          <!-- Avatar: Comm -->
+          <div class="avatar avatar--comm avatar--idle" id="avatar-comm" onclick="openAgentPanel('comm')">
+            <div class="avatar__error-icon">!</div>
+            <div class="avatar__head"></div>
+            <div class="avatar__body"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Agent Info Panel (slide-in) -->
+      <div class="agent-panel" id="agentPanel">
+        <button class="agent-panel__close" onclick="closeAgentPanel()">&times;</button>
+        <div class="agent-panel__avatar" id="panelAvatar"></div>
+        <div class="agent-panel__name" id="panelName"></div>
+        <div class="agent-panel__role" id="panelRole"></div>
+
+        <div class="agent-panel__field">
+          <div class="agent-panel__field-label">상태</div>
+          <div class="agent-panel__field-value">
+            <span class="agent-panel__state" id="panelState"></span>
+          </div>
+        </div>
+
+        <div class="agent-panel__field">
+          <div class="agent-panel__field-label">현재 작업</div>
+          <div class="agent-panel__field-value" id="panelTask">-</div>
+        </div>
+
+        <div class="agent-panel__field">
+          <div class="agent-panel__field-label">툴콜 횟수</div>
+          <div class="agent-panel__field-value" id="panelToolCalls">0</div>
+        </div>
+
+        <div class="agent-panel__field">
+          <div class="agent-panel__field-label">완료 작업</div>
+          <div class="agent-panel__field-value" id="panelCompleted">0</div>
+        </div>
+
+        <div class="agent-panel__field">
+          <div class="agent-panel__field-label">성공률</div>
+          <div class="agent-panel__field-value" id="panelSuccessRate">100%</div>
+        </div>
+      </div>
+
+      <!-- Minimap -->
+      <div class="minimap">
+        <div class="minimap__title">미니맵</div>
+        <div class="minimap__rooms">
+          <div class="minimap__room minimap__room--active" data-room="mission-control" onclick="switchRoom('mission-control')">
+            <div class="minimap__dot minimap__dot--blue"></div>
+            <span>Mission Control</span>
+          </div>
+          <div class="minimap__room" data-room="workflow-lab" onclick="switchRoom('workflow-lab')">
+            <div class="minimap__dot minimap__dot--green"></div>
+            <span>Workflow Lab</span>
+          </div>
+          <div class="minimap__room" data-room="comm-hub" onclick="switchRoom('comm-hub')">
+            <div class="minimap__dot minimap__dot--purple"></div>
+            <span>Comm Hub</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Activity Log -->
+    <div class="activity-log">
+      <div class="activity-log__title">실시간 활동 로그</div>
+      <div class="activity-log__entries" id="logEntries">
+        <!-- Log entries injected by JS -->
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Agent Status Cards -->
+  <div class="agent-cards" id="agentCards">
+    <!-- Generated by JS -->
+  </div>
+
+  <!-- System Status -->
+  <div class="system-status">
+    <div class="system-card">
+      <div class="system-card__label">메모리 사용량</div>
+      <div class="system-card__value" id="sysMemory">64%</div>
+      <div class="system-card__bar">
+        <div class="system-card__bar-fill" id="sysMemoryBar" style="width:64%;background:var(--accent-blue)"></div>
+      </div>
+    </div>
+    <div class="system-card">
+      <div class="system-card__label">토큰 사용량</div>
+      <div class="system-card__value" id="sysTokens">12.4K</div>
+      <div class="system-card__bar">
+        <div class="system-card__bar-fill" id="sysTokenBar" style="width:31%;background:var(--accent-green)"></div>
+      </div>
+    </div>
+    <div class="system-card">
+      <div class="system-card__label">API 상태</div>
+      <div class="system-card__value" style="color:var(--accent-green)">정상</div>
+      <div class="system-card__bar">
+        <div class="system-card__bar-fill" style="width:100%;background:var(--accent-green)"></div>
+      </div>
+    </div>
+    <div class="system-card">
+      <div class="system-card__label">가동 시간</div>
+      <div class="system-card__value" id="sysUptime">0분</div>
+      <div class="system-card__bar">
+        <div class="system-card__bar-fill" style="width:100%;background:var(--accent-purple)"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ===== Agent Definitions ===== */
+const AGENTS = [
+  {
+    id: 'ops',
+    name: 'Ops Agent',
+    nameKo: '운영 에이전트',
+    room: 'mission-control',
+    desk: 'desk-a',
+    color: '#58a6ff',
+    role: '시스템 모니터링, 오피스 관리, 상태 점검',
+    taskPool: [
+      { type: 'check_system', duration: 3000, label: '시스템 상태 점검' },
+      { type: 'monitor_api', duration: 5000, label: 'API 상태 모니터링' },
+      { type: 'run_workflow', duration: 8000, label: '워크플로우 실행' },
+      { type: 'generate_report', duration: 6000, label: '리포트 생성' }
+    ]
+  },
+  {
+    id: 'flow',
+    name: 'Flow Agent',
+    nameKo: '플로우 에이전트',
+    room: 'workflow-lab',
+    desk: 'desk-b',
+    color: '#3fb950',
+    role: '워크플로우 실행, 스케줄 관리, 데이터 파이프라인',
+    taskPool: [
+      { type: 'execute_workflow', duration: 7000, label: '워크플로우 실행 중' },
+      { type: 'schedule_check', duration: 4000, label: '스케줄 확인' },
+      { type: 'data_pipeline', duration: 10000, label: '데이터 파이프라인 처리' },
+      { type: 'optimize_flow', duration: 6000, label: '플로우 최적화' }
+    ]
+  },
+  {
+    id: 'comm',
+    name: 'Comm Agent',
+    nameKo: '커뮤니케이션 에이전트',
+    room: 'communication-hub',
+    desk: 'desk-c',
+    color: '#d2a8ff',
+    role: '알림 전송, 채팅 관리, 로그 수집',
+    taskPool: [
+      { type: 'send_notification', duration: 2000, label: '알림 전송' },
+      { type: 'process_chat', duration: 4000, label: '채팅 처리' },
+      { type: 'collect_logs', duration: 5000, label: '로그 수집' },
+      { type: 'summarize_day', duration: 8000, label: '일일 요약 생성' }
+    ]
+  }
+];
+
+/* ===== State ===== */
+const state = {
+  currentRoom: 'mission-control',
+  panelOpen: false,
+  panelAgentId: null,
+  totalCompleted: 0,
+  totalToolCalls: 0,
+  totalSuccess: 0,
+  totalAttempts: 0,
+  startTime: Date.now()
+};
+
+const agentStates = {};
+AGENTS.forEach(a => {
+  agentStates[a.id] = {
+    state: 'idle',
+    currentTask: null,
+    progress: 0,
+    toolCalls: 0,
+    completed: 0,
+    errors: 0,
+    errorCooldown: 0
+  };
+});
+
+/* ===== Room Switching ===== */
+function switchRoom(roomId) {
+  state.currentRoom = roomId;
+
+  document.querySelectorAll('.room').forEach(r => r.classList.add('room--hidden'));
+  const target = document.getElementById('room-' + roomId);
+  if (target) target.classList.remove('room--hidden');
+
+  document.querySelectorAll('.room-tab').forEach(t => t.classList.remove('room-tab--active'));
+  document.querySelector('.room-tab[data-room="' + roomId + '"]').classList.add('room-tab--active');
+
+  document.querySelectorAll('.minimap__room').forEach(m => m.classList.remove('minimap__room--active'));
+  document.querySelector('.minimap__room[data-room="' + roomId + '"]').classList.add('minimap__room--active');
+}
+
+document.querySelectorAll('.room-tab').forEach(tab => {
+  tab.addEventListener('click', () => switchRoom(tab.dataset.room));
+});
+
+/* ===== Theme Toggle ===== */
+document.getElementById('themeToggle').addEventListener('click', () => {
+  const body = document.body;
+  const btn = document.getElementById('themeToggle');
+  if (body.getAttribute('data-theme') === 'light') {
+    body.removeAttribute('data-theme');
+    btn.innerHTML = '&#9790;';
+  } else {
+    body.setAttribute('data-theme', 'light');
+    btn.innerHTML = '&#9728;';
+  }
+});
+
+/* ===== Nav Tab Switching ===== */
+document.querySelectorAll('.navbar__tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.navbar__tab').forEach(t => t.classList.remove('navbar__tab--active'));
+    tab.classList.add('navbar__tab--active');
+  });
+});
+
+/* ===== Agent Info Panel ===== */
+function openAgentPanel(agentId) {
+  const agent = AGENTS.find(a => a.id === agentId);
+  const as = agentStates[agentId];
+  if (!agent) return;
+
+  state.panelAgentId = agentId;
+
+  document.getElementById('panelAvatar').style.background = agent.color;
+  document.getElementById('panelAvatar').textContent = agent.name.charAt(0);
+  document.getElementById('panelName').textContent = agent.nameKo;
+  document.getElementById('panelRole').textContent = agent.role;
+
+  updatePanelState(agentId);
+
+  document.getElementById('agentPanel').classList.add('agent-panel--open');
+  state.panelOpen = true;
+}
+
+function updatePanelState(agentId) {
+  const as = agentStates[agentId];
+  const stateEl = document.getElementById('panelState');
+  const stateMap = { idle: '대기 중', working: '작업 중', error: '오류' };
+
+  stateEl.textContent = stateMap[as.state] || as.state;
+  stateEl.className = 'agent-panel__state agent-panel__state--' + as.state;
+
+  document.getElementById('panelTask').textContent = as.currentTask ? as.currentTask.label : '-';
+  document.getElementById('panelToolCalls').textContent = as.toolCalls;
+  document.getElementById('panelCompleted').textContent = as.completed;
+
+  const total = as.completed + as.errors;
+  const rate = total > 0 ? Math.round((as.completed / total) * 100) : 100;
+  document.getElementById('panelSuccessRate').textContent = rate + '%';
+}
+
+function closeAgentPanel() {
+  document.getElementById('agentPanel').classList.remove('agent-panel--open');
+  state.panelOpen = false;
+  state.panelAgentId = null;
+}
+
+/* ===== Agent Cards ===== */
+function renderAgentCards() {
+  const container = document.getElementById('agentCards');
+  container.innerHTML = AGENTS.map(agent => {
+    const as = agentStates[agent.id];
+    const stateMap = { idle: '대기 중', working: '작업 중', error: '오류' };
+    const stateLabel = stateMap[as.state] || as.state;
+    const roomMap = { 'mission-control': 'Mission Control', 'workflow-lab': 'Workflow Lab', 'communication-hub': 'Communication Hub' };
+
+    const total = as.completed + as.errors;
+    const rate = total > 0 ? Math.round((as.completed / total) * 100) : 100;
+    const progressPct = as.currentTask ? Math.min(100, Math.round((as.progress / as.currentTask.duration) * 100)) : 0;
+
+    return '<div class="agent-card" onclick="switchToAgentRoom(\'' + agent.id + '\')">' +
+      '<div class="agent-card__header">' +
+        '<div class="agent-card__dot" style="background:' + agent.color + '"></div>' +
+        '<div class="agent-card__name">' + agent.nameKo + '</div>' +
+      '</div>' +
+      '<div class="agent-card__room">' + (roomMap[agent.room] || agent.room) + '</div>' +
+      '<div class="agent-card__state-row">' +
+        '<span class="agent-panel__state agent-panel__state--' + as.state + '">' + stateLabel + '</span>' +
+      '</div>' +
+      '<div class="agent-card__task">' + (as.currentTask ? as.currentTask.label : '-') + '</div>' +
+      (as.state === 'working' ?
+        '<div class="progress-bar"><div class="progress-bar__fill" style="width:' + progressPct + '%;background:' + agent.color + '"></div></div>' : '') +
+      '<div class="agent-card__stats">' +
+        '<span>완료 <span class="agent-card__stat-value">' + as.completed + '</span></span>' +
+        '<span>툴콜 <span class="agent-card__stat-value">' + as.toolCalls + '</span></span>' +
+        '<span>성공률 <span class="agent-card__stat-value">' + rate + '%</span></span>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+function switchToAgentRoom(agentId) {
+  const agent = AGENTS.find(a => a.id === agentId);
+  if (!agent) return;
+
+  const roomMap = {
+    'mission-control': 'mission-control',
+    'workflow-lab': 'workflow-lab',
+    'communication-hub': 'comm-hub'
+  };
+  switchRoom(roomMap[agent.room] || agent.room);
+  openAgentPanel(agentId);
+}
+
+/* ===== Activity Log ===== */
+const MAX_LOG_ENTRIES = 50;
+
+function addLogEntry(agentId, message, type) {
+  const agent = AGENTS.find(a => a.id === agentId);
+  const container = document.getElementById('logEntries');
+  const time = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+  const entry = document.createElement('div');
+  entry.className = 'log-entry log-entry--' + type;
+  entry.innerHTML =
+    '<div class="log-entry__dot" style="background:' + (agent ? agent.color : '#8b949e') + '"></div>' +
+    '<div class="log-entry__content">' +
+      '<div class="log-entry__agent">' + (agent ? agent.nameKo : '시스템') + '</div>' +
+      '<div class="log-entry__task">' + message + '</div>' +
+    '</div>' +
+    '<div class="log-entry__time">' + time + '</div>';
+
+  container.insertBefore(entry, container.firstChild);
+
+  while (container.children.length > MAX_LOG_ENTRIES) {
+    container.removeChild(container.lastChild);
+  }
+}
+
+/* ===== Update Avatar Visual State ===== */
+function updateAvatarVisual(agentId) {
+  const as = agentStates[agentId];
+  const avatarEl = document.getElementById('avatar-' + agentId);
+  const monitorEl = document.getElementById('monitor-' + agentId);
+  const monitorText = document.getElementById('monitorText-' + agentId);
+
+  if (!avatarEl) return;
+
+  avatarEl.className = 'avatar avatar--' + agentId + ' avatar--' + as.state;
+
+  // Monitor glow
+  const monitorClasses = ['desk__monitor'];
+  if (as.state === 'working') {
+    const colorMap = { ops: '--active', flow: '--active-green', comm: '--active-purple' };
+    monitorClasses.push('desk__monitor' + (colorMap[agentId] || '--active'));
+    if (monitorText) monitorText.textContent = '...';
+  } else {
+    if (monitorText) monitorText.textContent = '>_';
+  }
+  if (monitorEl) monitorEl.className = monitorClasses.join(' ');
+}
+
+/* ===== Simulation Engine ===== */
+const TICK_INTERVAL = 2000;
+
+function simulationTick() {
+  AGENTS.forEach(agent => {
+    const as = agentStates[agent.id];
+
+    if (as.state === 'idle') {
+      // 30% chance to pick a task
+      if (Math.random() < 0.3) {
+        const task = agent.taskPool[Math.floor(Math.random() * agent.taskPool.length)];
+        as.state = 'working';
+        as.currentTask = { ...task };
+        as.progress = 0;
+        as.toolCalls++;
+        state.totalToolCalls++;
+
+        addLogEntry(agent.id, task.label + ' 시작', 'working');
+        updateAvatarVisual(agent.id);
+      }
+    } else if (as.state === 'working') {
+      as.progress += TICK_INTERVAL;
+
+      if (as.progress >= as.currentTask.duration) {
+        const success = Math.random() < 0.95;
+        state.totalAttempts++;
+
+        if (success) {
+          as.completed++;
+          state.totalCompleted++;
+          state.totalSuccess++;
+          addLogEntry(agent.id, as.currentTask.label + ' 완료', 'success');
+          as.state = 'idle';
+          as.currentTask = null;
+          as.progress = 0;
+        } else {
+          as.errors++;
+          addLogEntry(agent.id, as.currentTask.label + ' 오류 발생', 'error');
+          as.state = 'error';
+          as.errorCooldown = 4000;
+        }
+        updateAvatarVisual(agent.id);
+      }
+    } else if (as.state === 'error') {
+      as.errorCooldown -= TICK_INTERVAL;
+      if (as.errorCooldown <= 0) {
+        as.state = 'idle';
+        as.currentTask = null;
+        as.progress = 0;
+        addLogEntry(agent.id, '오류 복구 완료, 대기 상태로 전환', 'success');
+        updateAvatarVisual(agent.id);
+      }
+    }
+  });
+
+  // Update dashboard stats
+  document.getElementById('statCompletedTasks').textContent = state.totalCompleted;
+  document.getElementById('statToolCalls').textContent = state.totalToolCalls;
+  const rate = state.totalAttempts > 0 ? Math.round((state.totalSuccess / state.totalAttempts) * 100) : 100;
+  document.getElementById('statSuccessRate').textContent = rate + '%';
+
+  // Update uptime
+  const uptimeMin = Math.floor((Date.now() - state.startTime) / 60000);
+  document.getElementById('sysUptime').textContent = uptimeMin + '분';
+
+  // Update system stats (simulated)
+  const mem = 60 + Math.floor(Math.random() * 15);
+  document.getElementById('sysMemory').textContent = mem + '%';
+  document.getElementById('sysMemoryBar').style.width = mem + '%';
+
+  const tokens = (10 + state.totalToolCalls * 0.8).toFixed(1);
+  document.getElementById('sysTokens').textContent = tokens + 'K';
+  document.getElementById('sysTokenBar').style.width = Math.min(100, tokens / 40 * 100) + '%';
+
+  // Update agent cards
+  renderAgentCards();
+
+  // Update panel if open
+  if (state.panelOpen && state.panelAgentId) {
+    updatePanelState(state.panelAgentId);
+  }
+}
+
+/* ===== Scroll Fade-in ===== */
+function initScrollAnimations() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('fade-in--visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+}
+
+/* ===== Init ===== */
+function init() {
+  renderAgentCards();
+  initScrollAnimations();
+
+  // Initial log
+  addLogEntry('ops', '시스템 초기화 완료', 'success');
+  addLogEntry('flow', '워크플로우 엔진 준비 완료', 'success');
+  addLogEntry('comm', '커뮤니케이션 채널 연결', 'success');
+
+  // Start simulation
+  setInterval(simulationTick, TICK_INTERVAL);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

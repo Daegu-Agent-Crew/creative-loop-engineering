@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>맞고 고스톱 v2</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: #1a5c2a;
+  color: #fff;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+#game-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+/* Sections */
+.game-section {
+  padding: 6px;
+  position: relative;
+}
+.section-label {
+  font-size: 11px;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+/* Score bar */
+.score-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 12px;
+  background: rgba(0,0,0,0.3);
+  border-radius: 8px;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+.score-bar .score { font-weight: bold; color: #ffd700; }
+.go-count { color: #ff6b6b; font-size: 12px; margin-left: 8px; }
+/* Card styles */
+.card-area {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  min-height: 90px;
+  align-items: center;
+}
+.card {
+  width: 55px;
+  height: 82px;
+  border-radius: 5px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  transition: transform 0.2s, box-shadow 0.2s;
+  background-size: cover;
+  background-position: center;
+  background-color: #fff;
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 5px;
+}
+.card.back {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  cursor: default;
+}
+.card.back::after {
+  content: '花';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: rgba(255,255,255,0.5);
+}
+.card.playable {
+  cursor: pointer;
+}
+.card.playable:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 8px 20px rgba(255,215,0,0.5);
+  z-index: 10;
+}
+.card.selected {
+  outline: 3px solid #ffd700;
+  transform: translateY(-8px);
+}
+.card.match-highlight {
+  outline: 3px solid #00ff88;
+  animation: pulse 0.6s infinite alternate;
+}
+@keyframes pulse {
+  from { box-shadow: 0 0 5px #00ff88; }
+  to { box-shadow: 0 0 20px #00ff88; }
+}
+.card .fallback-text {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: #333;
+  background: #f5f0e0;
+  border-radius: 5px;
+  text-align: center;
+  line-height: 1.3;
+}
+.fallback-text .month { font-size: 14px; font-weight: bold; }
+.fallback-text .type { font-size: 9px; color: #666; }
+/* Floor area */
+#floor-area {
+  background: rgba(0,0,0,0.15);
+  border-radius: 10px;
+  padding: 10px;
+  margin: 4px 0;
+  min-height: 100px;
+}
+/* Captured cards */
+.captured-section {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+}
+.captured-group {
+  background: rgba(0,0,0,0.2);
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.captured-group .label { color: rgba(255,255,255,0.7); }
+.captured-group .count { color: #ffd700; font-weight: bold; }
+.captured-cards-row {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.captured-cards-row .card {
+  width: 30px;
+  height: 45px;
+}
+/* Buttons */
+.btn-area {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 8px 0;
+}
+.btn {
+  padding: 10px 30px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: none;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-go {
+  background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+  color: #fff;
+}
+.btn-stop {
+  background: linear-gradient(135deg, #00b894, #00cec9);
+  color: #fff;
+}
+.btn-go:hover:not(:disabled), .btn-stop:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+.btn-restart {
+  background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+  color: #fff;
+  display: inline-block;
+  margin-top: 10px;
+}
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: linear-gradient(135deg, #2d3436, #636e72);
+  border-radius: 16px;
+  padding: 30px;
+  text-align: center;
+  max-width: 350px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+}
+.modal h2 { font-size: 24px; margin-bottom: 10px; }
+.modal .result-score { font-size: 36px; color: #ffd700; margin: 10px 0; }
+.modal .result-detail { font-size: 14px; color: rgba(255,255,255,0.7); margin-bottom: 15px; }
+/* Turn indicator */
+#turn-indicator {
+  text-align: center;
+  font-size: 13px;
+  padding: 4px;
+  color: #ffd700;
+  font-weight: bold;
+}
+/* Floor match selection */
+.floor-select-msg {
+  text-align: center;
+  color: #00ff88;
+  font-size: 13px;
+  padding: 4px;
+  display: none;
+}
+/* Deck info */
+#deck-info {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+}
+/* Responsive */
+@media (max-width: 500px) {
+  .card { width: 42px; height: 63px; }
+  .captured-cards-row .card { width: 24px; height: 36px; }
+  .score-bar { font-size: 12px; }
+}
+/* Animation for card capture */
+@keyframes cardCapture {
+  0% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.7; }
+  100% { transform: scale(0); opacity: 0; }
+}
+.card.capturing {
+  animation: cardCapture 0.4s forwards;
+}
+</style>
+</head>
+<body>
+<div id="game-container">
+  <!-- AI Section -->
+  <div class="game-section">
+    <div class="score-bar">
+      <span>AI <span class="score" id="ai-score">0</span>점</span>
+      <span class="go-count" id="ai-go-count"></span>
+      <div class="captured-section" id="ai-captured-summary"></div>
+    </div>
+    <div class="card-area" id="ai-hand"></div>
+  </div>
+
+  <!-- Floor -->
+  <div class="game-section" id="floor-area">
+    <div class="section-label">바닥</div>
+    <div id="turn-indicator"></div>
+    <div class="floor-select-msg" id="floor-select-msg">바닥에서 가져갈 카드를 선택하세요</div>
+    <div class="card-area" id="floor-cards"></div>
+    <div id="deck-info"></div>
+  </div>
+
+  <!-- Go/Stop buttons -->
+  <div class="btn-area">
+    <button class="btn btn-go" id="goBtn" onclick="game.callGo()">고! (GO)</button>
+    <button class="btn btn-stop" id="stopBtn" onclick="game.callStop()">스톱 (STOP)</button>
+  </div>
+
+  <!-- Player Section -->
+  <div class="game-section">
+    <div class="card-area" id="player-hand"></div>
+    <div class="score-bar" style="margin-top:6px">
+      <span>나 <span class="score" id="player-score">0</span>점</span>
+      <span class="go-count" id="player-go-count"></span>
+      <div class="captured-section" id="player-captured-summary"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Result Modal -->
+<div class="modal-overlay" id="result-modal">
+  <div class="modal">
+    <h2 id="result-title"></h2>
+    <div class="result-score" id="result-score-text"></div>
+    <div class="result-detail" id="result-detail"></div>
+    <button class="btn btn-restart" onclick="game.startGame()">다시 하기</button>
+  </div>
+</div>
+
+<script>
+// ===== CARD DATA =====
+const MONTHS = ['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const TYPES = { GWANG: 'gwang', YEOLKKEUT: 'yeolkkeut', TTI: 'tti', PI: 'pi' };
+const TYPE_NAMES = { gwang: '광', yeolkkeut: '열끗', tti: '띠', pi: '피' };
+
+// Card image mapping: month (1-12), card index within month (0-3)
+// Based on sunduk/freegostop naming convention
+const CARD_IMAGE_NAMES = {
+  1:  ['jan0','jan1','jan2','jan3'],
+  2:  ['feb0','feb1','feb2','feb3'],
+  3:  ['mar0','mar1','mar2','mar3'],
+  4:  ['apr0','apr1','apr2','apr3'],
+  5:  ['may0','may1','may2','may3'],
+  6:  ['jun0','jun1','jun2','jun3'],
+  7:  ['jul0','jul1','jul2','jul3'],
+  8:  ['aug0','aug1','aug2','aug3'],
+  9:  ['sep0','sep1','sep2','sep3'],
+  10: ['oct0','oct1','oct2','oct3'],
+  11: ['nov0','nov1','nov2','nov3'],
+  12: ['dec0','dec1','dec2','dec3'],
+};
+
+// Image base URL
+const IMG_BASE = 'https://raw.githubusercontent.com/sunduk/freegostop/master/client/Assets/Resources/Images/Cards/';
+
+// All 48 cards definition
+// month, index within month, type, special attributes
+function createDeck() {
+  const cards = [];
+  const defs = [
+    // 1월 (송학) - 광, 홍단, 피, 피
+    {m:1, types:['gwang','tti','pi','pi'], special:[{gwang:true},{hongdan:true},{},{}]},
+    // 2월 (매화) - 열끗, 홍단, 피, 피
+    {m:2, types:['yeolkkeut','tti','pi','pi'], special:[{},{hongdan:true},{},{}]},
+    // 3월 (벚꽃) - 광, 홍단, 피, 피
+    {m:3, types:['gwang','tti','pi','pi'], special:[{gwang:true},{hongdan:true},{},{}]},
+    // 4월 (흑싸리) - 열끗, 초단, 피, 피
+    {m:4, types:['yeolkkeut','tti','pi','pi'], special:[{},{chodan:true},{},{}]},
+    // 5월 (난초) - 열끗, 초단, 피, 피
+    {m:5, types:['yeolkkeut','tti','pi','pi'], special:[{},{chodan:true},{},{}]},
+    // 6월 (모란) - 열끗, 청단, 피, 피
+    {m:6, types:['yeolkkeut','tti','pi','pi'], special:[{},{cheongdan:true},{},{}]},
+    // 7월 (홍싸리) - 열끗, 초단, 피, 피
+    {m:7, types:['yeolkkeut','tti','pi','pi'], special:[{},{chodan:true},{},{}]},
+    // 8월 (공산) - 광, 열끗, 피, 피
+    {m:8, types:['gwang','yeolkkeut','pi','pi'], special:[{gwang:true},{},{},{}]},
+    // 9월 (국화) - 열끗, 청단, 피, 피
+    {m:9, types:['yeolkkeut','tti','pi','pi'], special:[{},{cheongdan:true},{},{}]},
+    // 10월 (단풍) - 열끗, 청단, 피, 피
+    {m:10, types:['yeolkkeut','tti','pi','pi'], special:[{},{cheongdan:true},{},{}]},
+    // 11월 (오동) - 광, 열끗, 피, 쌍피
+    {m:11, types:['gwang','yeolkkeut','pi','pi'], special:[{gwang:true},{},{},{ssangpi:true}]},
+    // 12월 (비) - 광, 열끗, 띠, 피 (쌍피)
+    {m:12, types:['gwang','yeolkkeut','tti','pi'], special:[{gwang:true},{},{},{ssangpi:true}]},
+  ];
+
+  let id = 0;
+  for (const def of defs) {
+    for (let i = 0; i < 4; i++) {
+      cards.push({
+        id: id++,
+        month: def.m,
+        index: i,
+        type: def.types[i],
+        special: def.special[i] || {},
+        imgName: `${def.m}_${i+1}` // will try multiple naming patterns
+      });
+    }
+  }
+  return cards;
+}
+
+function getCardImageUrl(card) {
+  // Try numeric naming: "1_1.png", "1_2.png" etc
+  return `${IMG_BASE}${card.month}_${card.index + 1}.png`;
+}
+
+// Alternative URL patterns to try
+function getCardImageUrls(card) {
+  return [
+    `${IMG_BASE}${card.month}_${card.index + 1}.png`,
+    `${IMG_BASE}${String(card.month).padStart(2,'0')}_${card.index + 1}.png`,
+    `${IMG_BASE}card_${card.month}_${card.index + 1}.png`,
+  ];
+}
+
+// ===== SHUFFLE =====
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ===== CARD RENDERER =====
+class CardRenderer {
+  renderCard(card, opts = {}) {
+    const div = document.createElement('div');
+    div.className = 'card';
+    if (opts.back) {
+      div.classList.add('back');
+      return div;
+    }
+    div.dataset.cardId = card.id;
+    if (opts.playable) div.classList.add('playable');
+    if (opts.matchHighlight) div.classList.add('match-highlight');
+
+    // Try loading image
+    const img = document.createElement('img');
+    img.src = getCardImageUrl(card);
+    img.loading = 'lazy';
+    img.onerror = () => {
+      // Fallback to text
+      img.remove();
+      const fb = document.createElement('div');
+      fb.className = 'fallback-text';
+      fb.innerHTML = `<span class="month">${card.month}월</span><span class="type">${TYPE_NAMES[card.type]}</span>`;
+      div.appendChild(fb);
+    };
+    div.appendChild(img);
+    return div;
+  }
+
+  renderHand(container, cards, isAI, playableIds = []) {
+    container.innerHTML = '';
+    for (const card of cards) {
+      const el = this.renderCard(card, {
+        back: isAI,
+        playable: !isAI && playableIds.includes(card.id)
+      });
+      container.appendChild(el);
+    }
+  }
+
+  renderFloor(container, cards, highlightIds = []) {
+    container.innerHTML = '';
+    // Group by month
+    const byMonth = {};
+    for (const c of cards) {
+      if (!byMonth[c.month]) byMonth[c.month] = [];
+      byMonth[c.month].push(c);
+    }
+    const sorted = Object.keys(byMonth).sort((a,b) => a - b);
+    for (const m of sorted) {
+      for (const card of byMonth[m]) {
+        const el = this.renderCard(card, {
+          matchHighlight: highlightIds.includes(card.id),
+          playable: highlightIds.includes(card.id)
+        });
+        container.appendChild(el);
+      }
+    }
+  }
+
+  renderCapturedSummary(container, captured) {
+    const groups = { gwang: [], yeolkkeut: [], tti: [], pi: [] };
+    for (const c of captured) groups[c.type].push(c);
+
+    container.innerHTML = '';
+    const items = [
+      { key: 'gwang', label: '광', emoji: '🌟' },
+      { key: 'yeolkkeut', label: '열끗', emoji: '🐦' },
+      { key: 'tti', label: '띠', emoji: '📜' },
+      { key: 'pi', label: '피', emoji: '🍃' },
+    ];
+    for (const item of items) {
+      if (groups[item.key].length === 0) continue;
+      const piCount = item.key === 'pi'
+        ? groups[item.key].reduce((s,c) => s + (c.special.ssangpi ? 2 : 1), 0)
+        : groups[item.key].length;
+      const g = document.createElement('div');
+      g.className = 'captured-group';
+      g.innerHTML = `<span class="label">${item.label}</span><span class="count">${piCount}</span>`;
+      container.appendChild(g);
+    }
+  }
+}
+
+// ===== AI PLAYER =====
+class AIPlayer {
+  selectBestCard(hand, floor) {
+    // Score each card
+    let best = null;
+    let bestScore = -1;
+
+    for (const card of hand) {
+      const matches = floor.filter(f => f.month === card.month);
+      let score = 0;
+
+      if (matches.length === 3) {
+        // Can sweep all 3 - very valuable
+        score = 100;
+      } else if (matches.length === 2) {
+        // Will need to choose one
+        score = 50;
+      } else if (matches.length === 1) {
+        score = 30;
+      }
+
+      // Prefer capturing high-value cards
+      if (matches.length > 0) {
+        for (const m of matches) {
+          if (m.type === 'gwang') score += 20;
+          else if (m.type === 'yeolkkeut') score += 10;
+          else if (m.type === 'tti') score += 8;
+          else score += 2;
+        }
+        // Also value our own card type
+        if (card.type === 'gwang') score += 15;
+        else if (card.type === 'yeolkkeut') score += 8;
+        else if (card.type === 'tti') score += 5;
+      } else {
+        // No match - prefer discarding low-value cards
+        if (card.type === 'pi') score = 5;
+        else if (card.type === 'tti') score = 3;
+        else if (card.type === 'yeolkkeut') score = 2;
+        else score = 1; // keep gwang
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = card;
+      }
+    }
+    return best || hand[0];
+  }
+
+  selectFloorCard(matches, card) {
+    // Prefer higher value cards
+    const priority = { gwang: 4, yeolkkeut: 3, tti: 2, pi: 1 };
+    return matches.sort((a, b) => (priority[b.type] || 0) - (priority[a.type] || 0))[0];
+  }
+
+  shouldCallGo(score, goCount, opponentScore) {
+    // Simple logic: go if score advantage and not too risky
+    if (goCount >= 2) return false; // 3고 would auto-win but risky
+    if (score - opponentScore >= 5) return true;
+    if (score >= 7 && goCount === 0) return true;
+    return Math.random() < 0.3;
+  }
+}
+
+// ===== MAIN GAME =====
+class GoStopGame {
+  constructor() {
+    this.renderer = new CardRenderer();
+    this.ai = new AIPlayer();
+    this.initElements();
+    this.startGame();
+  }
+
+  initElements() {
+    this.els = {
+      aiHand: document.getElementById('ai-hand'),
+      aiScore: document.getElementById('ai-score'),
+      aiGoCount: document.getElementById('ai-go-count'),
+      aiCaptured: document.getElementById('ai-captured-summary'),
+      floor: document.getElementById('floor-cards'),
+      floorSelectMsg: document.getElementById('floor-select-msg'),
+      turnIndicator: document.getElementById('turn-indicator'),
+      deckInfo: document.getElementById('deck-info'),
+      playerHand: document.getElementById('player-hand'),
+      playerScore: document.getElementById('player-score'),
+      playerGoCount: document.getElementById('player-go-count'),
+      playerCaptured: document.getElementById('player-captured-summary'),
+      goBtn: document.getElementById('goBtn'),
+      stopBtn: document.getElementById('stopBtn'),
+      modal: document.getElementById('result-modal'),
+      resultTitle: document.getElementById('result-title'),
+      resultScore: document.getElementById('result-score-text'),
+      resultDetail: document.getElementById('result-detail'),
+    };
+  }
+
+  startGame() {
+    this.els.modal.classList.remove('active');
+    this.deck = shuffle(createDeck());
+    this.playerHand = [];
+    this.aiHand = [];
+    this.floor = [];
+    this.playerCaptured = [];
+    this.aiCaptured = [];
+    this.playerGoCount = 0;
+    this.aiGoCount = 0;
+    this.isPlayerTurn = true;
+    this.waitingForFloorSelect = false;
+    this.waitingForGoStop = false;
+    this.pendingCapture = null;
+    this.gameOver = false;
+
+    // Deal: 10 each, 8 floor
+    for (let i = 0; i < 10; i++) {
+      this.playerHand.push(this.deck.pop());
+      this.aiHand.push(this.deck.pop());
+    }
+    for (let i = 0; i < 8; i++) {
+      this.floor.push(this.deck.pop());
+    }
+
+    // Sort hands by month
+    this.playerHand.sort((a, b) => a.month - b.month || a.index - b.index);
+    this.aiHand.sort((a, b) => a.month - b.month || a.index - b.index);
+
+    this.hideGoStop();
+    this.render();
+  }
+
+  render() {
+    // AI hand (face down)
+    this.renderer.renderHand(this.els.aiHand, this.aiHand, true);
+
+    // Player hand
+    const playableIds = (!this.waitingForFloorSelect && !this.waitingForGoStop && this.isPlayerTurn && !this.gameOver)
+      ? this.playerHand.map(c => c.id)
+      : [];
+    this.renderer.renderHand(this.els.playerHand, this.playerHand, false, playableIds);
+
+    // Attach click handlers to player cards
+    if (playableIds.length > 0) {
+      this.els.playerHand.querySelectorAll('.card.playable').forEach(el => {
+        el.addEventListener('click', () => {
+          const cardId = parseInt(el.dataset.cardId);
+          this.playerPlayCard(cardId);
+        });
+      });
+    }
+
+    // Floor
+    const highlightIds = this.waitingForFloorSelect && this.pendingCapture
+      ? this.pendingCapture.floorMatches.map(c => c.id)
+      : [];
+    this.renderer.renderFloor(this.els.floor, this.floor, highlightIds);
+
+    // Attach click handlers to floor match highlights
+    if (highlightIds.length > 0) {
+      this.els.floor.querySelectorAll('.card.match-highlight').forEach(el => {
+        el.addEventListener('click', () => {
+          const cardId = parseInt(el.dataset.cardId);
+          this.selectFloorCard(cardId);
+        });
+      });
+    }
+
+    // Scores
+    const pScore = this.calculateScore(this.playerCaptured);
+    const aScore = this.calculateScore(this.aiCaptured);
+    this.els.playerScore.textContent = pScore.total;
+    this.els.aiScore.textContent = aScore.total;
+
+    // Go counts
+    this.els.playerGoCount.textContent = this.playerGoCount > 0 ? `${this.playerGoCount}고` : '';
+    this.els.aiGoCount.textContent = this.aiGoCount > 0 ? `${this.aiGoCount}고` : '';
+
+    // Captured summaries
+    this.renderer.renderCapturedSummary(this.els.playerCaptured, this.playerCaptured);
+    this.renderer.renderCapturedSummary(this.els.aiCaptured, this.aiCaptured);
+
+    // Turn indicator
+    if (this.gameOver) {
+      this.els.turnIndicator.textContent = '';
+    } else if (this.waitingForGoStop) {
+      this.els.turnIndicator.textContent = this.isPlayerTurn ? '고 또는 스톱을 선택하세요' : 'AI 결정 중...';
+    } else {
+      this.els.turnIndicator.textContent = this.isPlayerTurn ? '당신의 차례' : 'AI 차례...';
+    }
+
+    // Floor select message
+    this.els.floorSelectMsg.style.display = this.waitingForFloorSelect ? 'block' : 'none';
+
+    // Deck info
+    this.els.deckInfo.textContent = `남은 카드: ${this.deck.length}장`;
+  }
+
+  playerPlayCard(cardId) {
+    if (!this.isPlayerTurn || this.waitingForFloorSelect || this.waitingForGoStop || this.gameOver) return;
+
+    const cardIndex = this.playerHand.findIndex(c => c.id === cardId);
+    if (cardIndex === -1) return;
+
+    const card = this.playerHand.splice(cardIndex, 1)[0];
+    this.processCardPlay(card, 'player');
+  }
+
+  processCardPlay(card, who) {
+    const matches = this.floor.filter(f => f.month === card.month);
+
+    if (matches.length === 0) {
+      // No match - card goes to floor
+      this.floor.push(card);
+      this.afterCardPlay(who);
+    } else if (matches.length === 1) {
+      // Exact one match - capture both
+      this.floor = this.floor.filter(f => f.id !== matches[0].id);
+      this.addCaptured(who, [card, matches[0]]);
+      this.afterCardPlay(who);
+    } else if (matches.length === 2) {
+      // Two matches - player chooses which to take
+      if (who === 'player') {
+        this.waitingForFloorSelect = true;
+        this.pendingCapture = { playedCard: card, floorMatches: matches, who };
+        this.render();
+        return;
+      } else {
+        // AI chooses
+        const chosen = this.ai.selectFloorCard(matches, card);
+        this.floor = this.floor.filter(f => f.id !== chosen.id);
+        this.addCaptured(who, [card, chosen]);
+        this.afterCardPlay(who);
+      }
+    } else if (matches.length === 3) {
+      // Three matches - capture all
+      for (const m of matches) {
+        this.floor = this.floor.filter(f => f.id !== m.id);
+      }
+      this.addCaptured(who, [card, ...matches]);
+      this.afterCardPlay(who);
+    }
+  }
+
+  selectFloorCard(cardId) {
+    if (!this.waitingForFloorSelect || !this.pendingCapture) return;
+
+    const match = this.pendingCapture.floorMatches.find(c => c.id === cardId);
+    if (!match) return;
+
+    const { playedCard, who } = this.pendingCapture;
+    this.floor = this.floor.filter(f => f.id !== match.id);
+    this.addCaptured(who, [playedCard, match]);
+    this.waitingForFloorSelect = false;
+    this.pendingCapture = null;
+    this.afterCardPlay(who);
+  }
+
+  afterCardPlay(who) {
+    // Draw from deck
+    if (this.deck.length > 0) {
+      const drawn = this.deck.pop();
+      const deckMatches = this.floor.filter(f => f.month === drawn.month);
+
+      if (deckMatches.length === 0) {
+        this.floor.push(drawn);
+      } else if (deckMatches.length === 1) {
+        this.floor = this.floor.filter(f => f.id !== deckMatches[0].id);
+        this.addCaptured(who, [drawn, deckMatches[0]]);
+      } else if (deckMatches.length === 2) {
+        // With deck draw, if 2 matches, take one (AI logic or first)
+        if (who === 'player') {
+          // For simplicity, take the higher value one
+          const chosen = deckMatches.sort((a,b) => {
+            const p = {gwang:4,yeolkkeut:3,tti:2,pi:1};
+            return (p[b.type]||0) - (p[a.type]||0);
+          })[0];
+          this.floor = this.floor.filter(f => f.id !== chosen.id);
+          this.addCaptured(who, [drawn, chosen]);
+        } else {
+          const chosen = this.ai.selectFloorCard(deckMatches, drawn);
+          this.floor = this.floor.filter(f => f.id !== chosen.id);
+          this.addCaptured(who, [drawn, chosen]);
+        }
+      } else if (deckMatches.length === 3) {
+        for (const m of deckMatches) {
+          this.floor = this.floor.filter(f => f.id !== m.id);
+        }
+        this.addCaptured(who, [drawn, ...deckMatches]);
+      }
+    }
+
+    // Check win condition
+    const captured = who === 'player' ? this.playerCaptured : this.aiCaptured;
+    const score = this.calculateScore(captured);
+    const goCount = who === 'player' ? this.playerGoCount : this.aiGoCount;
+
+    if (score.total >= 3 + goCount) {
+      // Can go or stop
+      if (who === 'player') {
+        this.waitingForGoStop = true;
+        this.showGoStop();
+        this.render();
+        return;
+      } else {
+        // AI decides
+        const oppScore = this.calculateScore(this.playerCaptured).total;
+        if (this.ai.shouldCallGo(score.total, this.aiGoCount, oppScore)) {
+          this.aiGoCount++;
+          if (this.aiGoCount >= 3) {
+            this.endGame('ai', score.total);
+            return;
+          }
+        } else {
+          this.endGame('ai', score.total);
+          return;
+        }
+      }
+    }
+
+    // Check if hands are empty
+    if (this.playerHand.length === 0 && this.aiHand.length === 0) {
+      this.endByDraw();
+      return;
+    }
+
+    // Switch turn
+    this.isPlayerTurn = !this.isPlayerTurn;
+    this.render();
+
+    // AI turn
+    if (!this.isPlayerTurn && !this.gameOver) {
+      setTimeout(() => this.aiTurn(), 800);
+    }
+  }
+
+  aiTurn() {
+    if (this.gameOver || this.isPlayerTurn) return;
+    if (this.aiHand.length === 0) {
+      this.isPlayerTurn = true;
+      this.render();
+      return;
+    }
+
+    const card = this.ai.selectBestCard(this.aiHand, this.floor);
+    const idx = this.aiHand.findIndex(c => c.id === card.id);
+    this.aiHand.splice(idx, 1);
+    this.processCardPlay(card, 'ai');
+  }
+
+  addCaptured(who, cards) {
+    const arr = who === 'player' ? this.playerCaptured : this.aiCaptured;
+    arr.push(...cards);
+  }
+
+  showGoStop() {
+    this.els.goBtn.style.display = 'inline-block';
+    this.els.stopBtn.style.display = 'inline-block';
+  }
+
+  hideGoStop() {
+    this.els.goBtn.style.display = 'none';
+    this.els.stopBtn.style.display = 'none';
+  }
+
+  callGo() {
+    if (!this.waitingForGoStop) return;
+    this.playerGoCount++;
+    this.waitingForGoStop = false;
+    this.hideGoStop();
+
+    if (this.playerGoCount >= 3) {
+      const score = this.calculateScore(this.playerCaptured);
+      this.endGame('player', score.total);
+      return;
+    }
+
+    // Continue - switch turn
+    this.isPlayerTurn = false;
+    this.render();
+    setTimeout(() => this.aiTurn(), 800);
+  }
+
+  callStop() {
+    if (!this.waitingForGoStop) return;
+    this.waitingForGoStop = false;
+    this.hideGoStop();
+    const score = this.calculateScore(this.playerCaptured);
+    this.endGame('player', score.total);
+  }
+
+  calculateScore(captured) {
+    const groups = { gwang: [], yeolkkeut: [], tti: [], pi: [] };
+    for (const c of captured) groups[c.type].push(c);
+
+    let total = 0;
+    const details = [];
+
+    // 광 점수
+    const gwangCount = groups.gwang.length;
+    if (gwangCount === 5) {
+      total += 15;
+      details.push('오광 +15');
+    } else if (gwangCount === 4) {
+      total += 4;
+      details.push('사광 +4');
+    } else if (gwangCount === 3) {
+      // Check if 비광(12월 광) is included
+      const hasBi = groups.gwang.some(c => c.month === 12);
+      if (hasBi) {
+        total += 2;
+        details.push('비광 +2');
+      } else {
+        total += 3;
+        details.push('삼광 +3');
+      }
+    }
+
+    // 열끗 점수
+    const yeolCount = groups.yeolkkeut.length;
+    if (yeolCount >= 5) {
+      const pts = yeolCount - 4;
+      total += pts;
+      details.push(`열끗 ${yeolCount}장 +${pts}`);
+    }
+
+    // 띠 점수
+    const ttiCount = groups.tti.length;
+    if (ttiCount >= 5) {
+      const pts = ttiCount - 4;
+      total += pts;
+      details.push(`띠 ${ttiCount}장 +${pts}`);
+    }
+
+    // 피 점수 (쌍피는 2장으로 계산)
+    let piCount = 0;
+    for (const c of groups.pi) {
+      piCount += c.special.ssangpi ? 2 : 1;
+    }
+    if (piCount >= 10) {
+      const pts = piCount - 9;
+      total += pts;
+      details.push(`피 ${piCount}장 +${pts}`);
+    }
+
+    // 특수 조합
+    // 홍단 (1,2,3월 띠)
+    const hongdan = groups.tti.filter(c => c.special.hongdan);
+    if (hongdan.length >= 3) {
+      total += 3;
+      details.push('홍단 +3');
+    }
+
+    // 초단 (4,5,7월 띠)
+    const chodan = groups.tti.filter(c => c.special.chodan);
+    if (chodan.length >= 3) {
+      total += 3;
+      details.push('초단 +3');
+    }
+
+    // 청단 (6,9,10월 띠)
+    const cheongdan = groups.tti.filter(c => c.special.cheongdan);
+    if (cheongdan.length >= 3) {
+      total += 3;
+      details.push('청단 +3');
+    }
+
+    // 고 배수
+    return { total, details, gwangCount, yeolCount, ttiCount, piCount };
+  }
+
+  endGame(winner, score) {
+    this.gameOver = true;
+    this.hideGoStop();
+
+    const goCount = winner === 'player' ? this.playerGoCount : this.aiGoCount;
+    let multiplier = 1;
+    if (goCount === 1) multiplier = 2;
+    else if (goCount === 2) multiplier = 4;
+    else if (goCount >= 3) multiplier = 8;
+
+    const finalScore = score * multiplier;
+    const captured = winner === 'player' ? this.playerCaptured : this.aiCaptured;
+    const scoreInfo = this.calculateScore(captured);
+
+    this.els.resultTitle.textContent = winner === 'player' ? '승리!' : '패배...';
+    this.els.resultTitle.style.color = winner === 'player' ? '#ffd700' : '#ff6b6b';
+    this.els.resultScore.textContent = `${finalScore}점`;
+    this.els.resultDetail.innerHTML = scoreInfo.details.join('<br>') +
+      (goCount > 0 ? `<br>${goCount}고 (x${multiplier})` : '');
+
+    this.els.modal.classList.add('active');
+    this.render();
+  }
+
+  endByDraw() {
+    this.gameOver = true;
+    this.hideGoStop();
+
+    const pScore = this.calculateScore(this.playerCaptured);
+    const aScore = this.calculateScore(this.aiCaptured);
+
+    let winner, finalScore, details;
+    if (pScore.total > aScore.total) {
+      winner = '승리!';
+      finalScore = pScore.total;
+      details = pScore.details;
+    } else if (aScore.total > pScore.total) {
+      winner = '패배...';
+      finalScore = aScore.total;
+      details = aScore.details;
+    } else {
+      winner = '무승부';
+      finalScore = pScore.total;
+      details = pScore.details;
+    }
+
+    this.els.resultTitle.textContent = winner;
+    this.els.resultTitle.style.color = winner === '승리!' ? '#ffd700' : winner === '패배...' ? '#ff6b6b' : '#fff';
+    this.els.resultScore.textContent = `${finalScore}점`;
+    this.els.resultDetail.innerHTML = details.join('<br>') + '<br>(카드 소진)';
+    this.els.modal.classList.add('active');
+    this.render();
+  }
+}
+
+// Start
+const game = new GoStopGame();
+</script>
+</body>
+</html>

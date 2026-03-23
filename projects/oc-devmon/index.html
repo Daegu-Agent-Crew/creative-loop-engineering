@@ -1,0 +1,4545 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OC-DevMon | OpenClaw Developer Monitor</title>
+<style>
+/* ===== CSS Variables + Dark Theme (P1-01) ===== */
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-card: #1c2128;
+  --border: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #484f58;
+  --accent: #58a6ff;
+  --color-normal: #22c55e;
+  --color-caution: #eab308;
+  --color-warning: #f97316;
+  --color-critical: #ef4444;
+  --color-idle: #484f58;
+  --color-blue: #58a6ff;
+  --color-purple: #bc8cff;
+  --color-cyan: #39d2c0;
+  --color-pink: #f778ba;
+  --seg-system: #58a6ff;
+  --seg-bootstrap: #bc8cff;
+  --seg-history: #39d2c0;
+  --seg-tools: #f97316;
+  --seg-attachments: #f778ba;
+  --seg-reserve: #484f58;
+  --font-mono: 'SF Mono', 'Cascadia Code', 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --radius: 6px;
+  --radius-lg: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-mono);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-x: hidden;
+}
+
+/* ===== Top Bar (P1-08) ===== */
+.top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent);
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.meta-item .label { color: var(--text-muted); }
+.meta-item .value { color: var(--text-primary); font-weight: 500; }
+
+.top-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.context-mini {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.context-mini-bar {
+  width: 120px;
+  height: 8px;
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.context-mini-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease, background-color 0.3s;
+}
+
+.cost-display {
+  font-weight: 600;
+  color: var(--color-cyan);
+}
+
+/* ===== Tab Navigation (P1-09) ===== */
+.tab-nav {
+  display: flex;
+  padding: 0 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  gap: 2px;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.2s;
+}
+
+.tab-btn:hover { color: var(--text-primary); background: var(--bg-tertiary); }
+.tab-btn.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== Main Layout ===== */
+.main-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  grid-template-rows: auto auto;
+  gap: 1px;
+  background: var(--border);
+  min-height: calc(100vh - 80px);
+}
+
+.panel {
+  background: var(--bg-primary);
+  padding: 12px;
+  overflow-y: auto;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.panel-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+/* ===== Agent Loop Tracker (P1-03) ===== */
+.loop-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 12px;
+}
+
+.loop-id { color: var(--accent); font-weight: 600; }
+.loop-iteration { color: var(--text-secondary); }
+.loop-duration { color: var(--color-cyan); margin-left: auto; }
+
+.phase-list { display: flex; flex-direction: column; gap: 2px; }
+
+.phase-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  transition: background 0.2s;
+  animation: slideDown 0.3s ease-out;
+}
+
+.phase-item:hover { background: var(--bg-tertiary); }
+
+.phase-icon { width: 18px; text-align: center; font-size: 13px; }
+.phase-name { flex: 1; color: var(--text-primary); }
+
+.phase-duration {
+  color: var(--text-secondary);
+  font-size: 11px;
+  min-width: 50px;
+  text-align: right;
+}
+
+.phase-item.pending { opacity: 0.4; }
+.phase-item.running { background: rgba(88, 166, 255, 0.08); animation: slideDown 0.3s ease-out, phaseGlow 2s ease-in-out infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Run 2: Phase glow animation for running phases */
+@keyframes phaseGlow {
+  0%, 100% { box-shadow: 0 0 4px rgba(88, 166, 255, 0.1); }
+  50% { box-shadow: 0 0 12px rgba(88, 166, 255, 0.35), 0 0 20px rgba(88, 166, 255, 0.15); }
+}
+
+/* Run 2: Slide-down animation for new phase items */
+@keyframes slideDown {
+  from { transform: translateY(-8px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* Run 2: Progress bar inside running phase items */
+.phase-progress {
+  width: 40px;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.phase-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 2px;
+  width: 0%;
+}
+@keyframes fillProgress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+.phase-item.running .phase-progress-fill {
+  animation: fillProgress var(--phase-duration, 1s) linear forwards;
+}
+
+.phase-item.running .phase-icon { animation: pulse 1.2s ease-in-out infinite; }
+
+.iteration-marker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.iteration-marker::before, .iteration-marker::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ===== Phase Detail (Improvement #2) ===== */
+.phase-detail {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding-left: 26px;
+  margin-top: -1px;
+  margin-bottom: 2px;
+}
+
+/* ===== Tool Call Tracer (P1-05) ===== */
+.tool-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  margin-bottom: 4px;
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--color-idle);
+  font-size: 12px;
+  transition: all 0.2s;
+  flex-wrap: wrap;
+}
+
+.tool-card:hover { background: var(--bg-tertiary); cursor: pointer; }
+.tool-card.completed { border-left-color: var(--color-normal); }
+.tool-card.executing { border-left-color: var(--color-blue); }
+.tool-card.error { border-left-color: var(--color-critical); }
+/* Run 2: pending status blink */
+.tool-card.pending { border-left-color: #484f58; animation: pendingBlink 1.5s ease-in-out infinite; }
+
+@keyframes pendingBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* Run 2: Tool error message */
+.tool-error-msg {
+  width: 100%;
+  font-size: 11px;
+  color: var(--color-critical);
+  padding: 4px 0 0 28px;
+  word-break: break-all;
+}
+
+.tool-index { color: var(--text-muted); font-size: 11px; min-width: 20px; }
+
+.tool-name {
+  font-weight: 600;
+  color: var(--color-purple);
+  min-width: 80px;
+}
+
+.tool-input {
+  flex: 1;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+}
+
+.tool-duration { color: var(--text-secondary); font-size: 11px; min-width: 45px; text-align: right; }
+.tool-tokens { color: var(--color-cyan); font-size: 11px; min-width: 50px; text-align: right; }
+.tool-status { font-size: 12px; }
+
+/* ===== Context Window Monitor (P1-04) ===== */
+.context-section { margin-bottom: 16px; }
+
+.usage-bar-wrap {
+  position: relative;
+  height: 24px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.usage-fill {
+  height: 100%;
+  border-radius: var(--radius);
+  transition: width 0.8s ease, background-color 0.5s;
+}
+
+.usage-label {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  white-space: nowrap;
+}
+
+.breakdown-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 3px;
+  overflow: visible;
+  margin-bottom: 10px;
+  gap: 1px;
+}
+
+.segment {
+  height: 100%;
+  min-width: 2px;
+  transition: width 0.5s ease;
+  position: relative;
+  cursor: pointer;
+}
+
+.segment.system { background: var(--seg-system); }
+.segment.bootstrap { background: var(--seg-bootstrap); }
+.segment.history { background: var(--seg-history); }
+.segment.tools { background: var(--seg-tools); }
+.segment.attachments { background: var(--seg-attachments); }
+.segment.reserve { background: var(--seg-reserve); }
+
+/* Segment tooltip (Improvement #4) */
+.segment-tooltip {
+  display: none;
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  z-index: 20;
+  margin-bottom: 6px;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  line-height: 1.6;
+}
+.segment-tooltip .tt-tokens { font-weight: 700; color: var(--accent); }
+.segment-tooltip .tt-pct { color: var(--color-caution); font-weight: 600; }
+.segment:hover .segment-tooltip { display: block; }
+
+.breakdown-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.bootstrap-files { display: flex; flex-direction: column; gap: 3px; }
+
+.bootstrap-file {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 3px;
+}
+
+.bootstrap-file:hover { background: var(--bg-tertiary); }
+.bootstrap-file .fname { color: var(--text-primary); min-width: 100px; }
+.bootstrap-file .ftokens { color: var(--text-secondary); }
+
+/* Run 2: Truncated file dashed border + warning */
+.bootstrap-file.truncated-file {
+  border: 1px dashed var(--color-warning);
+}
+
+.badge-truncated {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: rgba(249, 115, 22, 0.15);
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+/* Run 2: Bootstrap tree structure */
+.bootstrap-tree {
+  margin-top: 4px;
+}
+.bootstrap-tree-header {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  padding: 2px 0;
+}
+.bootstrap-tree-item {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 4px;
+  color: var(--text-muted);
+}
+.bootstrap-tree-item .fname { color: var(--text-primary); }
+.bootstrap-tree-item .ftokens { color: var(--text-secondary); margin-left: 8px; }
+.bootstrap-tree-item.truncated-file {
+  border: 1px dashed var(--color-warning);
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+
+/* ===== Context Danger Glow (Improvement #4) ===== */
+.context-danger-glow {
+  animation: dangerPulse 2s ease-in-out infinite;
+}
+.context-danger-glow::after {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 999;
+  box-shadow: inset 0 0 60px rgba(239, 68, 68, 0.2), inset 0 0 120px rgba(239, 68, 68, 0.08);
+  animation: dangerPulse 2s ease-in-out infinite;
+}
+@keyframes dangerPulse {
+  0%, 100% { box-shadow: inset 0 0 60px rgba(239, 68, 68, 0.2), inset 0 0 120px rgba(239, 68, 68, 0.08); }
+  50% { box-shadow: inset 0 0 80px rgba(239, 68, 68, 0.35), inset 0 0 160px rgba(239, 68, 68, 0.15); }
+}
+
+/* ===== Session Queue Visualizer (P1-06) ===== */
+.queue-summary {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.queue-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.queue-stat .qlabel { color: var(--text-muted); }
+.queue-stat .qvalue { font-weight: 600; }
+
+.session-lanes { display: flex; flex-direction: column; gap: 8px; }
+
+.session-lane {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+
+.lane-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 11px;
+}
+
+.lane-key { color: var(--accent); font-weight: 600; }
+.lane-concurrency { color: var(--text-muted); }
+
+.run-cards { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.run-card {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+}
+
+.run-card.running { border-color: var(--color-blue); background: rgba(88, 166, 255, 0.08); }
+.run-card.queued { border-color: var(--color-idle); opacity: 0.7; }
+
+.run-mode {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-weight: 600;
+}
+
+.run-mode.steer { background: rgba(247, 120, 186, 0.2); color: var(--color-pink); }
+.run-mode.followup { background: rgba(88, 166, 255, 0.2); color: var(--color-blue); }
+.run-mode.collect { background: rgba(188, 140, 255, 0.2); color: var(--color-purple); }
+
+.run-preview { color: var(--text-secondary); max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.run-wait { color: var(--text-muted); font-size: 10px; }
+
+/* ===== Compaction Event Logger (P1-07) ===== */
+.compaction-card {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 10px;
+  margin-bottom: 8px;
+  border-left: 3px solid var(--color-warning);
+}
+
+.compaction-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.compaction-id { color: var(--color-warning); font-weight: 600; font-size: 12px; }
+.compaction-trigger { font-size: 11px; color: var(--text-secondary); }
+
+.compaction-bars {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.compaction-bar-label { font-size: 10px; color: var(--text-muted); min-width: 40px; }
+
+.compaction-bar-track {
+  flex: 1;
+  height: 10px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.compaction-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s;
+}
+
+.compaction-bar-fill.before { background: var(--color-critical); }
+.compaction-bar-fill.after { background: var(--color-normal); }
+
+.compaction-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.compaction-stats .cstat-value { color: var(--text-primary); font-weight: 600; }
+
+/* Run 2: Compaction large token counts */
+.compaction-big-tokens {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: 8px 0;
+}
+.compaction-big-tokens .big-tok {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.compaction-big-tokens .big-tok.before-tok { color: var(--color-critical); }
+.compaction-big-tokens .big-tok.after-tok { color: var(--color-normal); }
+.compaction-big-tokens .big-arrow { font-size: 20px; color: var(--text-muted); }
+
+/* Run 2: Compaction donut chart */
+.compaction-donut-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+.compaction-donut-label {
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+/* Run 2: Compaction flash overlay */
+.compaction-flash {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 1000;
+  background: rgba(249, 115, 22, 0.15);
+  animation: compactionFlashAnim 0.6s ease-out forwards;
+}
+@keyframes compactionFlashAnim {
+  0% { background: rgba(255, 255, 255, 0.25); }
+  30% { background: rgba(249, 115, 22, 0.2); }
+  100% { background: transparent; opacity: 0; }
+}
+
+/* ===== Tool Call Log (right panel) ===== */
+.log-list { display: flex; flex-direction: column; gap: 2px; }
+
+.log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-radius: 3px;
+}
+
+.log-entry:hover { background: var(--bg-tertiary); }
+.log-time { color: var(--text-muted); min-width: 65px; font-size: 10px; }
+.log-icon { min-width: 14px; text-align: center; }
+.log-msg { color: var(--text-secondary); }
+.log-msg .highlight { color: var(--text-primary); font-weight: 500; }
+
+/* ===== Streaming Stats ===== */
+.streaming-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.stat-box {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  text-align: center;
+}
+
+.stat-value { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.stat-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+.stat-value.normal { color: var(--color-normal); }
+.stat-value.caution { color: var(--color-caution); }
+.stat-value.warning { color: var(--color-warning); }
+.stat-value.critical { color: var(--color-critical); }
+
+/* ===== Test Results Panel ===== */
+.test-results {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 100;
+  transform: translateY(calc(100% - 32px));
+  transition: transform 0.3s ease;
+}
+
+.test-results.expanded { transform: translateY(0); }
+
+.test-results-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 16px;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--border);
+}
+
+.test-results-header:hover { background: var(--bg-tertiary); }
+
+.test-summary { font-size: 12px; font-weight: 600; }
+
+.test-list { padding: 8px 16px; }
+
+.test-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: 11px;
+}
+
+.test-id { min-width: 55px; font-weight: 600; }
+.test-pass { color: var(--color-normal); }
+.test-fail { color: var(--color-critical); }
+.test-desc { color: var(--text-secondary); }
+
+/* ===== Simulation Controls ===== */
+.sim-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.sim-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sim-btn:hover { background: var(--border); }
+.sim-btn.active { border-color: var(--accent); color: var(--accent); }
+
+.sim-status { font-size: 11px; color: var(--text-secondary); margin-left: auto; }
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  .top-bar { flex-direction: column; align-items: flex-start; }
+  .context-mini-bar { width: 80px; }
+  /* Run 2: Mobile chart touch scrolling */
+  .chart-wrap {
+    touch-action: pan-x pan-y;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .analytics-grid { grid-template-columns: 1fr; }
+}
+
+/* ===== Scrollbar ===== */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-primary); }
+::-webkit-scrollbar-thumb { background: var(--bg-tertiary); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border); }
+
+/* ===== No-data placeholder ===== */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-align: center;
+}
+
+/* ===== Analytics Tab (P2-01) ===== */
+.analytics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 16px;
+}
+
+@media (max-width: 768px) {
+  .analytics-grid { grid-template-columns: 1fr; }
+}
+
+.chart-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-card.wide { grid-column: 1 / -1; }
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.chart-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.chart-subtitle {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.chart-wrap {
+  position: relative;
+  width: 100%;
+  height: 220px;
+}
+
+.chart-wrap canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* Chart Tooltip (P2-07) */
+.chart-tooltip {
+  position: absolute;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--text-primary);
+  pointer-events: none;
+  z-index: 50;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.chart-tooltip.visible { opacity: 1; }
+.chart-tooltip .tt-label { color: var(--text-muted); font-size: 10px; display: block; margin-bottom: 2px; }
+.chart-tooltip .tt-value { font-weight: 600; }
+.chart-tooltip .tt-row { display: flex; gap: 8px; align-items: center; }
+.chart-tooltip .tt-dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+
+/* Analytics summary row */
+.analytics-summary {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px 0;
+  flex-wrap: wrap;
+}
+
+.analytics-stat {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.analytics-stat .as-value { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.analytics-stat .as-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+/* ===== Phase 3: Explorer Tab (P3-01) ===== */
+.explorer-layout {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 1px;
+  background: var(--border);
+  min-height: calc(100vh - 120px);
+}
+
+.explorer-sidebar {
+  background: var(--bg-primary);
+  padding: 12px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.explorer-main {
+  background: var(--bg-primary);
+  padding: 12px;
+  overflow-y: auto;
+}
+
+@media (max-width: 768px) {
+  .explorer-layout { grid-template-columns: 1fr; }
+}
+
+/* P3-02: Step-Through Controls */
+.step-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.step-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 60px;
+  text-align: center;
+}
+
+.step-btn:hover:not(:disabled) { background: var(--border); border-color: var(--accent); }
+.step-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.step-info {
+  flex: 1;
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.step-info .step-current { color: var(--accent); font-weight: 600; }
+
+/* Phase highlight in step-through */
+.phase-item.step-active {
+  background: rgba(88, 166, 255, 0.15);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+
+/* P3-03: Tool Call Drill-down */
+.tool-card.clickable { cursor: pointer; }
+.tool-card.clickable:hover { background: var(--bg-tertiary); border-left-color: var(--accent); }
+.tool-card.selected { background: rgba(88, 166, 255, 0.12); border-left-color: var(--accent); }
+
+.drilldown-panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  margin-top: 8px;
+  animation: slideInRight 0.3s ease-out;
+}
+
+/* Slide-in animation for drill-down (Improvement #1) */
+@keyframes slideInRight {
+  from { transform: translateX(30px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.drilldown-panel.closing {
+  animation: slideOutRight 0.2s ease-in forwards;
+}
+@keyframes slideOutRight {
+  from { transform: translateX(0); opacity: 1; }
+  to { transform: translateX(30px); opacity: 0; }
+}
+
+.drilldown-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.drilldown-title { font-size: 13px; font-weight: 600; color: var(--accent); }
+
+.drilldown-close {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.drilldown-close:hover { color: var(--text-primary); border-color: var(--text-secondary); }
+
+.drilldown-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.drilldown-stat {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+}
+
+.drilldown-stat .ds-label { font-size: 10px; color: var(--text-muted); margin-bottom: 2px; }
+.drilldown-stat .ds-value { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.drilldown-stat .ds-value.success { color: var(--color-normal); }
+.drilldown-stat .ds-value.error { color: var(--color-critical); }
+
+.drilldown-section { margin-bottom: 10px; }
+.drilldown-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.drilldown-code {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  font-size: 11px;
+  color: var(--text-primary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 200px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+/* P3-04: Context Diff */
+.context-diff {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+}
+
+.context-diff-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-warning);
+  margin-bottom: 10px;
+}
+
+.diff-columns {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.diff-col {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+
+.diff-col-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.diff-col.before { border-left: 3px solid var(--color-critical); }
+.diff-col.after { border-left: 3px solid var(--color-normal); }
+
+.diff-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  font-size: 11px;
+}
+
+.diff-row .diff-label { color: var(--text-secondary); }
+.diff-row .diff-value { color: var(--text-primary); font-weight: 600; }
+
+.diff-arrow {
+  display: flex;
+  align-items: center;
+  font-size: 20px;
+  color: var(--text-muted);
+  padding-top: 30px;
+}
+
+.diff-ratio {
+  text-align: center;
+  margin-top: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-normal);
+}
+
+/* P3-05: Filters */
+.filter-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 8px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.filter-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.filter-select, .filter-input {
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+}
+
+.filter-select:focus, .filter-input:focus { border-color: var(--accent); }
+
+/* P3-06: Search */
+.search-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 0;
+  margin-bottom: 8px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  outline: none;
+}
+
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--text-muted); }
+
+.search-count {
+  font-size: 10px;
+  color: var(--text-muted);
+  padding: 5px 0;
+}
+
+.search-highlight { background: rgba(234, 179, 8, 0.3); color: var(--color-caution); border-radius: 2px; padding: 0 1px; }
+
+/* P3-07: Config Tab */
+.config-layout {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.config-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+}
+
+.config-card-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  gap: 12px;
+}
+
+.config-label {
+  font-size: 12px;
+  color: var(--text-primary);
+  min-width: 150px;
+}
+
+.config-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.config-input {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  width: 120px;
+  text-align: right;
+  outline: none;
+}
+
+.config-input:focus { border-color: var(--accent); }
+
+.config-range {
+  -webkit-appearance: none;
+  width: 150px;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  outline: none;
+}
+
+.config-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.config-value {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 600;
+  min-width: 40px;
+  text-align: right;
+}
+
+.config-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.config-save-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.config-save-btn:hover { background: rgba(88, 166, 255, 0.2); }
+
+.config-reset-btn {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.config-reset-btn:hover { background: var(--border); color: var(--text-primary); }
+
+/* P3-09: Keyboard shortcut hints */
+.kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.shortcut-help {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 10px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+}
+
+.shortcut-item { display: flex; align-items: center; gap: 4px; }
+
+/* Run 3: Connection Mode Toggle */
+.conn-toggle {
+  display: flex;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.conn-btn {
+  padding: 3px 8px;
+  border: none;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.conn-btn:hover { color: var(--text-primary); }
+.conn-btn.active { background: var(--accent); color: #fff; }
+
+.ws-form {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.ws-input {
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  width: 200px;
+  outline: none;
+}
+.ws-input:focus { border-color: var(--accent); }
+.ws-connect-btn {
+  padding: 3px 10px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ws-connect-btn:hover { background: rgba(88, 166, 255, 0.2); }
+.ws-status {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Run 3: Agent Info Card */
+.agent-info-card {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+.agent-info-item { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+.agent-info-label { color: var(--text-muted); }
+.agent-info-value { color: var(--text-primary); font-weight: 600; }
+
+/* Run 3: Shortcut Modal */
+.shortcut-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6); z-index: 2000;
+  display: flex; align-items: center; justify-content: center;
+}
+.shortcut-modal {
+  background: var(--bg-secondary); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 20px; min-width: 360px; max-width: 500px;
+}
+.shortcut-modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--border);
+}
+.shortcut-modal-title { font-size: 14px; font-weight: 700; color: var(--accent); }
+.shortcut-modal-body { display: flex; flex-direction: column; gap: 8px; }
+.shortcut-modal-row {
+  display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-secondary);
+}
+.shortcut-modal-row .kbd { min-width: 50px; text-align: center; }
+</style>
+</head>
+<body>
+
+<!-- ===== Top Bar (P1-08) ===== -->
+<div class="top-bar">
+  <div class="top-bar-left">
+    <span class="logo">OC-DevMon</span>
+    <div class="meta-item">
+      <span class="label">Model:</span>
+      <span class="value" id="topModel">-</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Session:</span>
+      <span class="value" id="topSession">-</span>
+    </div>
+  </div>
+  <div class="top-bar-right">
+    <div class="context-mini">
+      <span class="meta-item" id="topContextText">- / -</span>
+      <div class="context-mini-bar">
+        <div class="context-mini-fill" id="topContextBar" style="width:0%"></div>
+      </div>
+    </div>
+    <div class="cost-display" id="topCost">$0.0000</div>
+    <div class="conn-toggle" id="connToggle">
+      <button class="conn-btn active" data-mode="sim" onclick="setConnMode('sim')">시뮬레이션</button>
+      <button class="conn-btn" data-mode="live" onclick="setConnMode('live')">실시간</button>
+    </div>
+    <div class="ws-form" id="wsForm" style="display:none;">
+      <input type="text" class="ws-input" id="wsUrl" value="ws://127.0.0.1:18800/ws" placeholder="WebSocket URL">
+      <button class="ws-connect-btn" id="wsConnectBtn" onclick="connectWs()">연결</button>
+      <span class="ws-status" id="wsStatus">미연결</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Tab Navigation (P1-09) ===== -->
+<div class="tab-nav">
+  <button class="tab-btn active" data-tab="live">Live</button>
+  <button class="tab-btn" data-tab="analytics">Analytics</button>
+  <button class="tab-btn" data-tab="explorer">Explorer</button>
+  <button class="tab-btn" data-tab="config">Config</button>
+</div>
+
+<!-- ===== Simulation Controls ===== -->
+<div class="sim-controls">
+  <button class="sim-btn active" id="btnPlay" onclick="simEngine.playScenario()">&#9654; 재생</button>
+  <button class="sim-btn" id="btnPause" onclick="simEngine.pause()">&#10074;&#10074; 일시정지</button>
+  <button class="sim-btn" id="btnReset" onclick="simEngine.reset()">&#8634; 초기화</button>
+  <button class="sim-btn" id="btnMulti" onclick="simEngine.runMultiSession()">&#9776; 멀티세션</button>
+  <select class="filter-select" id="scenarioSelect" style="margin-left:8px;">
+    <option value="1">시나리오 1: 날씨 질문</option>
+    <option value="2">시나리오 2: Compaction</option>
+    <option value="3">시나리오 3: 멀티세션</option>
+    <option value="4">시나리오 4: 긴 코딩 작업</option>
+  </select>
+  <button class="sim-btn" onclick="exportCSV()">📊 CSV Export</button>
+  <button class="sim-btn" onclick="exportJSON()">📋 JSON Export</button>
+  <span class="sim-status" id="simStatus">대기 중</span>
+</div>
+
+<!-- Run 2: Compaction flash overlay -->
+<div id="compactionFlash" class="compaction-flash" style="display:none;"></div>
+
+<!-- ===== Live Tab (P1-09) ===== -->
+<div class="tab-content active" id="tab-live">
+  <div class="agent-info-card" id="agentInfoCard">
+    <div class="agent-info-item"><span class="agent-info-label">에이전트</span><span class="agent-info-value" id="aiName">OpenClaw</span></div>
+    <div class="agent-info-item"><span class="agent-info-label">모델</span><span class="agent-info-value" id="aiModel">-</span></div>
+    <div class="agent-info-item"><span class="agent-info-label">버전</span><span class="agent-info-value" id="aiVersion">0.1.0-dev</span></div>
+    <div class="agent-info-item"><span class="agent-info-label">세션 수</span><span class="agent-info-value" id="aiSessions">0</span></div>
+    <div class="agent-info-item"><span class="agent-info-label">총 실행시간</span><span class="agent-info-value" id="aiUptime">0s</span></div>
+    <div class="agent-info-item agent-info-error" id="aiErrorWrap" style="display:none;"><span class="agent-info-label">마지막 에러</span><span class="agent-info-value" id="aiLastError" style="color:var(--color-critical)">-</span></div>
+  </div>
+  <div class="main-grid">
+    <!-- Left Panel -->
+    <div class="panel" style="display:flex;flex-direction:column;gap:16px;">
+      <!-- Agent Loop Tracker (P1-03) -->
+      <div>
+        <div class="panel-header">
+          <span class="panel-title">Agent Loop</span>
+          <span class="panel-badge" id="loopStatus">대기</span>
+        </div>
+        <div id="agentLoopContent">
+          <div class="empty-state">시뮬레이션을 시작하세요</div>
+        </div>
+      </div>
+
+      <!-- Tool Call Tracer (P1-05) -->
+      <div>
+        <div class="panel-header">
+          <span class="panel-title">Tool Calls</span>
+          <span class="panel-badge" id="toolCallCount">0</span>
+        </div>
+        <div id="toolCallsContent">
+          <div class="empty-state">도구 호출 없음</div>
+        </div>
+      </div>
+
+      <!-- Session Queue Visualizer (P1-06) -->
+      <div>
+        <div class="panel-header">
+          <span class="panel-title">Session Queue</span>
+        </div>
+        <div id="queueContent">
+          <div class="queue-summary">
+            <div class="queue-stat"><span class="qlabel">Running:</span> <span class="qvalue" id="qRunning">0</span></div>
+            <div class="queue-stat"><span class="qlabel">Queued:</span> <span class="qvalue" id="qQueued">0</span></div>
+            <div class="queue-stat"><span class="qlabel">Max:</span> <span class="qvalue" id="qMax">4</span></div>
+          </div>
+          <div class="session-lanes" id="sessionLanes"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="panel" style="display:flex;flex-direction:column;gap:16px;">
+      <!-- Context Window Monitor (P1-04) -->
+      <div class="context-section">
+        <div class="panel-header">
+          <span class="panel-title">Context Window</span>
+          <span class="panel-badge" id="contextPercent">0%</span>
+        </div>
+        <div id="contextContent">
+          <div class="usage-bar-wrap">
+            <div class="usage-fill" id="usageFill" style="width:0%"></div>
+            <span class="usage-label" id="usageLabel">0 / 0</span>
+          </div>
+          <div class="breakdown-bar" id="breakdownBar"></div>
+          <div class="breakdown-legend" id="breakdownLegend"></div>
+          <div class="bootstrap-files" id="bootstrapFiles"></div>
+        </div>
+      </div>
+
+      <!-- Streaming Stats -->
+      <div>
+        <div class="panel-header">
+          <span class="panel-title">Streaming</span>
+        </div>
+        <div class="streaming-stats" id="streamingStats">
+          <div class="stat-box"><div class="stat-value" id="statTTFT">-</div><div class="stat-label">TTFT (ms)</div></div>
+          <div class="stat-box"><div class="stat-value" id="statTPS">-</div><div class="stat-label">tok/s</div></div>
+          <div class="stat-box"><div class="stat-value" id="statBlocks">-</div><div class="stat-label">Blocks</div></div>
+          <div class="stat-box"><div class="stat-value" id="statPreviews">-</div><div class="stat-label">Previews</div></div>
+        </div>
+      </div>
+
+      <!-- Tool Call Log -->
+      <div>
+        <div class="panel-header">
+          <span class="panel-title">Event Log</span>
+          <span class="panel-badge" id="logCount">0</span>
+        </div>
+        <div class="log-list" id="logList"></div>
+      </div>
+
+      <!-- Compaction Event Logger (P1-07) -->
+      <div>
+        <div class="panel-header">
+          <span class="panel-title">Compaction Events</span>
+          <span class="panel-badge" id="compactionCount">0</span>
+        </div>
+        <div id="compactionContent"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Analytics Tab (P2-01) ===== -->
+<div class="tab-content" id="tab-analytics">
+  <!-- Summary stats -->
+  <div class="analytics-summary" id="analyticsSummary">
+    <div class="analytics-stat"><div class="as-value" id="asTotalTurns">0</div><div class="as-label">총 턴 수</div></div>
+    <div class="analytics-stat"><div class="as-value" id="asTotalInput">0</div><div class="as-label">총 Input 토큰</div></div>
+    <div class="analytics-stat"><div class="as-value" id="asTotalOutput">0</div><div class="as-label">총 Output 토큰</div></div>
+    <div class="analytics-stat"><div class="as-value" id="asTotalCost">$0.0000</div><div class="as-label">총 비용</div></div>
+    <div class="analytics-stat"><div class="as-value" id="asCompactions">0</div><div class="as-label">Compaction</div></div>
+  </div>
+
+  <div class="analytics-grid">
+    <!-- P2-02: Token Timeline Chart -->
+    <div class="chart-card wide">
+      <div class="chart-header">
+        <span class="chart-title">Token Timeline</span>
+        <span class="chart-subtitle">턴별 토큰 사용량</span>
+      </div>
+      <div class="chart-wrap" id="tokenTimelineWrap">
+        <canvas id="chartTokenTimeline"></canvas>
+        <div class="chart-tooltip" id="ttTokenTimeline"></div>
+      </div>
+    </div>
+
+    <!-- P2-03: Tool Call Frequency -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">Tool Call 빈도</span>
+        <span class="chart-subtitle">도구별 호출 횟수 / 평균 소요시간</span>
+      </div>
+      <div class="chart-wrap" id="toolFreqWrap">
+        <canvas id="chartToolFreq"></canvas>
+        <div class="chart-tooltip" id="ttToolFreq"></div>
+      </div>
+    </div>
+
+    <!-- P2-04: Latency Distribution -->
+    <div class="chart-card">
+      <div class="chart-header">
+        <span class="chart-title">Latency Distribution</span>
+        <span class="chart-subtitle">응답 레이턴시 분포</span>
+      </div>
+      <div class="chart-wrap" id="latencyWrap">
+        <canvas id="chartLatency"></canvas>
+        <div class="chart-tooltip" id="ttLatency"></div>
+      </div>
+    </div>
+
+    <!-- P2-05: Cost Tracker -->
+    <div class="chart-card wide">
+      <div class="chart-header">
+        <span class="chart-title">Cost Tracker</span>
+        <span class="chart-subtitle">누적 비용 추이</span>
+      </div>
+      <div class="chart-wrap" id="costWrap">
+        <canvas id="chartCost"></canvas>
+        <div class="chart-tooltip" id="ttCost"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Explorer Tab (P3-01) ===== -->
+<div class="tab-content" id="tab-explorer">
+  <div class="explorer-layout">
+    <!-- Explorer Sidebar -->
+    <div class="explorer-sidebar">
+      <!-- P3-02: Step-Through Controls -->
+      <div>
+        <div class="panel-header">
+          <span class="panel-title">Agent Loop Step-Through</span>
+          <span class="panel-badge" id="explorerLoopStatus">대기</span>
+        </div>
+        <div class="step-controls">
+          <button class="step-btn" id="btnStepPrev" onclick="explorerStepPrev()" disabled>&#9664; 이전</button>
+          <span class="step-info">단계 <span class="step-current" id="stepCurrent">0</span> / <span id="stepTotal">0</span></span>
+          <button class="step-btn" id="btnStepNext" onclick="explorerStepNext()" disabled>다음 &#9654;</button>
+        </div>
+        <div id="explorerPhaseList" class="phase-list"></div>
+        <div class="shortcut-help">
+          <span class="shortcut-item"><span class="kbd">J</span> 다음</span>
+          <span class="shortcut-item"><span class="kbd">K</span> 이전</span>
+          <span class="shortcut-item"><span class="kbd">Enter</span> 드릴다운</span>
+        </div>
+      </div>
+
+      <!-- P3-05: Filters -->
+      <div>
+        <div class="panel-header">
+          <span class="panel-title">Tool Calls</span>
+          <span class="panel-badge" id="explorerToolCount">0</span>
+        </div>
+        <div class="filter-bar">
+          <div class="filter-group">
+            <span class="filter-label">도구:</span>
+            <select class="filter-select" id="filterTool" onchange="applyExplorerFilters()">
+              <option value="">전체</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">상태:</span>
+            <select class="filter-select" id="filterStatus" onchange="applyExplorerFilters()">
+              <option value="">전체</option>
+              <option value="completed">완료</option>
+              <option value="executing">실행중</option>
+              <option value="error">오류</option>
+              <option value="pending">대기</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <span class="filter-label">세션:</span>
+            <select class="filter-select" id="filterSession" onchange="applyExplorerFilters()">
+              <option value="">전체</option>
+            </select>
+          </div>
+        </div>
+        <!-- P3-06: Search -->
+        <div class="search-bar">
+          <input type="text" class="search-input" id="searchInput" placeholder="Tool Call 검색 (입력/출력)..." oninput="applyExplorerSearch()">
+        </div>
+        <div class="search-count" id="searchCount"></div>
+        <div id="explorerToolCards"></div>
+      </div>
+    </div>
+
+    <!-- Explorer Main Panel -->
+    <div class="explorer-main">
+      <!-- P3-03: Drill-down Panel -->
+      <div id="drilldownContainer">
+        <div class="empty-state" style="min-height:200px;">Tool Call 카드를 클릭하면 상세 정보가 표시됩니다<br><span style="font-size:10px;color:var(--text-muted)">또는 <span class="kbd">Enter</span> 키로 선택된 단계의 도구를 드릴다운</span></div>
+      </div>
+
+      <!-- P3-04: Context Diff -->
+      <div id="contextDiffContainer" style="margin-top:16px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Config Tab (P3-07) ===== -->
+<div class="tab-content" id="tab-config">
+  <div class="config-layout">
+    <div class="config-card">
+      <div class="config-card-title">시뮬레이션 설정</div>
+      <div class="config-row">
+        <div><div class="config-label">시뮬레이션 속도</div><div class="config-desc">Phase 재생 속도 배율</div></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <input type="range" class="config-range" id="cfgSpeed" min="0.5" max="10" step="0.5" value="1" oninput="updateConfigDisplay()">
+          <span class="config-value" id="cfgSpeedVal">1x</span>
+        </div>
+      </div>
+      <div class="config-row">
+        <div><div class="config-label">최대 Phase 표시 시간</div><div class="config-desc">각 Phase 애니메이션 최대 시간 (ms)</div></div>
+        <input type="number" class="config-input" id="cfgMaxPhaseTime" value="800" min="100" max="5000" step="100">
+      </div>
+    </div>
+
+    <div class="config-card">
+      <div class="config-card-title">Context Window 임계값</div>
+      <div class="config-row">
+        <div><div class="config-label">Normal (초록)</div><div class="config-desc">이 % 이하는 정상 상태</div></div>
+        <input type="number" class="config-input" id="cfgThresholdNormal" value="70" min="0" max="100">
+      </div>
+      <div class="config-row">
+        <div><div class="config-label">Caution (노랑)</div><div class="config-desc">주의 구간 상한</div></div>
+        <input type="number" class="config-input" id="cfgThresholdCaution" value="85" min="0" max="100">
+      </div>
+      <div class="config-row">
+        <div><div class="config-label">Warning (주황)</div><div class="config-desc">경고 구간 상한</div></div>
+        <input type="number" class="config-input" id="cfgThresholdWarning" value="95" min="0" max="100">
+      </div>
+    </div>
+
+    <div class="config-card">
+      <div class="config-card-title">Compaction 설정</div>
+      <div class="config-row">
+        <div><div class="config-label">목표 토큰 수</div><div class="config-desc">Compaction 후 목표 토큰</div></div>
+        <input type="number" class="config-input" id="cfgCompactionTarget" value="16000" min="1000" max="100000" step="1000">
+      </div>
+      <div class="config-row">
+        <div><div class="config-label">자동 트리거 임계값 (%)</div><div class="config-desc">이 사용률 이상이면 자동 Compaction</div></div>
+        <input type="number" class="config-input" id="cfgCompactionTrigger" value="92" min="50" max="100">
+      </div>
+    </div>
+
+    <div class="config-card">
+      <div class="config-card-title">키보드 단축키</div>
+      <div class="config-row"><div class="config-label"><span class="kbd">J</span> 다음 단계</div><div class="config-desc">Explorer 탭에서 다음 Phase로 이동</div></div>
+      <div class="config-row"><div class="config-label"><span class="kbd">K</span> 이전 단계</div><div class="config-desc">Explorer 탭에서 이전 Phase로 이동</div></div>
+      <div class="config-row"><div class="config-label"><span class="kbd">Enter</span> 드릴다운</div><div class="config-desc">선택된 Tool Call의 상세 정보 표시</div></div>
+      <div class="config-row"><div class="config-label"><span class="kbd">Esc</span> 드릴다운 닫기</div><div class="config-desc">상세 패널 닫기</div></div>
+      <div class="config-row"><div class="config-label"><span class="kbd">1-4</span> 탭 전환</div><div class="config-desc">Live / Analytics / Explorer / Config</div></div>
+    </div>
+
+    <div class="config-actions">
+      <button class="config-save-btn" onclick="applyConfig()">설정 적용</button>
+      <button class="config-reset-btn" onclick="resetConfig()">기본값 복원</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== Test Results Panel ===== -->
+<div class="test-results" id="testResults">
+  <div class="test-results-header" onclick="toggleTestPanel()">
+    <span class="test-summary" id="testSummary">테스트: 실행 전</span>
+    <span style="font-size:11px;color:var(--text-muted)">클릭하여 펼치기</span>
+  </div>
+  <div class="test-list" id="testList"></div>
+</div>
+
+<!-- Run 3: Shortcut Guide Modal -->
+<div class="shortcut-modal-overlay" id="shortcutModal" style="display:none;" onclick="closeShortcutModal()">
+  <div class="shortcut-modal" onclick="event.stopPropagation()">
+    <div class="shortcut-modal-header">
+      <span class="shortcut-modal-title">키보드 단축키</span>
+      <button class="drilldown-close" onclick="closeShortcutModal()">ESC</button>
+    </div>
+    <div class="shortcut-modal-body">
+      <div class="shortcut-modal-row"><span class="kbd">?</span><span>단축키 가이드 표시/숨기기</span></div>
+      <div class="shortcut-modal-row"><span class="kbd">J</span><span>Agent Loop 다음 단계 (Explorer)</span></div>
+      <div class="shortcut-modal-row"><span class="kbd">K</span><span>Agent Loop 이전 단계 (Explorer)</span></div>
+      <div class="shortcut-modal-row"><span class="kbd">Enter</span><span>Drill-down 열기 (Explorer)</span></div>
+      <div class="shortcut-modal-row"><span class="kbd">Esc</span><span>패널/모달 닫기</span></div>
+      <div class="shortcut-modal-row"><span class="kbd">1</span><span>Live 탭</span></div>
+      <div class="shortcut-modal-row"><span class="kbd">2</span><span>Analytics 탭</span></div>
+      <div class="shortcut-modal-row"><span class="kbd">3</span><span>Explorer 탭</span></div>
+      <div class="shortcut-modal-row"><span class="kbd">4</span><span>Config 탭</span></div>
+      <div class="shortcut-modal-row"><span class="kbd">Space</span><span>시뮬레이션 일시정지/재생</span></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// =========================================================
+// OC-DevMon Phase 1 - Core Monitor Implementation
+// =========================================================
+
+// ===== Run 2: Tool Icons Map =====
+const TOOL_ICONS = {
+  read: '📖',
+  edit: '✏️',
+  exec: '💻',
+  bash: '💻',
+  web_search: '🔍',
+  web_fetch: '🌐',
+  write: '💾',
+  grep: '🔎',
+  image: '🖼️',
+  memory_search: '🧠',
+  memory_get: '📝',
+  cron: '⏰',
+  sessions_spawn: '🚀',
+  sessions_send: '📨',
+};
+const DEFAULT_TOOL_ICON = '⚙️';
+
+function getToolIcon(toolName) {
+  return TOOL_ICONS[toolName] || DEFAULT_TOOL_ICON;
+}
+
+// ===== Run 3: Connection Mode Toggle =====
+function setConnMode(mode) {
+  document.querySelectorAll('.conn-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  document.getElementById('wsForm').style.display = mode === 'live' ? 'flex' : 'none';
+}
+function connectWs() {
+  const url = document.getElementById('wsUrl').value;
+  document.getElementById('wsStatus').textContent = '연결 시도... (UI만 구현)';
+  document.getElementById('wsStatus').style.color = 'var(--color-caution)';
+  setTimeout(() => {
+    document.getElementById('wsStatus').textContent = '미구현 (시뮬레이션 모드 사용)';
+    document.getElementById('wsStatus').style.color = 'var(--text-muted)';
+  }, 1500);
+}
+
+// ===== Run 3: Shortcut Modal =====
+function toggleShortcutModal() {
+  const modal = document.getElementById('shortcutModal');
+  modal.style.display = modal.style.display === 'none' ? 'flex' : 'none';
+}
+function closeShortcutModal() {
+  document.getElementById('shortcutModal').style.display = 'none';
+}
+
+// ===== Run 3: Data Export =====
+function exportCSV() {
+  const rows = [['callId','toolName','status','duration','outputTokens','inputPreview']];
+  state.toolCalls.forEach(tc => {
+    rows.push([
+      tc.callId, tc.toolName, tc.status,
+      tc.duration ?? '', tc.result?.outputTokens ?? '',
+      '"' + (tc.inputPreview || '').replace(/"/g, '""') + '"'
+    ]);
+  });
+  const csv = rows.map(r => r.join(',')).join('\n');
+  downloadFile('oc-devmon-export.csv', csv, 'text/csv');
+}
+
+function exportJSON() {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    config: SIM_CONFIG,
+    agentLoop: state.agentLoop,
+    toolCalls: state.toolCalls,
+    context: state.context,
+    queue: state.queue,
+    streaming: state.streaming,
+    compactions: state.compactions,
+    usage: state.usage,
+    currentCost: state.currentCost,
+    analytics: analyticsData,
+  };
+  downloadFile('oc-devmon-export.json', JSON.stringify(data, null, 2), 'application/json');
+}
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ===== Simulation Data (from DESIGN.md) =====
+
+const SIM_CONFIG = {
+  model: 'GLM-5-Turbo',
+  maxContextTokens: 32000,
+  pricing: { inputPer1k: 0.002, outputPer1k: 0.008 },
+  sessionId: 'sim-session-main',
+  compaction: { mode: 'auto', targetTokens: 16000, identifierPolicy: 'strict' },
+  globalLane: { maxConcurrent: 4 },
+};
+
+const SIM_BOOTSTRAP_FILES = [
+  { name: 'SOUL.md',      originalTokens: 228,   injectedTokens: 228,   truncated: false, path: '/workspace/SOUL.md' },
+  { name: 'AGENTS.md',    originalTokens: 436,   injectedTokens: 436,   truncated: false, path: '/workspace/AGENTS.md' },
+  { name: 'TOOLS.md',     originalTokens: 13553,  injectedTokens: 5241,  truncated: true,  path: '/workspace/TOOLS.md' },
+  { name: 'IDENTITY.md',  originalTokens: 53,    injectedTokens: 53,    truncated: false, path: '/workspace/IDENTITY.md' },
+  { name: 'USER.md',      originalTokens: 97,    injectedTokens: 97,    truncated: false, path: '/workspace/USER.md' },
+  { name: 'HEARTBEAT.md', originalTokens: 290,   injectedTokens: 290,   truncated: false, path: '/workspace/HEARTBEAT.md' },
+];
+
+const SIM_LOOP_PHASES = [
+  { phase: 'intake',           duration: 50 },
+  { phase: 'context_assembly', duration: 150 },
+  { phase: 'inference',        duration: 1000 },
+  { phase: 'tool_execution',   duration: 234, toolName: 'web_search', toolInput: '서울 날씨 현재', toolOutputTokens: 150 },
+  // iteration 2
+  { phase: 'inference',        duration: 766 },
+  { phase: 'tool_execution',   duration: 45, toolName: 'read', toolInput: '/workspace/SOUL.md', toolOutputTokens: 228 },
+  // final
+  { phase: 'inference',        duration: 555 },
+  { phase: 'streaming_reply',  duration: 600, ttft: 320, tokensPerSecond: 40, totalTokens: 500, blockCount: 3, previewUpdates: 12 },
+  { phase: 'persistence',      duration: 100 },
+];
+
+// ===== Scenario 4: Long Coding Task (Improvement #3) =====
+const SIM_LOOP_PHASES_CODING = [
+  { phase: 'intake', duration: 40 },
+  { phase: 'context_assembly', duration: 200 },
+  { phase: 'inference', duration: 1200 },
+  { phase: 'tool_execution', duration: 65, toolName: 'read', toolInput: 'src/main.ts', toolOutputTokens: 420 },
+  { phase: 'inference', duration: 800 },
+  { phase: 'tool_execution', duration: 55, toolName: 'read', toolInput: 'src/utils.ts', toolOutputTokens: 310 },
+  { phase: 'inference', duration: 900 },
+  { phase: 'tool_execution', duration: 72, toolName: 'grep', toolInput: 'handleRequest', toolOutputTokens: 180 },
+  { phase: 'inference', duration: 1100 },
+  { phase: 'tool_execution', duration: 120, toolName: 'edit', toolInput: 'src/main.ts:42', toolOutputTokens: 50 },
+  { phase: 'inference', duration: 850 },
+  { phase: 'tool_execution', duration: 95, toolName: 'write', toolInput: 'src/handler.ts', toolOutputTokens: 280 },
+  { phase: 'inference', duration: 700 },
+  { phase: 'tool_execution', duration: 48, toolName: 'read', toolInput: 'tests/main.test.ts', toolOutputTokens: 350 },
+  { phase: 'inference', duration: 950 },
+  { phase: 'tool_execution', duration: 110, toolName: 'edit', toolInput: 'tests/main.test.ts:15', toolOutputTokens: 60 },
+  { phase: 'inference', duration: 600 },
+  { phase: 'tool_execution', duration: 340, toolName: 'bash', toolInput: 'npm test', toolOutputTokens: 520 },
+  { phase: 'inference', duration: 750 },
+  { phase: 'tool_execution', duration: 88, toolName: 'edit', toolInput: 'src/handler.ts:28', toolOutputTokens: 45 },
+  { phase: 'inference', duration: 500 },
+  { phase: 'tool_execution', duration: 310, toolName: 'bash', toolInput: 'npm test', toolOutputTokens: 490 },
+  { phase: 'inference', duration: 650 },
+  { phase: 'streaming_reply', duration: 1200, ttft: 280, tokensPerSecond: 45, totalTokens: 850, blockCount: 5, previewUpdates: 18 },
+  { phase: 'persistence', duration: 120 },
+];
+
+const SIM_CONTEXT_SNAPSHOT = {
+  maxTokens: 32000,
+  totalUsed: 26576,
+  usagePercent: 83.05,
+  breakdown: {
+    systemPrompt:       { label: 'System Prompt',       tokens: 9600,  percent: 30.0, cssClass: 'system' },
+    bootstrap:          { label: 'Bootstrap Files',     tokens: 6345,  percent: 19.8, cssClass: 'bootstrap' },
+    conversationHistory:{ label: 'Conversation History', tokens: 8000,  percent: 25.0, cssClass: 'history' },
+    toolResults:        { label: 'Tool Results',        tokens: 1631,  percent: 5.1,  cssClass: 'tools' },
+    attachments:        { label: 'Attachments',         tokens: 0,     percent: 0,    cssClass: 'attachments' },
+    reserve:            { label: 'Response Reserve',    tokens: 1000,  percent: 3.1,  cssClass: 'reserve' },
+  },
+};
+
+const SIM_COMPACTION = {
+  compactionId: 'compact-001',
+  sessionId: 'sim-session-main',
+  triggeredAt: Date.now() + 30000,
+  completedAt: null,
+  duration: 2500,
+  trigger: { reason: 'auto_threshold', contextUsagePercent: 92 },
+  before: { totalTokens: 29440, conversationTokens: 18000, turnCount: 24 },
+  after: { totalTokens: 16200, conversationTokens: 4760, turnCount: 6 },
+  compressionRatio: 0.45,
+  summaryModel: 'GLM-5-Turbo',
+  config: SIM_CONFIG.compaction,
+};
+
+const SIM_MULTI_SESSION_QUEUE = {
+  timestamp: Date.now(),
+  sessions: [
+    {
+      sessionKey: 'session-A',
+      currentRun: { runId: 'run-A1', sessionKey: 'session-A', mode: 'followup', status: 'running', queuedAt: Date.now(), startedAt: Date.now(), messagePreview: '코드 리뷰해줘' },
+      queued: [
+        { runId: 'run-A2', sessionKey: 'session-A', mode: 'followup', status: 'queued', queuedAt: Date.now() + 1000, messagePreview: '테스트도 추가해줘' },
+      ],
+      concurrency: 1,
+    },
+    {
+      sessionKey: 'session-B',
+      currentRun: { runId: 'run-B1', sessionKey: 'session-B', mode: 'followup', status: 'running', queuedAt: Date.now() + 500, startedAt: Date.now() + 500, messagePreview: 'API 문서 작성해줘' },
+      queued: [],
+      concurrency: 1,
+    },
+    {
+      sessionKey: 'session-C',
+      currentRun: { runId: 'run-C1', sessionKey: 'session-C', mode: 'steer', status: 'running', queuedAt: Date.now() + 800, startedAt: Date.now() + 800, messagePreview: '아니 그거 말고 이거' },
+      queued: [],
+      concurrency: 1,
+    },
+  ],
+  globalLane: { maxConcurrent: 4, currentConcurrent: 3 },
+};
+
+// ===== Constants =====
+
+const CONTEXT_THRESHOLDS = {
+  normal:  { max: 70,  color: '#22c55e' },
+  caution: { max: 85,  color: '#eab308' },
+  warning: { max: 95,  color: '#f97316' },
+  danger:  { max: 100, color: '#ef4444' },
+};
+
+const PHASE_META = {
+  intake:           { icon: '\u{1F4E5}', label: 'Intake' },
+  context_assembly: { icon: '\u{1F9E9}', label: 'Context Assembly' },
+  inference:        { icon: '\u{1F9E0}', label: 'Inference' },
+  tool_execution:   { icon: '\u{1F6E0}\u{FE0F}', label: 'Tool Execution' },
+  streaming_reply:  { icon: '\u{1F4E1}', label: 'Streaming Reply' },
+  persistence:      { icon: '\u{1F4BE}', label: 'Persistence' },
+};
+
+// ===== Utility Functions =====
+
+function fmt(n) { return n.toLocaleString('en-US'); }
+function fmtMs(ms) { return ms >= 1000 ? (ms / 1000).toFixed(1) + 's' : ms + 'ms'; }
+function fmtCost(c) { return '$' + c.toFixed(4); }
+function fmtPercent(p) { return p.toFixed(1) + '%'; }
+function timeStr(ts) {
+  const d = new Date(ts);
+  return d.toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+}
+
+function getContextColor(percent) {
+  if (percent <= CONTEXT_THRESHOLDS.normal.max) return CONTEXT_THRESHOLDS.normal.color;
+  if (percent <= CONTEXT_THRESHOLDS.caution.max) return CONTEXT_THRESHOLDS.caution.color;
+  if (percent <= CONTEXT_THRESHOLDS.warning.max) return CONTEXT_THRESHOLDS.warning.color;
+  return CONTEXT_THRESHOLDS.danger.color;
+}
+
+function getContextLevel(percent) {
+  if (percent <= 70) return 'normal';
+  if (percent <= 85) return 'caution';
+  if (percent <= 95) return 'warning';
+  return 'critical';
+}
+
+function calcCost(inputTokens, outputTokens, pricing) {
+  return (inputTokens * pricing.inputPer1k + outputTokens * pricing.outputPer1k) / 1000;
+}
+
+// ===== Helper: get phase detail text (Improvement #2) =====
+function getPhaseDetailText(phaseName, phaseDef, phaseIndex, phases) {
+  switch (phaseName) {
+    case 'intake':
+      // Use queue's messagePreview
+      const queueMsg = state.queue && state.queue.sessions && state.queue.sessions[0] && state.queue.sessions[0].currentRun
+        ? state.queue.sessions[0].currentRun.messagePreview
+        : '날씨 알려줘';
+      return '수신: ' + queueMsg;
+    case 'context_assembly':
+      const bfNames = SIM_BOOTSTRAP_FILES.map(f => f.name).join(', ');
+      const bfTotalTok = SIM_BOOTSTRAP_FILES.reduce((s, f) => s + f.injectedTokens, 0);
+      return 'Bootstrap: ' + bfNames + ' (' + fmt(bfTotalTok) + ' tok)';
+    case 'inference':
+      const dur = phaseDef ? phaseDef.duration : (phaseIndex !== undefined && phases && phases[phaseIndex] ? phases[phaseIndex].duration : null);
+      return '모델: ' + SIM_CONFIG.model + ' | 추론시간: ' + (dur != null ? dur + 'ms' : '...');
+    case 'tool_execution':
+      if (phaseDef && phaseDef.toolName) {
+        return '툴: ' + phaseDef.toolName + '(' + (phaseDef.toolInput || '') + ')';
+      }
+      return '툴: (unknown)';
+    case 'streaming_reply':
+      if (phaseDef) {
+        return '응답: ' + (phaseDef.totalTokens || '?') + ' tok | TTFT: ' + (phaseDef.ttft || '?') + 'ms';
+      }
+      return '응답: ...';
+    case 'persistence':
+      return 'JSONL 저장 완료';
+    default:
+      return '';
+  }
+}
+
+// ===== Event Bus =====
+
+class EventBus {
+  constructor() { this._handlers = {}; }
+  on(event, fn) {
+    if (!this._handlers[event]) this._handlers[event] = [];
+    this._handlers[event].push(fn);
+  }
+  off(event, fn) {
+    if (!this._handlers[event]) return;
+    this._handlers[event] = this._handlers[event].filter(h => h !== fn);
+  }
+  emit(event, data) {
+    (this._handlers[event] || []).forEach(fn => fn(data));
+  }
+}
+
+const bus = new EventBus();
+
+// ===== Monitor State =====
+
+const state = {
+  model: SIM_CONFIG.model,
+  sessionId: SIM_CONFIG.sessionId,
+  pricing: SIM_CONFIG.pricing,
+  agentLoop: null,
+  context: null,
+  toolCalls: [],
+  queue: {
+    timestamp: Date.now(),
+    sessions: [],
+    globalLane: { maxConcurrent: SIM_CONFIG.globalLane.maxConcurrent, currentConcurrent: 0 },
+  },
+  streaming: null,
+  compactions: [],
+  usage: [],
+  logs: [],
+  currentCost: 0,
+  _activePhases: null, // track which phases array is in use for detail text
+};
+
+// ===== Run 2: Compaction Flash Helper =====
+function triggerCompactionFlash() {
+  const flash = document.getElementById('compactionFlash');
+  flash.style.display = 'block';
+  // Force reflow
+  flash.offsetHeight;
+  setTimeout(() => { flash.style.display = 'none'; }, 600);
+}
+
+// ===== Run 2: Draw Compaction Donut =====
+function drawCompactionDonut(canvasEl, compressionRatio) {
+  const ctx = canvasEl.getContext('2d');
+  const w = canvasEl.width;
+  const h = canvasEl.height;
+  const cx = w / 2;
+  const cy = h / 2;
+  const r = Math.min(cx, cy) - 4;
+  const kept = compressionRatio; // portion kept
+  const compressed = 1 - kept;   // portion compressed away
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Compressed away portion (orange)
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, -Math.PI / 2, -Math.PI / 2 + compressed * Math.PI * 2);
+  ctx.closePath();
+  ctx.fillStyle = '#f97316';
+  ctx.fill();
+
+  // Kept portion (green)
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, -Math.PI / 2 + compressed * Math.PI * 2, -Math.PI / 2 + Math.PI * 2);
+  ctx.closePath();
+  ctx.fillStyle = '#22c55e';
+  ctx.fill();
+
+  // Inner circle (donut hole)
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.55, 0, Math.PI * 2);
+  ctx.fillStyle = '#1c2128';
+  ctx.fill();
+
+  // Center text
+  ctx.fillStyle = '#e6edf3';
+  ctx.font = 'bold 12px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(Math.round(compressed * 100) + '%', cx, cy);
+}
+
+// ===== Renderers =====
+
+function renderTopBar() {
+  document.getElementById('topModel').textContent = state.model;
+  document.getElementById('topSession').textContent = state.sessionId;
+
+  const ctx = state.context;
+  if (ctx) {
+    const pct = ctx.usagePercent;
+    document.getElementById('topContextText').textContent = `${fmt(ctx.totalUsed)} / ${fmt(ctx.maxTokens)} (${fmtPercent(pct)})`;
+    const bar = document.getElementById('topContextBar');
+    bar.style.width = pct + '%';
+    bar.style.backgroundColor = getContextColor(pct);
+
+    // Improvement #4: red glow when >90%
+    document.body.classList.toggle('context-danger-glow', ctx.usagePercent >= 90);
+  }
+
+  document.getElementById('topCost').textContent = fmtCost(state.currentCost);
+
+  // Run 3: Update agent info card
+  document.getElementById('aiModel').textContent = state.model;
+  document.getElementById('aiSessions').textContent = state.queue.sessions.length;
+  if (state.agentLoop && state.agentLoop.startedAt) {
+    const uptime = Date.now() - state.agentLoop.startedAt;
+    document.getElementById('aiUptime').textContent = fmtMs(uptime);
+  }
+}
+
+function renderAgentLoop() {
+  const loop = state.agentLoop;
+  const container = document.getElementById('agentLoopContent');
+  const badge = document.getElementById('loopStatus');
+
+  if (!loop) {
+    container.innerHTML = '<div class="empty-state">시뮬레이션을 시작하세요</div>';
+    badge.textContent = '대기';
+    return;
+  }
+
+  badge.textContent = loop.status === 'running' ? '실행 중' : loop.status === 'completed' ? '완료' : '오류';
+
+  let html = `<div class="loop-header">
+    <span class="loop-id">Loop #${loop.loopId.replace('loop-','')}</span>
+    <span class="loop-iteration">Iteration ${loop.iteration}</span>
+    <span class="loop-duration">${loop.totalDuration != null ? fmtMs(loop.totalDuration) : '...'}</span>
+  </div><div class="phase-list">`;
+
+  let currentIteration = 1;
+  let seenFirstInference = false;
+  const activePhases = state._activePhases || SIM_LOOP_PHASES;
+  let toolExecIdx = 0;
+
+  for (let i = 0; i < loop.phases.length; i++) {
+    const p = loop.phases[i];
+    if (p.phase === 'inference' && seenFirstInference) {
+      currentIteration++;
+      html += `<div class="iteration-marker">Iteration ${currentIteration}</div>`;
+    }
+    if (p.phase === 'inference') seenFirstInference = true;
+
+    const meta = PHASE_META[p.phase] || { icon: '\u{2699}\u{FE0F}', label: p.phase };
+    let icon = meta.icon;
+    if (p.status === 'completed') icon = '\u{2705}';
+    else if (p.status === 'running') icon = '\u{1F504}';
+    else if (p.status === 'error') icon = '\u{274C}';
+    else icon = '\u{23F3}';
+
+    // Find matching phaseDef for detail text
+    let phaseDef = activePhases[i] || null;
+
+    // Run 2: Add progress bar for running phases
+    const phaseDurationMs = phaseDef ? phaseDef.duration : 1000;
+    const progressHtml = p.status === 'running'
+      ? `<div class="phase-progress"><div class="phase-progress-fill" style="--phase-duration: ${phaseDurationMs}ms"></div></div>`
+      : '';
+
+    html += `<div class="phase-item ${p.status}">
+      <span class="phase-icon">${icon}</span>
+      <span class="phase-name">${meta.label}</span>
+      ${progressHtml}
+      <span class="phase-duration">${p.duration != null ? fmtMs(p.duration) : ''}</span>
+    </div>`;
+
+    // Improvement #2: Phase detail sub-line
+    const detailText = getPhaseDetailText(p.phase, phaseDef, i, loop.phases);
+    if (detailText) {
+      html += `<div class="phase-detail">${detailText}</div>`;
+    }
+  }
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function renderToolCalls() {
+  const container = document.getElementById('toolCallsContent');
+  document.getElementById('toolCallCount').textContent = state.toolCalls.length;
+
+  if (state.toolCalls.length === 0) {
+    container.innerHTML = '<div class="empty-state">도구 호출 없음</div>';
+    return;
+  }
+
+  // Run 3: Virtual scroll - limit visible items to 50
+  const MAX_VISIBLE_TOOLS = 50;
+  const visibleCalls = state.toolCalls.length > MAX_VISIBLE_TOOLS
+    ? state.toolCalls.slice(0, MAX_VISIBLE_TOOLS)
+    : state.toolCalls;
+
+  let html = '';
+  visibleCalls.forEach((tc, i) => {
+    const toolIcon = getToolIcon(tc.toolName);
+    const statusIcon = tc.status === 'completed' ? '\u{2705}' : tc.status === 'executing' ? '\u{1F504}' : tc.status === 'error' ? '\u{274C}' : '\u{23F3}';
+    const errorMsg = (tc.status === 'error' && tc.result && tc.result.error)
+      ? `<div class="tool-error-msg">${escapeHtml(tc.result.error)}</div>` : '';
+    html += `<div class="tool-card ${tc.status}" onclick="switchTab('explorer');setTimeout(()=>drilldownToolCall('${tc.callId}'),100)">
+      <span class="tool-index">#${i + 1}</span>
+      <span class="tool-name">${toolIcon} ${tc.toolName}</span>
+      <span class="tool-input">${tc.inputPreview || ''}</span>
+      <span class="tool-duration">${tc.duration != null ? fmtMs(tc.duration) : '...'}</span>
+      <span class="tool-status">${statusIcon}</span>
+      <span class="tool-tokens">${tc.result ? tc.result.outputTokens + ' tok' : ''}</span>
+      ${errorMsg}
+    </div>`;
+  });
+
+  if (state.toolCalls.length > MAX_VISIBLE_TOOLS) {
+    html += `<div class="empty-state" style="padding:8px;cursor:pointer" onclick="this.style.display='none';renderToolCallsFull()">+ ${state.toolCalls.length - MAX_VISIBLE_TOOLS}개 더 보기</div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function renderToolCallsFull() {
+  const container = document.getElementById('toolCallsContent');
+  let html = '';
+  state.toolCalls.forEach((tc, i) => {
+    const toolIcon = getToolIcon(tc.toolName);
+    const statusIcon = tc.status === 'completed' ? '\u{2705}' : tc.status === 'executing' ? '\u{1F504}' : tc.status === 'error' ? '\u{274C}' : '\u{23F3}';
+    const errorMsg = (tc.status === 'error' && tc.result && tc.result.error)
+      ? `<div class="tool-error-msg">${escapeHtml(tc.result.error)}</div>` : '';
+    html += `<div class="tool-card ${tc.status}" onclick="switchTab('explorer');setTimeout(()=>drilldownToolCall('${tc.callId}'),100)">
+      <span class="tool-index">#${i + 1}</span>
+      <span class="tool-name">${toolIcon} ${tc.toolName}</span>
+      <span class="tool-input">${tc.inputPreview || ''}</span>
+      <span class="tool-duration">${tc.duration != null ? fmtMs(tc.duration) : '...'}</span>
+      <span class="tool-status">${statusIcon}</span>
+      <span class="tool-tokens">${tc.result ? tc.result.outputTokens + ' tok' : ''}</span>
+      ${errorMsg}
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+function renderContext() {
+  const ctx = state.context;
+  if (!ctx) return;
+
+  document.getElementById('contextPercent').textContent = fmtPercent(ctx.usagePercent);
+
+  const fill = document.getElementById('usageFill');
+  fill.style.width = ctx.usagePercent + '%';
+  fill.style.backgroundColor = getContextColor(ctx.usagePercent);
+
+  document.getElementById('usageLabel').textContent = `${fmt(ctx.totalUsed)} / ${fmt(ctx.maxTokens)} (${fmtPercent(ctx.usagePercent)})`;
+
+  // Improvement #4: red glow when >90%
+  document.body.classList.toggle('context-danger-glow', ctx.usagePercent >= 90);
+
+  // Breakdown bar with tooltips (Improvement #4)
+  const bd = ctx.breakdown;
+  const segments = [bd.systemPrompt, bd.bootstrap, bd.conversationHistory, bd.toolResults, bd.attachments, bd.reserve];
+  const barEl = document.getElementById('breakdownBar');
+  barEl.innerHTML = segments
+    .filter(s => s.percent > 0)
+    .map(s => `<div class="segment ${s.cssClass}" style="width:${s.percent}%" title="${s.label}: ${fmt(s.tokens)} tok (${fmtPercent(s.percent)})"><span class="segment-tooltip">${s.label}<br><span class="tt-tokens">${fmt(s.tokens)}</span> tok | <span class="tt-pct">${fmtPercent(s.percent)}</span></span></div>`)
+    .join('');
+
+  // Legend
+  const legendEl = document.getElementById('breakdownLegend');
+  const segColors = { system: 'var(--seg-system)', bootstrap: 'var(--seg-bootstrap)', history: 'var(--seg-history)', tools: 'var(--seg-tools)', attachments: 'var(--seg-attachments)', reserve: 'var(--seg-reserve)' };
+  legendEl.innerHTML = segments
+    .filter(s => s.percent > 0)
+    .map(s => `<div class="legend-item"><div class="legend-dot" style="background:${segColors[s.cssClass]}"></div>${s.label} ${fmtPercent(s.percent)}</div>`)
+    .join('');
+
+  // Run 2: Bootstrap files as tree structure
+  const bfEl = document.getElementById('bootstrapFiles');
+  const files = ctx.bootstrapFiles || SIM_BOOTSTRAP_FILES;
+  let treeHtml = '<div class="bootstrap-tree">';
+  treeHtml += '<div class="bootstrap-tree-header">\u{1F4C1} Bootstrap Files</div>';
+  files.forEach((f, idx) => {
+    const isLast = idx === files.length - 1;
+    const prefix = isLast ? '\u{2514}\u{2500}\u{2500} ' : '\u{251C}\u{2500}\u{2500} ';
+    const badge = f.truncated ? ' <span class="badge-truncated">TRUNCATED</span>' : '';
+    const tokStr = f.truncated ? `${fmt(f.injectedTokens)}/${fmt(f.originalTokens)}` : fmt(f.injectedTokens);
+    const warnIcon = f.truncated ? '\u{26A0}\u{FE0F} ' : '';
+    const truncClass = f.truncated ? ' truncated-file' : '';
+    treeHtml += `<div class="bootstrap-tree-item${truncClass}">${prefix}${warnIcon}<span class="fname">${f.name}</span><span class="ftokens">${tokStr} tok</span>${badge}</div>`;
+  });
+  treeHtml += '</div>';
+  bfEl.innerHTML = treeHtml;
+}
+
+function renderQueue() {
+  const q = state.queue;
+  document.getElementById('qRunning').textContent = q.globalLane.currentConcurrent;
+  document.getElementById('qQueued').textContent = q.sessions.reduce((s, l) => s + l.queued.length, 0);
+  document.getElementById('qMax').textContent = q.globalLane.maxConcurrent;
+
+  const lanesEl = document.getElementById('sessionLanes');
+  if (q.sessions.length === 0) {
+    lanesEl.innerHTML = '<div class="empty-state">활성 세션 없음</div>';
+    return;
+  }
+
+  lanesEl.innerHTML = q.sessions.map(s => {
+    let cards = '';
+    if (s.currentRun) {
+      const r = s.currentRun;
+      const modeBadge = `<span class="run-mode ${r.mode}">${r.mode}</span>`;
+      cards += `<div class="run-card running">${modeBadge}<span class="run-preview">${r.messagePreview}</span></div>`;
+    }
+    s.queued.forEach(r => {
+      const modeBadge = `<span class="run-mode ${r.mode}">${r.mode}</span>`;
+      const wait = r.waitTime ? `<span class="run-wait">${fmtMs(r.waitTime)}</span>` : '';
+      cards += `<div class="run-card queued">${modeBadge}<span class="run-preview">${r.messagePreview}</span>${wait}</div>`;
+    });
+
+    return `<div class="session-lane">
+      <div class="lane-header"><span class="lane-key">${s.sessionKey}</span><span class="lane-concurrency">concurrency: ${s.concurrency}</span></div>
+      <div class="run-cards">${cards}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderStreaming() {
+  const s = state.streaming;
+  if (!s) return;
+  document.getElementById('statTTFT').textContent = s.ttft;
+  document.getElementById('statTTFT').className = 'stat-value ' + (s.ttft < 200 ? 'normal' : s.ttft < 500 ? 'caution' : 'warning');
+  document.getElementById('statTPS').textContent = s.tokensPerSecond;
+  document.getElementById('statTPS').className = 'stat-value normal';
+  document.getElementById('statBlocks').textContent = s.blockCount;
+  document.getElementById('statPreviews').textContent = s.previewUpdates;
+}
+
+function renderCompactions() {
+  const container = document.getElementById('compactionContent');
+  document.getElementById('compactionCount').textContent = state.compactions.length;
+
+  if (state.compactions.length === 0) {
+    container.innerHTML = '<div class="empty-state">Compaction 이벤트 없음</div>';
+    return;
+  }
+
+  container.innerHTML = state.compactions.map((c, ci) => {
+    const maxTok = c.before.totalTokens;
+    const beforePct = 100;
+    const afterPct = (c.after.totalTokens / maxTok * 100).toFixed(1);
+    const ratio = ((1 - c.compressionRatio) * 100).toFixed(0);
+    const donutId = 'compaction-donut-' + ci;
+
+    return `<div class="compaction-card">
+      <div class="compaction-header">
+        <span class="compaction-id">${c.compactionId}</span>
+        <span class="compaction-trigger">${c.trigger.reason} @ ${fmtPercent(c.trigger.contextUsagePercent)}</span>
+      </div>
+      <div class="compaction-big-tokens">
+        <span class="big-tok before-tok">${fmt(c.before.totalTokens)}</span>
+        <span class="big-arrow">\u{2192}</span>
+        <span class="big-tok after-tok">${fmt(c.after.totalTokens)}</span>
+      </div>
+      <div class="compaction-bars">
+        <span class="compaction-bar-label">Before</span>
+        <div class="compaction-bar-track"><div class="compaction-bar-fill before" style="width:${beforePct}%"></div></div>
+        <span style="font-size:10px;color:var(--text-secondary);min-width:55px">${fmt(c.before.totalTokens)} tok</span>
+      </div>
+      <div class="compaction-bars">
+        <span class="compaction-bar-label">After</span>
+        <div class="compaction-bar-track"><div class="compaction-bar-fill after" style="width:${afterPct}%"></div></div>
+        <span style="font-size:10px;color:var(--text-secondary);min-width:55px">${fmt(c.after.totalTokens)} tok</span>
+      </div>
+      <div class="compaction-donut-wrap">
+        <canvas class="compaction-donut" id="${donutId}" width="100" height="100"></canvas>
+        <div class="compaction-donut-label">압축률: ${ratio}%<br>유지: ${(c.compressionRatio * 100).toFixed(0)}%</div>
+      </div>
+      <div class="compaction-stats">
+        <span>소요시간: <span class="cstat-value">${fmtMs(c.duration)}</span></span>
+        <span>모델: <span class="cstat-value">${c.summaryModel}</span></span>
+        <span>턴: <span class="cstat-value">${c.before.turnCount} \u{2192} ${c.after.turnCount}</span></span>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Draw donut charts after DOM update
+  requestAnimationFrame(() => {
+    state.compactions.forEach((c, ci) => {
+      const canvas = document.getElementById('compaction-donut-' + ci);
+      if (canvas) drawCompactionDonut(canvas, c.compressionRatio);
+    });
+  });
+}
+
+function addLog(icon, msg, timestamp) {
+  state.logs.push({ icon, msg, timestamp: timestamp || Date.now() });
+  if (state.logs.length > 100) state.logs.shift();
+  renderLog();
+}
+
+function renderLog() {
+  document.getElementById('logCount').textContent = state.logs.length;
+  const container = document.getElementById('logList');
+  container.innerHTML = state.logs.slice(-30).reverse().map(l =>
+    `<div class="log-entry"><span class="log-time">${timeStr(l.timestamp)}</span><span class="log-icon">${l.icon}</span><span class="log-msg">${l.msg}</span></div>`
+  ).join('');
+}
+
+function renderAll() {
+  renderTopBar();
+  renderAgentLoop();
+  renderToolCalls();
+  renderContext();
+  renderQueue();
+  renderStreaming();
+  renderCompactions();
+}
+
+// ===== Simulation Engine (P1-02) =====
+
+class SimulationEngine {
+  constructor() {
+    this.running = false;
+    this.phaseIndex = 0;
+    this.timer = null;
+    this.startTime = null;
+    this.toolCallIndex = 0;
+    this.iteration = 1;
+  }
+
+  play() {
+    if (this.running) return;
+    this.running = true;
+    this.startTime = Date.now();
+    this.phaseIndex = 0;
+    this.toolCallIndex = 0;
+    this.iteration = 1;
+
+    // Track active phases for detail text
+    state._activePhases = SIM_LOOP_PHASES;
+
+    // Reset state
+    state.agentLoop = {
+      loopId: 'loop-001',
+      sessionId: SIM_CONFIG.sessionId,
+      iteration: 1,
+      phases: [],
+      status: 'running',
+      startedAt: this.startTime,
+      completedAt: null,
+      totalDuration: null,
+      toolCallCount: 0,
+      outputTokens: 0,
+    };
+    state.toolCalls = [];
+    state.streaming = null;
+    state.logs = [];
+    state.currentCost = 0;
+    state.compactions = [];
+
+    // Set context
+    state.context = {
+      ...SIM_CONTEXT_SNAPSHOT,
+      bootstrapFiles: SIM_BOOTSTRAP_FILES,
+    };
+
+    // Set initial queue
+    state.queue = {
+      timestamp: this.startTime,
+      sessions: [{
+        sessionKey: SIM_CONFIG.sessionId,
+        currentRun: { runId: 'run-001', sessionKey: SIM_CONFIG.sessionId, mode: 'followup', status: 'running', queuedAt: this.startTime, startedAt: this.startTime, messagePreview: '날씨 알려줘' },
+        queued: [],
+        concurrency: 1,
+      }],
+      globalLane: { maxConcurrent: 4, currentConcurrent: 1 },
+    };
+
+    updateSimStatus('재생 중...');
+    addLog('\u{25B6}\u{FE0F}', '<span class="highlight">시뮬레이션 시작</span> - "날씨 알려줘"', this.startTime);
+    renderAll();
+
+    this.runNextPhase();
+  }
+
+  runNextPhase() {
+    if (!this.running || this.phaseIndex >= SIM_LOOP_PHASES.length) {
+      this.complete();
+      return;
+    }
+
+    const phaseDef = SIM_LOOP_PHASES[this.phaseIndex];
+    const now = Date.now();
+
+    // Track iteration changes
+    if (phaseDef.phase === 'inference' && this.phaseIndex > 2) {
+      this.iteration++;
+      state.agentLoop.iteration = this.iteration;
+    }
+
+    // Add phase as running
+    const phaseRec = {
+      phase: phaseDef.phase,
+      status: 'running',
+      startedAt: now,
+      completedAt: null,
+      duration: null,
+    };
+    state.agentLoop.phases.push(phaseRec);
+
+    addLog(PHASE_META[phaseDef.phase]?.icon || '\u{2699}\u{FE0F}',
+      `<span class="highlight">${PHASE_META[phaseDef.phase]?.label || phaseDef.phase}</span> 시작`,
+      now);
+
+    // If this is a tool call phase, create tool call record
+    if (phaseDef.phase === 'tool_execution' && phaseDef.toolName) {
+      const tc = {
+        callId: `tc-${String(this.toolCallIndex + 1).padStart(3, '0')}`,
+        loopId: 'loop-001',
+        iteration: this.iteration,
+        toolName: phaseDef.toolName,
+        input: {},
+        inputPreview: `${phaseDef.toolName}("${phaseDef.toolInput}")`,
+        status: 'executing',
+        startedAt: now,
+        completedAt: null,
+        duration: null,
+        result: null,
+      };
+      state.toolCalls.push(tc);
+      this.toolCallIndex++;
+      state.agentLoop.toolCallCount = this.toolCallIndex;
+    }
+
+    renderAll();
+
+    // Complete after duration
+    this.timer = setTimeout(() => {
+      phaseRec.status = 'completed';
+      phaseRec.completedAt = Date.now();
+      phaseRec.duration = phaseDef.duration;
+
+      // Complete tool call if applicable
+      if (phaseDef.phase === 'tool_execution' && phaseDef.toolName) {
+        const tc = state.toolCalls[state.toolCalls.length - 1];
+        tc.status = 'completed';
+        tc.completedAt = Date.now();
+        tc.duration = phaseDef.duration;
+        tc.result = {
+          success: true,
+          outputTokens: phaseDef.toolOutputTokens || 0,
+          outputPreview: phaseDef.toolName === 'web_search' ? '서울 현재 기온 12\u00B0C, 맑음, 습도 45%...' : '---\nname: OpenClaw\ndescription: ...',
+        };
+
+        addLog('\u{2705}', `${getToolIcon(phaseDef.toolName)} <span class="highlight">${phaseDef.toolName}</span> 완료 \u{2192} ${phaseDef.toolOutputTokens} tok (${fmtMs(phaseDef.duration)})`, Date.now());
+      }
+
+      // Handle streaming metrics
+      if (phaseDef.phase === 'streaming_reply') {
+        state.streaming = {
+          loopId: 'loop-001',
+          ttft: phaseDef.ttft || 320,
+          tokensPerSecond: phaseDef.tokensPerSecond || 40,
+          totalTokensStreamed: phaseDef.totalTokens || 500,
+          blockCount: phaseDef.blockCount || 3,
+          previewUpdates: phaseDef.previewUpdates || 12,
+          startedAt: phaseRec.startedAt,
+          duration: phaseDef.duration,
+        };
+        state.agentLoop.outputTokens = phaseDef.totalTokens || 500;
+
+        // Calculate cost
+        const inputTokens = state.context.totalUsed;
+        const outputTokens = state.agentLoop.outputTokens;
+        state.currentCost = calcCost(inputTokens, outputTokens, state.pricing);
+
+        addLog('\u{1F4E1}', `스트리밍 완료 \u{2192} TTFT: ${phaseDef.ttft}ms, ${phaseDef.tokensPerSecond} tok/s`, Date.now());
+      }
+
+      addLog(PHASE_META[phaseDef.phase]?.icon || '\u{2705}',
+        `${PHASE_META[phaseDef.phase]?.label || phaseDef.phase} 완료 (${fmtMs(phaseDef.duration)})`,
+        Date.now());
+
+      this.phaseIndex++;
+      renderAll();
+      this.runNextPhase();
+    }, Math.min(phaseDef.duration, 800)); // Cap display time for better UX
+  }
+
+  complete() {
+    if (state.agentLoop) {
+      state.agentLoop.status = 'completed';
+      state.agentLoop.completedAt = Date.now();
+      state.agentLoop.totalDuration = state.agentLoop.phases.reduce((s, p) => s + (p.duration || 0), 0);
+    }
+    this.running = false;
+    updateSimStatus('완료');
+    addLog('\u{1F3C1}', '<span class="highlight">시뮬레이션 완료</span>', Date.now());
+    renderAll();
+
+    // Schedule compaction demo
+    setTimeout(() => this.runCompaction(), 1500);
+  }
+
+  runCompaction() {
+    const c = { ...SIM_COMPACTION, triggeredAt: Date.now(), completedAt: null };
+    state.compactions.push(c);
+    addLog('\u{26A0}\u{FE0F}', `<span class="highlight">Compaction 시작</span> - Context ${fmtPercent(c.trigger.contextUsagePercent)}`, Date.now());
+
+    // Update context to show high usage before compaction
+    state.context = {
+      ...state.context,
+      totalUsed: 29440,
+      usagePercent: 92,
+    };
+    renderAll();
+
+    setTimeout(() => {
+      c.completedAt = Date.now();
+      // Update context after compaction
+      state.context = {
+        ...state.context,
+        totalUsed: 16200,
+        usagePercent: 50.6,
+        breakdown: {
+          ...state.context.breakdown,
+          conversationHistory: { label: 'Conversation History', tokens: 2500, percent: 7.8, cssClass: 'history' },
+          toolResults: { label: 'Tool Results', tokens: 431, percent: 1.3, cssClass: 'tools' },
+        },
+      };
+      addLog('\u{2705}', `<span class="highlight">Compaction 완료</span> - ${fmt(29440)} \u{2192} ${fmt(16200)} tok (${((1 - 0.45) * 100).toFixed(0)}% 감소)`, Date.now());
+      // Run 2: Flash effect on compaction complete
+      triggerCompactionFlash();
+      renderAll();
+      runTests();
+    }, 1200);
+  }
+
+  runMultiSession() {
+    state.queue = SIM_MULTI_SESSION_QUEUE;
+    state.queue.timestamp = Date.now();
+    addLog('\u{26A1}', '<span class="highlight">멀티세션 큐</span> - 3개 세션 동시 실행', Date.now());
+    updateSimStatus('멀티세션 시뮬레이션');
+    renderQueue();
+    renderLog();
+
+    // Simulate queued run wait time increase
+    let waitCounter = 0;
+    const waitTimer = setInterval(() => {
+      waitCounter += 1000;
+      const sessionA = state.queue.sessions[0];
+      if (sessionA && sessionA.queued.length > 0) {
+        sessionA.queued[0].waitTime = waitCounter;
+      }
+      renderQueue();
+      if (waitCounter >= 5000) clearInterval(waitTimer);
+    }, 1000);
+
+    runTests();
+  }
+
+  // ===== Scenario 4: Long Coding Task (Improvement #3) =====
+  playCodingScenario() {
+    if (this.running) return;
+    this.running = true;
+    this.startTime = Date.now();
+    this.phaseIndex = 0;
+    this.toolCallIndex = 0;
+    this.iteration = 1;
+
+    state._activePhases = SIM_LOOP_PHASES_CODING;
+
+    state.agentLoop = {
+      loopId: 'loop-004',
+      sessionId: SIM_CONFIG.sessionId,
+      iteration: 1,
+      phases: [],
+      status: 'running',
+      startedAt: this.startTime,
+      completedAt: null,
+      totalDuration: null,
+      toolCallCount: 0,
+      outputTokens: 0,
+    };
+    state.toolCalls = [];
+    state.streaming = null;
+    state.logs = [];
+    state.currentCost = 0;
+    state.compactions = [];
+
+    // Start with high context (75%)
+    state.context = {
+      maxTokens: 32000,
+      totalUsed: 24000,
+      usagePercent: 75,
+      breakdown: {
+        systemPrompt:       { label: 'System Prompt',       tokens: 9600,  percent: 30.0, cssClass: 'system' },
+        bootstrap:          { label: 'Bootstrap Files',     tokens: 6345,  percent: 19.8, cssClass: 'bootstrap' },
+        conversationHistory:{ label: 'Conversation History', tokens: 6055,  percent: 18.9, cssClass: 'history' },
+        toolResults:        { label: 'Tool Results',        tokens: 1000,  percent: 3.1,  cssClass: 'tools' },
+        attachments:        { label: 'Attachments',         tokens: 0,     percent: 0,    cssClass: 'attachments' },
+        reserve:            { label: 'Response Reserve',    tokens: 1000,  percent: 3.1,  cssClass: 'reserve' },
+      },
+      bootstrapFiles: SIM_BOOTSTRAP_FILES,
+    };
+
+    state.queue = {
+      timestamp: this.startTime,
+      sessions: [{
+        sessionKey: SIM_CONFIG.sessionId,
+        currentRun: { runId: 'run-004', sessionKey: SIM_CONFIG.sessionId, mode: 'followup', status: 'running', queuedAt: this.startTime, startedAt: this.startTime, messagePreview: 'handleRequest 리팩터링해줘' },
+        queued: [],
+        concurrency: 1,
+      }],
+      globalLane: { maxConcurrent: 4, currentConcurrent: 1 },
+    };
+
+    updateSimStatus('시나리오 4: 긴 코딩 작업...');
+    addLog('\u{25B6}\u{FE0F}', '<span class="highlight">시나리오 4 시작</span> - "handleRequest 리팩터링해줘"', this.startTime);
+    renderAll();
+
+    this._codingCompactionDone = false;
+    this._runCodingPhase();
+  }
+
+  _runCodingPhase() {
+    if (!this.running || this.phaseIndex >= SIM_LOOP_PHASES_CODING.length) {
+      this._codingComplete();
+      return;
+    }
+
+    const phaseDef = SIM_LOOP_PHASES_CODING[this.phaseIndex];
+    const now = Date.now();
+
+    if (phaseDef.phase === 'inference' && this.phaseIndex > 2) {
+      this.iteration++;
+      state.agentLoop.iteration = this.iteration;
+    }
+
+    const phaseRec = {
+      phase: phaseDef.phase,
+      status: 'running',
+      startedAt: now,
+      completedAt: null,
+      duration: null,
+    };
+    state.agentLoop.phases.push(phaseRec);
+
+    addLog(PHASE_META[phaseDef.phase]?.icon || '\u{2699}\u{FE0F}',
+      `<span class="highlight">${PHASE_META[phaseDef.phase]?.label || phaseDef.phase}</span> 시작`, now);
+
+    if (phaseDef.phase === 'tool_execution' && phaseDef.toolName) {
+      const toolInput = (() => {
+        switch(phaseDef.toolName) {
+          case 'grep': return { pattern: phaseDef.toolInput };
+          case 'bash': return { command: phaseDef.toolInput };
+          case 'edit': return { file_path: phaseDef.toolInput.split(':')[0], line: parseInt(phaseDef.toolInput.split(':')[1]) || 1 };
+          case 'write': return { file_path: phaseDef.toolInput };
+          default: return { file_path: phaseDef.toolInput };
+        }
+      })();
+      const tc = {
+        callId: `tc-${String(this.toolCallIndex + 1).padStart(3, '0')}`,
+        loopId: 'loop-004',
+        iteration: this.iteration,
+        toolName: phaseDef.toolName,
+        input: toolInput,
+        inputPreview: `${phaseDef.toolName}("${phaseDef.toolInput}")`,
+        status: 'executing',
+        startedAt: now,
+        completedAt: null,
+        duration: null,
+        result: null,
+      };
+      state.toolCalls.push(tc);
+      this.toolCallIndex++;
+      state.agentLoop.toolCallCount = this.toolCallIndex;
+    }
+
+    renderAll();
+
+    const displayTime = Math.min(phaseDef.duration / configState.simSpeed, configState.maxPhaseTime);
+
+    this.timer = setTimeout(() => {
+      phaseRec.status = 'completed';
+      phaseRec.completedAt = Date.now();
+      phaseRec.duration = phaseDef.duration;
+
+      if (phaseDef.phase === 'tool_execution' && phaseDef.toolName) {
+        const tc = state.toolCalls[state.toolCalls.length - 1];
+        tc.status = 'completed';
+        tc.completedAt = Date.now();
+        tc.duration = phaseDef.duration;
+        const outputPreviews = {
+          read: `// ${phaseDef.toolInput}\nimport { Router } from 'express';\nexport function handleRequest(req, res) { ... }`,
+          grep: `src/main.ts:42: async function handleRequest(req: Request)\nsrc/handler.ts:15: export { handleRequest }`,
+          edit: `Applied edit to ${phaseDef.toolInput} successfully.`,
+          write: `File ${phaseDef.toolInput} written (${phaseDef.toolOutputTokens} tokens).`,
+          bash: phaseDef.toolInput === 'npm test' ? `> jest --coverage\n\nTests: 12 passed, 12 total\nTime: 2.4s` : `$ ${phaseDef.toolInput}\n[output]`,
+        };
+        tc.result = {
+          success: true,
+          outputTokens: phaseDef.toolOutputTokens || 0,
+          outputPreview: outputPreviews[phaseDef.toolName] || `[${phaseDef.toolName}] output for ${phaseDef.toolInput}`,
+        };
+        addLog('\u{2705}', `${getToolIcon(phaseDef.toolName)} <span class="highlight">${phaseDef.toolName}</span> 완료 \u{2192} ${phaseDef.toolOutputTokens} tok (${fmtMs(phaseDef.duration)})`, Date.now());
+
+        // Grow context with each tool call
+        if (state.context) {
+          const addedTokens = phaseDef.toolOutputTokens || 0;
+          state.context.totalUsed += addedTokens;
+          state.context.usagePercent = (state.context.totalUsed / state.context.maxTokens) * 100;
+          state.context.breakdown.toolResults.tokens += addedTokens;
+          state.context.breakdown.toolResults.percent = (state.context.breakdown.toolResults.tokens / state.context.maxTokens) * 100;
+        }
+      }
+
+      if (phaseDef.phase === 'streaming_reply') {
+        state.streaming = {
+          loopId: 'loop-004',
+          ttft: phaseDef.ttft || 280,
+          tokensPerSecond: phaseDef.tokensPerSecond || 45,
+          totalTokensStreamed: phaseDef.totalTokens || 850,
+          blockCount: phaseDef.blockCount || 5,
+          previewUpdates: phaseDef.previewUpdates || 18,
+          startedAt: phaseRec.startedAt,
+          duration: phaseDef.duration,
+        };
+        state.agentLoop.outputTokens = phaseDef.totalTokens || 850;
+        const inputTokens = state.context.totalUsed;
+        const outputTokens = state.agentLoop.outputTokens;
+        state.currentCost = calcCost(inputTokens, outputTokens, state.pricing);
+        addLog('\u{1F4E1}', `스트리밍 완료 \u{2192} TTFT: ${phaseDef.ttft}ms, ${phaseDef.tokensPerSecond} tok/s`, Date.now());
+      }
+
+      addLog(PHASE_META[phaseDef.phase]?.icon || '\u{2705}',
+        `${PHASE_META[phaseDef.phase]?.label || phaseDef.phase} 완료 (${fmtMs(phaseDef.duration)})`, Date.now());
+
+      this.phaseIndex++;
+
+      // Trigger compaction at ~iteration 6 (after 6th tool call) if context is high
+      if (!this._codingCompactionDone && this.toolCallIndex >= 6 && state.context && state.context.usagePercent >= 85) {
+        this._codingCompactionDone = true;
+        addLog('\u{26A0}\u{FE0F}', '<span class="highlight">Compaction 트리거</span> - Context ' + fmtPercent(state.context.usagePercent), Date.now());
+
+        const compData = {
+          compactionId: 'compact-004',
+          sessionId: SIM_CONFIG.sessionId,
+          triggeredAt: Date.now(),
+          completedAt: null,
+          duration: 1800,
+          trigger: { reason: 'auto_threshold', contextUsagePercent: Math.round(state.context.usagePercent) },
+          before: { totalTokens: state.context.totalUsed, conversationTokens: state.context.breakdown.conversationHistory.tokens, turnCount: 18 },
+          after: { totalTokens: 18000, conversationTokens: 3500, turnCount: 5 },
+          compressionRatio: 0.4,
+          summaryModel: SIM_CONFIG.model,
+          config: SIM_CONFIG.compaction,
+        };
+        state.compactions.push(compData);
+        renderAll();
+
+        setTimeout(() => {
+          compData.completedAt = Date.now();
+          state.context.totalUsed = 18000;
+          state.context.usagePercent = (18000 / 32000) * 100;
+          state.context.breakdown.conversationHistory = { label: 'Conversation History', tokens: 3500, percent: (3500/32000)*100, cssClass: 'history' };
+          state.context.breakdown.toolResults = { label: 'Tool Results', tokens: 800, percent: (800/32000)*100, cssClass: 'tools' };
+          addLog('\u{2705}', `<span class="highlight">Compaction 완료</span> - ${fmt(compData.before.totalTokens)} \u{2192} 18,000 tok`, Date.now());
+          // Run 2: Flash on compaction
+          triggerCompactionFlash();
+          renderAll();
+          // Continue phases after compaction
+          this._runCodingPhase();
+        }, 800);
+        return;
+      }
+
+      renderAll();
+      this._runCodingPhase();
+    }, displayTime);
+  }
+
+  _codingComplete() {
+    if (state.agentLoop) {
+      state.agentLoop.status = 'completed';
+      state.agentLoop.completedAt = Date.now();
+      state.agentLoop.totalDuration = state.agentLoop.phases.reduce((s, p) => s + (p.duration || 0), 0);
+    }
+    this.running = false;
+    updateSimStatus('시나리오 4 완료');
+    addLog('\u{1F3C1}', '<span class="highlight">시나리오 4 완료</span> - 긴 코딩 작업', Date.now());
+    renderAll();
+    runTests();
+  }
+
+  // ===== Scenario Selection (Improvement #3) =====
+  playScenario() {
+    const scenario = document.getElementById('scenarioSelect').value;
+    switch(scenario) {
+      case '1': this.play(); break;
+      case '2': this.play(); break; // compaction auto-runs after play
+      case '3': this.runMultiSession(); break;
+      case '4': this.playCodingScenario(); break;
+    }
+  }
+
+  pause() {
+    this.running = false;
+    if (this.timer) clearTimeout(this.timer);
+    updateSimStatus('일시정지');
+  }
+
+  reset() {
+    this.pause();
+    this.phaseIndex = 0;
+    this.toolCallIndex = 0;
+    this.iteration = 1;
+
+    state.agentLoop = null;
+    state.toolCalls = [];
+    state.streaming = null;
+    state.context = null;
+    state.queue = {
+      timestamp: Date.now(),
+      sessions: [],
+      globalLane: { maxConcurrent: 4, currentConcurrent: 0 },
+    };
+    state.compactions = [];
+    state.logs = [];
+    state.currentCost = 0;
+    state._activePhases = null;
+
+    // Remove danger glow on reset
+    document.body.classList.remove('context-danger-glow');
+
+    updateSimStatus('초기화됨');
+    renderAll();
+  }
+}
+
+const simEngine = new SimulationEngine();
+
+function updateSimStatus(text) {
+  document.getElementById('simStatus').textContent = text;
+}
+
+// ===== Tab Navigation =====
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    // Phase 3: trigger deferred updates
+    if (typeof switchTab === 'function') {
+      const tab = btn.dataset.tab;
+      if (tab === 'analytics' && analyticsData._pendingDraw) {
+        setTimeout(() => drawAllCharts(), 50);
+      }
+      if (tab === 'explorer') {
+        setTimeout(() => updateExplorerFromState(), 50);
+      }
+    }
+  });
+});
+
+// ===== Test Panel =====
+
+function toggleTestPanel() {
+  document.getElementById('testResults').classList.toggle('expanded');
+}
+
+// ===== TDD Test Runner (P1-10, P1-11, P1-12) =====
+
+function assert(id, condition, desc) {
+  return { id, pass: !!condition, desc };
+}
+
+function runTests() {
+  const results = [];
+
+  // TC-001: Agent Loop phases have timestamps and durations
+  if (state.agentLoop && state.agentLoop.phases.length >= 5) {
+    const allHaveDuration = state.agentLoop.phases
+      .filter(p => p.status === 'completed')
+      .every(p => p.duration !== undefined && p.duration > 0);
+    results.push(assert('TC-001', allHaveDuration, 'Agent Loop: 모든 완료 phase에 duration 기록'));
+  } else {
+    results.push(assert('TC-001', false, 'Agent Loop: phases가 5개 이상이어야 함'));
+  }
+
+  // TC-002: Context at 83% shows caution color
+  const cautionColor = getContextColor(83.05);
+  results.push(assert('TC-002', cautionColor === CONTEXT_THRESHOLDS.caution.color, 'Context 83% \u{2192} caution 색상'));
+
+  // TC-003: Tool call recording
+  const tc1 = SIM_LOOP_PHASES.find(p => p.toolName === 'web_search');
+  results.push(assert('TC-003', tc1 && tc1.duration === 234 && tc1.toolOutputTokens === 150, 'Tool Call: web_search 234ms, 150tok'));
+
+  // TC-004: Session queue - queued run
+  const sessionA = SIM_MULTI_SESSION_QUEUE.sessions[0];
+  results.push(assert('TC-004', sessionA && sessionA.queued.length === 1, 'Session Queue: session-A에 대기 런 1개'));
+
+  // TC-005: Compaction data
+  results.push(assert('TC-005',
+    SIM_COMPACTION.compressionRatio === 0.45 && SIM_COMPACTION.duration === 2500,
+    'Compaction: 압축률 0.45, 소요시간 2500ms'));
+
+  // TC-006: TTFT
+  const streamPhase = SIM_LOOP_PHASES.find(p => p.phase === 'streaming_reply');
+  results.push(assert('TC-006', streamPhase && streamPhase.ttft === 320, 'TTFT: 320ms'));
+
+  // TC-007: Streaming speed
+  results.push(assert('TC-007', streamPhase && streamPhase.tokensPerSecond === 40, 'Streaming: 40 tok/s'));
+
+  // TC-008: Truncated TOOLS.md
+  const toolsMd = SIM_BOOTSTRAP_FILES.find(f => f.name === 'TOOLS.md');
+  results.push(assert('TC-008', toolsMd && toolsMd.truncated === true && toolsMd.injectedTokens === 5241, 'TOOLS.md TRUNCATED 5,241tok'));
+
+  // TC-009: Cost calculation
+  const cost = calcCost(18845, 500, SIM_CONFIG.pricing);
+  results.push(assert('TC-009', Math.abs(cost - 0.0417) < 0.001, `비용 계산: ${fmtCost(cost)} \u{2248} $0.0417`));
+
+  // TC-010: Steer mode
+  const steerSession = SIM_MULTI_SESSION_QUEUE.sessions[2];
+  results.push(assert('TC-010', steerSession && steerSession.currentRun && steerSession.currentRun.mode === 'steer', 'Queue Mode: steer 모드 식별'));
+
+  // TC-I01: Integration - Full loop simulation
+  const loopComplete = state.agentLoop && state.agentLoop.status === 'completed';
+  const hasToolCalls = state.toolCalls.length >= 2;
+  const hasContext = state.context !== null;
+  const hasStreaming = state.streaming !== null;
+  results.push(assert('TC-I01', loopComplete && hasToolCalls && hasContext && hasStreaming, '통합: 전체 루프 시뮬레이션 완료'));
+
+  // TC-I02: Integration - Compaction During Run
+  const hasCompaction = state.compactions.length > 0;
+  const compactionValid = hasCompaction &&
+    state.compactions[0].before.totalTokens === 29440 &&
+    state.compactions[0].after.totalTokens === 16200 &&
+    state.compactions[0].compressionRatio === 0.45;
+  const contextDropped = state.context && state.context.totalUsed <= 16200;
+  const costStillTracked = state.currentCost > 0;
+  results.push(assert('TC-I02',
+    hasCompaction && compactionValid && contextDropped && costStillTracked,
+    '통합: Compaction 중 Context 감소, 카드 생성, 비용 누적'));
+
+  // TC-I03: Integration - Multi-session
+  const multiQ = SIM_MULTI_SESSION_QUEUE;
+  results.push(assert('TC-I03',
+    multiQ.sessions.length === 3 && multiQ.globalLane.currentConcurrent === 3,
+    '통합: 3세션 동시 실행, 큐 시각화'));
+
+  // Render results
+  const passCount = results.filter(r => r.pass).length;
+  const totalCount = results.length;
+  const allPass = passCount === totalCount;
+
+  document.getElementById('testSummary').textContent =
+    `테스트: ${passCount}/${totalCount} 통과 ${allPass ? '\u{2705}' : '\u{26A0}\u{FE0F}'}`;
+  document.getElementById('testSummary').style.color = allPass ? 'var(--color-normal)' : 'var(--color-caution)';
+
+  document.getElementById('testList').innerHTML = results.map(r =>
+    `<div class="test-row">
+      <span class="test-id ${r.pass ? 'test-pass' : 'test-fail'}">${r.pass ? '\u{2705}' : '\u{274C}'} ${r.id}</span>
+      <span class="test-desc">${r.desc}</span>
+    </div>`
+  ).join('');
+}
+
+// =========================================================
+// Phase 2: Analytics Charts (P2-01 ~ P2-08)
+// =========================================================
+
+// ===== Analytics Data Store =====
+
+const analyticsData = {
+  usageTimeline: [],   // UsageTurn[]
+  toolStats: {},       // { toolName: { count, totalDuration, totalTokens, errors } }
+  latencies: [],       // number[] (total loop durations in ms)
+  compactionPoints: [], // { turnIndex, timestamp }
+};
+
+// Simulation usage timeline from DESIGN.md
+const SIM_USAGE_TIMELINE = [
+  { turnId: 't-001', loopId: 'loop-001', timestamp: 1711000000000, inputTokens: 9800,  outputTokens: 200,  costUsd: 0.0212 },
+  { turnId: 't-002', loopId: 'loop-002', timestamp: 1711000010000, inputTokens: 12400, outputTokens: 350,  costUsd: 0.0276 },
+  { turnId: 't-003', loopId: 'loop-003', timestamp: 1711000020000, inputTokens: 15200, outputTokens: 480,  costUsd: 0.0342 },
+  { turnId: 't-004', loopId: 'loop-004', timestamp: 1711000030000, inputTokens: 18000, outputTokens: 600,  costUsd: 0.0408 },
+  { turnId: 't-005', loopId: 'loop-005', timestamp: 1711000040000, inputTokens: 22500, outputTokens: 750,  costUsd: 0.0510 },
+  { turnId: 't-006', loopId: 'loop-006', timestamp: 1711000050000, inputTokens: 26000, outputTokens: 420,  costUsd: 0.0554 },
+  { turnId: 't-007', loopId: 'loop-007', timestamp: 1711000060000, inputTokens: 14000, outputTokens: 300,  costUsd: 0.0304 },
+];
+
+// Simulation tool stats (aggregated from multiple loops)
+const SIM_TOOL_STATS_DATA = [
+  { toolName: 'web_search', count: 5, avgDuration: 280, totalTokens: 820,  errorRate: 0 },
+  { toolName: 'read',       count: 8, avgDuration: 52,  totalTokens: 1640, errorRate: 0 },
+  { toolName: 'edit',       count: 3, avgDuration: 120, totalTokens: 450,  errorRate: 0.1 },
+  { toolName: 'write',      count: 2, avgDuration: 95,  totalTokens: 310,  errorRate: 0 },
+  { toolName: 'grep',       count: 4, avgDuration: 38,  totalTokens: 520,  errorRate: 0 },
+  { toolName: 'bash',       count: 2, avgDuration: 340, totalTokens: 280,  errorRate: 0.15 },
+];
+
+// Simulation latency data (total loop durations in ms)
+const SIM_LATENCIES = [1200, 3500, 850, 2100, 4200, 1800, 950, 3100, 600, 2800, 1500, 5200, 700, 2400, 1100, 3800, 900, 1600, 4500, 2200];
+
+// Compaction happens between turn 6 and 7
+const SIM_COMPACTION_TURN_INDEX = 5; // after turn 6 (0-indexed)
+
+// ===== Chart Utilities =====
+
+function setupCanvas(canvasId) {
+  const canvas = document.getElementById(canvasId);
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width * dpr;
+  canvas.height = rect.height * dpr;
+  canvas.style.width = rect.width + 'px';
+  canvas.style.height = rect.height + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+  return { ctx, w: rect.width, h: rect.height, canvas };
+}
+
+function showTooltip(tooltipId, x, y, html) {
+  const tt = document.getElementById(tooltipId);
+  tt.innerHTML = html;
+  tt.classList.add('visible');
+  // Position within parent
+  const parent = tt.parentElement;
+  const pr = parent.getBoundingClientRect();
+  let left = x + 12;
+  let top = y - 10;
+  // Prevent overflow
+  if (left + 160 > pr.width) left = x - 160;
+  if (top < 0) top = 4;
+  if (top + 60 > pr.height) top = pr.height - 60;
+  tt.style.left = left + 'px';
+  tt.style.top = top + 'px';
+}
+
+function hideTooltip(tooltipId) {
+  document.getElementById(tooltipId).classList.remove('visible');
+}
+
+// ===== Run 2: Helper to draw rotated Y-axis labels =====
+function drawYAxisLabel(ctx, text, x, y, h) {
+  ctx.save();
+  ctx.translate(x, y + h / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = '#8b949e';
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 0, 0);
+  ctx.restore();
+}
+
+// ===== P2-02: Token Timeline Chart =====
+
+let tokenTimelineHitBoxes = [];
+
+function drawTokenTimeline() {
+  const data = analyticsData.usageTimeline;
+  if (data.length === 0) return;
+
+  const { ctx, w, h } = setupCanvas('chartTokenTimeline');
+  const pad = { top: 20, right: 20, bottom: 30, left: 55 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Find max
+  const maxTok = Math.max(...data.map(d => d.inputTokens + d.outputTokens)) * 1.1;
+
+  // Grid lines
+  ctx.strokeStyle = '#30363d';
+  ctx.lineWidth = 0.5;
+  ctx.font = '10px monospace';
+  ctx.fillStyle = '#8b949e';
+  ctx.textAlign = 'right';
+
+  const gridLines = 5;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = pad.top + (chartH / gridLines) * i;
+    const val = Math.round(maxTok - (maxTok / gridLines) * i);
+    ctx.beginPath();
+    ctx.moveTo(pad.left, y);
+    ctx.lineTo(w - pad.right, y);
+    ctx.stroke();
+    ctx.fillText(fmt(val), pad.left - 6, y + 4);
+  }
+
+  // Run 2: Y-axis label
+  drawYAxisLabel(ctx, '\uD1A0\uD070', 10, pad.top, chartH);
+
+  // Bars
+  const barGroupW = chartW / data.length;
+  const barW = Math.min(barGroupW * 0.35, 30);
+  const gap = 2;
+
+  tokenTimelineHitBoxes = [];
+
+  data.forEach((d, i) => {
+    const x = pad.left + i * barGroupW + (barGroupW - barW * 2 - gap) / 2;
+
+    // Input bar (blue) with gradient
+    const inputH = (d.inputTokens / maxTok) * chartH;
+    const inputY = pad.top + chartH - inputH;
+    const inputGrad = ctx.createLinearGradient(x, inputY, x, pad.top + chartH);
+    inputGrad.addColorStop(0, '#58a6ff');
+    inputGrad.addColorStop(1, 'rgba(88, 166, 255, 0.3)');
+    ctx.fillStyle = inputGrad;
+    ctx.fillRect(x, inputY, barW, inputH);
+
+    // Output bar (green) with gradient
+    const outputH = (d.outputTokens / maxTok) * chartH;
+    const outputY = pad.top + chartH - outputH;
+    const outputGrad = ctx.createLinearGradient(x + barW + gap, outputY, x + barW + gap, pad.top + chartH);
+    outputGrad.addColorStop(0, '#22c55e');
+    outputGrad.addColorStop(1, 'rgba(34, 197, 94, 0.3)');
+    ctx.fillStyle = outputGrad;
+    ctx.fillRect(x + barW + gap, outputY, barW, outputH);
+
+    // X-axis label
+    ctx.fillStyle = '#8b949e';
+    ctx.textAlign = 'center';
+    ctx.font = '10px monospace';
+    ctx.fillText(`T${i + 1}`, x + barW + gap / 2, h - pad.bottom + 15);
+
+    // Hitbox
+    tokenTimelineHitBoxes.push({
+      x: x, y: Math.min(inputY, outputY),
+      w: barW * 2 + gap, h: chartH,
+      data: d, index: i
+    });
+  });
+
+  // P2-06: Compaction markers (red vertical lines)
+  analyticsData.compactionPoints.forEach(cp => {
+    if (cp.turnIndex >= 0 && cp.turnIndex < data.length) {
+      const x = pad.left + (cp.turnIndex + 0.5) * barGroupW + barGroupW / 2;
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(x, pad.top);
+      ctx.lineTo(x, pad.top + chartH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Marker label
+      ctx.fillStyle = '#ef4444';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('COMPACTION', x, pad.top - 5);
+    }
+  });
+
+  // Legend
+  ctx.font = '10px monospace';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#58a6ff';
+  ctx.fillRect(w - pad.right - 140, pad.top, 10, 10);
+  ctx.fillStyle = '#8b949e';
+  ctx.fillText('Input', w - pad.right - 126, pad.top + 9);
+  ctx.fillStyle = '#22c55e';
+  ctx.fillRect(w - pad.right - 70, pad.top, 10, 10);
+  ctx.fillStyle = '#8b949e';
+  ctx.fillText('Output', w - pad.right - 56, pad.top + 9);
+}
+
+// P2-07: Token Timeline hover
+document.getElementById('chartTokenTimeline')?.addEventListener('mousemove', (e) => {
+  const rect = e.target.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const hit = tokenTimelineHitBoxes.find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
+  if (hit) {
+    const d = hit.data;
+    showTooltip('ttTokenTimeline', x, y,
+      `<span class="tt-label">Turn ${hit.index + 1} (${d.turnId})</span>` +
+      `<div class="tt-row"><span class="tt-dot" style="background:#58a6ff"></span><span class="tt-value">${fmt(d.inputTokens)}</span> input</div>` +
+      `<div class="tt-row"><span class="tt-dot" style="background:#22c55e"></span><span class="tt-value">${fmt(d.outputTokens)}</span> output</div>` +
+      `<div class="tt-row">비용: <span class="tt-value">${fmtCost(d.costUsd)}</span></div>`
+    );
+  } else {
+    hideTooltip('ttTokenTimeline');
+  }
+});
+document.getElementById('chartTokenTimeline')?.addEventListener('mouseleave', () => hideTooltip('ttTokenTimeline'));
+
+// ===== P2-03: Tool Call Frequency Bar Chart =====
+
+let toolFreqHitBoxes = [];
+
+function drawToolFreqChart() {
+  const tools = analyticsData.toolStatsArray;
+  if (!tools || tools.length === 0) return;
+
+  const { ctx, w, h } = setupCanvas('chartToolFreq');
+  const pad = { top: 15, right: 20, bottom: 10, left: 75 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, w, h);
+
+  const maxCount = Math.max(...tools.map(t => t.count)) * 1.2;
+  const barH = Math.min(chartH / tools.length - 6, 22);
+
+  toolFreqHitBoxes = [];
+
+  tools.forEach((t, i) => {
+    const y = pad.top + i * (chartH / tools.length) + (chartH / tools.length - barH) / 2;
+    const barW = (t.count / maxCount) * chartW;
+
+    // Run 2: Gradient fill for horizontal bars
+    const hasError = t.errorRate > 0;
+    const barGrad = ctx.createLinearGradient(pad.left, y, pad.left + barW, y);
+    if (hasError) {
+      barGrad.addColorStop(0, '#f97316');
+      barGrad.addColorStop(1, 'rgba(249, 115, 22, 0.5)');
+    } else {
+      barGrad.addColorStop(0, '#bc8cff');
+      barGrad.addColorStop(1, 'rgba(188, 140, 255, 0.5)');
+    }
+    ctx.fillStyle = barGrad;
+    ctx.fillRect(pad.left, y, barW, barH);
+
+    // Error portion overlay
+    if (hasError) {
+      const errW = barW * t.errorRate;
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.6)';
+      ctx.fillRect(pad.left + barW - errW, y, errW, barH);
+    }
+
+    // Tool name label with icon
+    ctx.fillStyle = '#e6edf3';
+    ctx.font = '11px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(getToolIcon(t.toolName) + ' ' + t.toolName, pad.left - 6, y + barH / 2 + 4);
+
+    // Count label on bar
+    ctx.fillStyle = '#e6edf3';
+    ctx.textAlign = 'left';
+    ctx.font = '10px monospace';
+    ctx.fillText(`${t.count}x  avg ${fmtMs(t.avgDuration)}`, pad.left + barW + 6, y + barH / 2 + 4);
+
+    toolFreqHitBoxes.push({
+      x: pad.left, y: y, w: Math.max(barW, chartW), h: barH,
+      data: t, index: i
+    });
+  });
+}
+
+document.getElementById('chartToolFreq')?.addEventListener('mousemove', (e) => {
+  const rect = e.target.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const hit = toolFreqHitBoxes.find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
+  if (hit) {
+    const t = hit.data;
+    showTooltip('ttToolFreq', x, y,
+      `<span class="tt-label">${t.toolName}</span>` +
+      `<div class="tt-row">호출: <span class="tt-value">${t.count}회</span></div>` +
+      `<div class="tt-row">평균: <span class="tt-value">${fmtMs(t.avgDuration)}</span></div>` +
+      `<div class="tt-row">토큰: <span class="tt-value">${fmt(t.totalTokens)}</span></div>` +
+      (t.errorRate > 0 ? `<div class="tt-row" style="color:#ef4444">에러율: <span class="tt-value">${(t.errorRate * 100).toFixed(0)}%</span></div>` : '')
+    );
+  } else {
+    hideTooltip('ttToolFreq');
+  }
+});
+document.getElementById('chartToolFreq')?.addEventListener('mouseleave', () => hideTooltip('ttToolFreq'));
+
+// ===== P2-04: Latency Distribution Histogram =====
+
+let latencyHitBoxes = [];
+
+const LATENCY_BUCKETS = [
+  { label: '<100ms',     min: 0,    max: 100 },
+  { label: '100-500ms',  min: 100,  max: 500 },
+  { label: '500ms-1s',   min: 500,  max: 1000 },
+  { label: '1-3s',       min: 1000, max: 3000 },
+  { label: '3s+',        min: 3000, max: Infinity },
+];
+
+function drawLatencyChart() {
+  const latencies = analyticsData.latencies;
+  if (latencies.length === 0) return;
+
+  const { ctx, w, h } = setupCanvas('chartLatency');
+  const pad = { top: 20, right: 20, bottom: 35, left: 40 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Bucket counts
+  const counts = LATENCY_BUCKETS.map(b => latencies.filter(l => l >= b.min && l < b.max).length);
+  const maxCount = Math.max(...counts) * 1.2 || 1;
+
+  // Grid
+  ctx.strokeStyle = '#30363d';
+  ctx.lineWidth = 0.5;
+  ctx.font = '10px monospace';
+  ctx.fillStyle = '#8b949e';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (chartH / 4) * i;
+    const val = Math.round(maxCount - (maxCount / 4) * i);
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.fillText(val, pad.left - 5, y + 4);
+  }
+
+  // Run 2: Y-axis label
+  drawYAxisLabel(ctx, '\uD69F\uC218', 8, pad.top, chartH);
+
+  const barW = chartW / counts.length;
+  const innerBarW = barW * 0.7;
+
+  latencyHitBoxes = [];
+
+  counts.forEach((c, i) => {
+    const x = pad.left + i * barW + (barW - innerBarW) / 2;
+    const barH = (c / maxCount) * chartH;
+    const y = pad.top + chartH - barH;
+
+    // Run 2: Gradient fill for latency bars
+    const latGrad = ctx.createLinearGradient(x, y, x, pad.top + chartH);
+    latGrad.addColorStop(0, '#39d2c0');
+    latGrad.addColorStop(1, 'rgba(57, 210, 192, 0.3)');
+    ctx.fillStyle = latGrad;
+    ctx.fillRect(x, y, innerBarW, barH);
+
+    // Label
+    ctx.fillStyle = '#8b949e';
+    ctx.textAlign = 'center';
+    ctx.font = '9px monospace';
+    ctx.fillText(LATENCY_BUCKETS[i].label, pad.left + i * barW + barW / 2, h - pad.bottom + 14);
+
+    // Count on top
+    if (c > 0) {
+      ctx.fillStyle = '#e6edf3';
+      ctx.font = '10px monospace';
+      ctx.fillText(c, pad.left + i * barW + barW / 2, y - 4);
+    }
+
+    latencyHitBoxes.push({ x, y, w: innerBarW, h: barH + chartH - barH, data: { bucket: LATENCY_BUCKETS[i], count: c }, index: i });
+  });
+
+  // Stats markers
+  const sorted = [...latencies].sort((a, b) => a - b);
+  const avg = latencies.reduce((s, v) => s + v, 0) / latencies.length;
+  const median = sorted[Math.floor(sorted.length / 2)];
+  const p95 = sorted[Math.floor(sorted.length * 0.95)];
+
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'left';
+  const statsY = h - 6;
+  ctx.fillStyle = '#58a6ff';
+  ctx.fillText(`Avg: ${fmtMs(Math.round(avg))}`, pad.left, statsY);
+  ctx.fillStyle = '#22c55e';
+  ctx.fillText(`Med: ${fmtMs(median)}`, pad.left + 85, statsY);
+  ctx.fillStyle = '#f97316';
+  ctx.fillText(`P95: ${fmtMs(p95)}`, pad.left + 170, statsY);
+}
+
+document.getElementById('chartLatency')?.addEventListener('mousemove', (e) => {
+  const rect = e.target.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const hit = latencyHitBoxes.find(b => x >= b.x && x <= b.x + b.w && y >= 0 && y <= b.y + b.h);
+  if (hit) {
+    showTooltip('ttLatency', x, y,
+      `<span class="tt-label">${hit.data.bucket.label}</span>` +
+      `<div class="tt-row">횟수: <span class="tt-value">${hit.data.count}건</span></div>`
+    );
+  } else {
+    hideTooltip('ttLatency');
+  }
+});
+document.getElementById('chartLatency')?.addEventListener('mouseleave', () => hideTooltip('ttLatency'));
+
+// ===== P2-05: Cost Tracker Cumulative Line Chart =====
+
+let costHitBoxes = [];
+
+function drawCostChart() {
+  const data = analyticsData.usageTimeline;
+  if (data.length === 0) return;
+
+  const { ctx, w, h } = setupCanvas('chartCost');
+  const pad = { top: 20, right: 20, bottom: 30, left: 60 };
+  const chartW = w - pad.left - pad.right;
+  const chartH = h - pad.top - pad.bottom;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Cumulative costs
+  let cumCosts = [];
+  let cum = 0;
+  data.forEach(d => { cum += d.costUsd; cumCosts.push(cum); });
+  const maxCost = cum * 1.15;
+
+  // Grid
+  ctx.strokeStyle = '#30363d';
+  ctx.lineWidth = 0.5;
+  ctx.font = '10px monospace';
+  ctx.fillStyle = '#8b949e';
+  ctx.textAlign = 'right';
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.top + (chartH / 4) * i;
+    const val = maxCost - (maxCost / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(w - pad.right, y); ctx.stroke();
+    ctx.fillText('$' + val.toFixed(3), pad.left - 5, y + 4);
+  }
+
+  // Run 2: Y-axis label
+  drawYAxisLabel(ctx, '\uBE44\uC6A9 ($)', 10, pad.top, chartH);
+
+  // Draw filled area with proper gradient
+  const points = [];
+  cumCosts.forEach((c, i) => {
+    const x = pad.left + (i / (data.length - 1 || 1)) * chartW;
+    const y = pad.top + chartH - (c / maxCost) * chartH;
+    points.push({ x, y, cum: c, turn: data[i] });
+  });
+
+  // Run 2: Enhanced gradient fill
+  ctx.beginPath();
+  ctx.moveTo(pad.left, pad.top + chartH);
+  points.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pad.left + chartW, pad.top + chartH);
+  ctx.closePath();
+  const areaGrad = ctx.createLinearGradient(0, pad.top, 0, pad.top + chartH);
+  areaGrad.addColorStop(0, 'rgba(57, 210, 192, 0.25)');
+  areaGrad.addColorStop(1, 'rgba(57, 210, 192, 0.02)');
+  ctx.fillStyle = areaGrad;
+  ctx.fill();
+
+  // Draw line
+  ctx.beginPath();
+  points.forEach((p, i) => {
+    if (i === 0) ctx.moveTo(p.x, p.y);
+    else ctx.lineTo(p.x, p.y);
+  });
+  ctx.strokeStyle = '#39d2c0';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Points
+  costHitBoxes = [];
+  points.forEach((p, i) => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#39d2c0';
+    ctx.fill();
+    ctx.strokeStyle = '#0d1117';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // X label
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '10px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText(`T${i + 1}`, p.x, h - pad.bottom + 15);
+
+    // Turn cost label at last point
+    if (i === points.length - 1) {
+      ctx.fillStyle = '#39d2c0';
+      ctx.font = 'bold 11px monospace';
+      ctx.textAlign = 'left';
+      ctx.fillText(fmtCost(p.cum), p.x + 8, p.y - 6);
+    }
+
+    costHitBoxes.push({ x: p.x - 10, y: p.y - 10, w: 20, h: 20, data: p, index: i });
+  });
+
+  // P2-06: Compaction markers on cost chart
+  analyticsData.compactionPoints.forEach(cp => {
+    if (cp.turnIndex >= 0 && cp.turnIndex < points.length) {
+      const px = points[cp.turnIndex].x + (points.length > cp.turnIndex + 1 ?
+        (points[cp.turnIndex + 1].x - points[cp.turnIndex].x) / 2 : 20);
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(px, pad.top);
+      ctx.lineTo(px, pad.top + chartH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+}
+
+document.getElementById('chartCost')?.addEventListener('mousemove', (e) => {
+  const rect = e.target.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const hit = costHitBoxes.find(b => x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h);
+  if (hit) {
+    const d = hit.data;
+    showTooltip('ttCost', x, y,
+      `<span class="tt-label">Turn ${hit.index + 1}</span>` +
+      `<div class="tt-row">이 턴: <span class="tt-value">${fmtCost(d.turn.costUsd)}</span></div>` +
+      `<div class="tt-row">누적: <span class="tt-value">${fmtCost(d.cum)}</span></div>`
+    );
+  } else {
+    hideTooltip('ttCost');
+  }
+});
+document.getElementById('chartCost')?.addEventListener('mouseleave', () => hideTooltip('ttCost'));
+
+// ===== P2-08: Auto-update Analytics from Simulation =====
+
+function updateAnalyticsSummary() {
+  const data = analyticsData.usageTimeline;
+  document.getElementById('asTotalTurns').textContent = data.length;
+  document.getElementById('asTotalInput').textContent = fmt(data.reduce((s, d) => s + d.inputTokens, 0));
+  document.getElementById('asTotalOutput').textContent = fmt(data.reduce((s, d) => s + d.outputTokens, 0));
+  document.getElementById('asTotalCost').textContent = fmtCost(data.reduce((s, d) => s + d.costUsd, 0));
+  document.getElementById('asCompactions').textContent = analyticsData.compactionPoints.length;
+}
+
+function loadSimulationAnalytics() {
+  // Load usage timeline
+  analyticsData.usageTimeline = [...SIM_USAGE_TIMELINE];
+
+  // Load tool stats
+  analyticsData.toolStatsArray = [...SIM_TOOL_STATS_DATA];
+
+  // Load latencies
+  analyticsData.latencies = [...SIM_LATENCIES];
+
+  // Load compaction point
+  analyticsData.compactionPoints = [{ turnIndex: SIM_COMPACTION_TURN_INDEX, timestamp: 1711000055000 }];
+
+  updateAnalyticsSummary();
+  drawAllCharts();
+}
+
+function drawAllCharts() {
+  // Only draw if analytics tab is visible (canvas needs dimensions)
+  const tab = document.getElementById('tab-analytics');
+  if (!tab.classList.contains('active')) {
+    // Defer drawing until tab becomes visible
+    analyticsData._pendingDraw = true;
+    return;
+  }
+  analyticsData._pendingDraw = false;
+
+  requestAnimationFrame(() => {
+    drawTokenTimeline();
+    drawToolFreqChart();
+    drawLatencyChart();
+    drawCostChart();
+  });
+}
+
+function addAnalyticsTurn(turn) {
+  analyticsData.usageTimeline.push(turn);
+  updateAnalyticsSummary();
+  drawAllCharts();
+}
+
+function addAnalyticsToolCall(toolName, duration, outputTokens, success) {
+  if (!analyticsData.toolStatsArray) analyticsData.toolStatsArray = [];
+  const existing = analyticsData.toolStatsArray.find(t => t.toolName === toolName);
+  if (existing) {
+    const oldTotal = existing.avgDuration * existing.count;
+    existing.count++;
+    existing.avgDuration = Math.round((oldTotal + duration) / existing.count);
+    existing.totalTokens += outputTokens;
+    if (!success) existing.errorRate = ((existing.errorRate * (existing.count - 1)) + 1) / existing.count;
+  } else {
+    analyticsData.toolStatsArray.push({
+      toolName, count: 1, avgDuration: duration, totalTokens: outputTokens, errorRate: success ? 0 : 1
+    });
+  }
+  drawAllCharts();
+}
+
+function addAnalyticsLatency(durationMs) {
+  analyticsData.latencies.push(durationMs);
+  drawAllCharts();
+}
+
+function addAnalyticsCompaction(turnIndex) {
+  analyticsData.compactionPoints.push({ turnIndex, timestamp: Date.now() });
+  updateAnalyticsSummary();
+  drawAllCharts();
+}
+
+// ===== Hook analytics into tab switching =====
+
+const origTabListener = () => {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      // After tab switch, check if analytics needs drawing
+      setTimeout(() => {
+        if (document.getElementById('tab-analytics').classList.contains('active') && analyticsData._pendingDraw) {
+          drawAllCharts();
+        }
+      }, 50);
+    });
+  });
+};
+origTabListener();
+
+// ===== Hook analytics into simulation engine =====
+
+const origPlay = simEngine.play.bind(simEngine);
+simEngine.play = function() {
+  origPlay();
+  // Load simulation analytics data when sim starts
+  loadSimulationAnalytics();
+  // Reset explorer state
+  explorerState.currentStep = 0;
+  explorerState.selectedToolCall = null;
+  explorerState.searchQuery = '';
+};
+
+const origComplete = simEngine.complete.bind(simEngine);
+simEngine.complete = function() {
+  origComplete();
+  // Add the current loop as a latency data point
+  if (state.agentLoop && state.agentLoop.totalDuration) {
+    addAnalyticsLatency(state.agentLoop.totalDuration);
+  }
+  // Add tool calls to analytics
+  state.toolCalls.forEach(tc => {
+    if (tc.status === 'completed') {
+      addAnalyticsToolCall(tc.toolName, tc.duration, tc.result?.outputTokens || 0, true);
+    }
+  });
+};
+
+const origReset = simEngine.reset.bind(simEngine);
+simEngine.reset = function() {
+  origReset();
+  analyticsData.usageTimeline = [];
+  analyticsData.toolStatsArray = [];
+  analyticsData.latencies = [];
+  analyticsData.compactionPoints = [];
+  updateAnalyticsSummary();
+  drawAllCharts();
+};
+
+// Handle window resize for chart redraw
+window.addEventListener('resize', () => {
+  if (document.getElementById('tab-analytics').classList.contains('active')) {
+    drawAllCharts();
+  } else {
+    analyticsData._pendingDraw = true;
+  }
+});
+
+// =========================================================
+// Phase 3: Interactive Features (P3-01 ~ P3-09)
+// =========================================================
+
+// ===== P3-01/P3-02: Explorer - Step-Through =====
+
+const explorerState = {
+  currentStep: -1,
+  totalSteps: 0,
+  filteredToolCalls: [],
+  selectedToolCall: null,
+  searchQuery: '',
+};
+
+function updateExplorerFromState() {
+  const loop = state.agentLoop;
+  if (!loop || loop.phases.length === 0) {
+    document.getElementById('explorerLoopStatus').textContent = '대기';
+    document.getElementById('explorerPhaseList').innerHTML = '<div class="empty-state">시뮬레이션을 먼저 실행하세요</div>';
+    document.getElementById('stepCurrent').textContent = '0';
+    document.getElementById('stepTotal').textContent = '0';
+    document.getElementById('btnStepPrev').disabled = true;
+    document.getElementById('btnStepNext').disabled = true;
+    return;
+  }
+
+  explorerState.totalSteps = loop.phases.length;
+  document.getElementById('explorerLoopStatus').textContent = loop.status === 'completed' ? '완료' : '실행 중';
+  document.getElementById('stepTotal').textContent = explorerState.totalSteps;
+
+  // Render phase list with step highlight and detail info (Improvement #2)
+  let html = '';
+  let currentIteration = 1;
+  let seenFirstInference = false;
+  const activePhases = state._activePhases || SIM_LOOP_PHASES;
+
+  loop.phases.forEach((p, i) => {
+    if (p.phase === 'inference' && seenFirstInference) {
+      currentIteration++;
+      html += `<div class="iteration-marker">Iteration ${currentIteration}</div>`;
+    }
+    if (p.phase === 'inference') seenFirstInference = true;
+
+    const meta = PHASE_META[p.phase] || { icon: '\u{2699}\u{FE0F}', label: p.phase };
+    let icon = p.status === 'completed' ? '\u{2705}' : p.status === 'running' ? '\u{1F504}' : p.status === 'error' ? '\u{274C}' : '\u{23F3}';
+    const activeClass = i === explorerState.currentStep ? ' step-active' : '';
+
+    const phaseDef = activePhases[i] || null;
+
+    html += `<div class="phase-item ${p.status}${activeClass}" data-step="${i}" onclick="explorerGoToStep(${i})">
+      <span class="phase-icon">${icon}</span>
+      <span class="phase-name">${meta.label}</span>
+      <span class="phase-duration">${p.duration != null ? fmtMs(p.duration) : ''}</span>
+    </div>`;
+
+    // Phase detail sub-line
+    const detailText = getPhaseDetailText(p.phase, phaseDef, i, loop.phases);
+    if (detailText) {
+      html += `<div class="phase-detail">${detailText}</div>`;
+    }
+  });
+
+  document.getElementById('explorerPhaseList').innerHTML = html;
+  document.getElementById('stepCurrent').textContent = explorerState.currentStep >= 0 ? explorerState.currentStep + 1 : '0';
+
+  // Update button states
+  document.getElementById('btnStepPrev').disabled = explorerState.currentStep <= 0;
+  document.getElementById('btnStepNext').disabled = explorerState.currentStep >= explorerState.totalSteps - 1;
+
+  // Update tool call list
+  updateExplorerToolCalls();
+
+  // Update context diff
+  updateContextDiff();
+}
+
+function explorerGoToStep(idx) {
+  if (!state.agentLoop) return;
+  explorerState.currentStep = Math.max(0, Math.min(idx, state.agentLoop.phases.length - 1));
+  updateExplorerFromState();
+}
+
+function explorerStepPrev() {
+  if (explorerState.currentStep > 0) {
+    explorerState.currentStep--;
+    updateExplorerFromState();
+  }
+}
+
+function explorerStepNext() {
+  if (state.agentLoop && explorerState.currentStep < state.agentLoop.phases.length - 1) {
+    explorerState.currentStep++;
+    updateExplorerFromState();
+  }
+}
+
+// ===== P3-03: Tool Call Drill-down =====
+
+function updateExplorerToolCalls() {
+  const toolFilter = document.getElementById('filterTool').value;
+  const statusFilter = document.getElementById('filterStatus').value;
+  const sessionFilter = document.getElementById('filterSession').value;
+  const query = explorerState.searchQuery.toLowerCase();
+
+  let calls = [...state.toolCalls];
+
+  // P3-05: Apply filters
+  if (toolFilter) calls = calls.filter(tc => tc.toolName === toolFilter);
+  if (statusFilter) calls = calls.filter(tc => tc.status === statusFilter);
+  if (sessionFilter) calls = calls.filter(tc => {
+    const loop = state.agentLoop;
+    return loop && loop.sessionId === sessionFilter;
+  });
+
+  // P3-06: Apply search
+  if (query) {
+    calls = calls.filter(tc => {
+      const inputStr = (tc.inputPreview || JSON.stringify(tc.input) || '').toLowerCase();
+      const outputStr = (tc.result?.outputPreview || '').toLowerCase();
+      return inputStr.includes(query) || outputStr.includes(query);
+    });
+  }
+
+  explorerState.filteredToolCalls = calls;
+  document.getElementById('explorerToolCount').textContent = calls.length;
+  document.getElementById('searchCount').textContent = query ? `${calls.length}건 검색됨` : '';
+
+  const container = document.getElementById('explorerToolCards');
+  if (calls.length === 0) {
+    container.innerHTML = '<div class="empty-state">조건에 맞는 Tool Call 없음</div>';
+    return;
+  }
+
+  container.innerHTML = calls.map((tc, i) => {
+    const selectedClass = explorerState.selectedToolCall === tc.callId ? ' selected' : '';
+    let inputText = tc.inputPreview || '';
+    let outputText = tc.result?.outputPreview || '';
+
+    // Highlight search matches
+    if (query) {
+      inputText = highlightSearch(inputText, query);
+      outputText = highlightSearch(outputText, query);
+    }
+
+    const toolIcon = getToolIcon(tc.toolName);
+    const statusIcon = tc.status === 'completed' ? '\u{2705}' : tc.status === 'executing' ? '\u{1F504}' : tc.status === 'error' ? '\u{274C}' : '\u{23F3}';
+    const errorMsg = (tc.status === 'error' && tc.result && tc.result.error)
+      ? `<div class="tool-error-msg">${escapeHtml(tc.result.error)}</div>` : '';
+
+    return `<div class="tool-card clickable${selectedClass} ${tc.status}" data-callid="${tc.callId}" onclick="drilldownToolCall('${tc.callId}')">
+      <span class="tool-index">#${i + 1}</span>
+      <span class="tool-name">${toolIcon} ${tc.toolName}</span>
+      <span class="tool-input">${inputText}</span>
+      <span class="tool-duration">${tc.duration != null ? fmtMs(tc.duration) : '...'}</span>
+      <span class="tool-status">${statusIcon}</span>
+      <span class="tool-tokens">${tc.result ? tc.result.outputTokens + ' tok' : ''}</span>
+      ${errorMsg}
+    </div>`;
+  }).join('');
+
+  // Update filter dropdowns with available values
+  updateFilterOptions();
+}
+
+function highlightSearch(text, query) {
+  if (!query || !text) return text;
+  const escaped = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(`(${escaped})`, 'gi'), '<span class="search-highlight">$1</span>');
+}
+
+function drilldownToolCall(callId) {
+  const tc = state.toolCalls.find(t => t.callId === callId);
+  if (!tc) return;
+
+  explorerState.selectedToolCall = callId;
+
+  const container = document.getElementById('drilldownContainer');
+  const statusClass = tc.result?.success !== false ? 'success' : 'error';
+  const statusText = tc.result?.success !== false ? '성공' : '실패';
+
+  let inputDisplay = '';
+  if (tc.input && Object.keys(tc.input).length > 0) {
+    inputDisplay = JSON.stringify(tc.input, null, 2);
+  } else {
+    inputDisplay = tc.inputPreview || '(없음)';
+  }
+
+  let outputDisplay = '';
+  if (tc.result?.rawOutput) {
+    outputDisplay = JSON.stringify(tc.result.rawOutput, null, 2);
+  } else if (tc.result?.outputPreview) {
+    outputDisplay = tc.result.outputPreview;
+  }
+  if (tc.result?.error) {
+    outputDisplay += '\n\n[ERROR] ' + tc.result.error;
+  }
+
+  container.innerHTML = `<div class="drilldown-panel">
+    <div class="drilldown-header">
+      <span class="drilldown-title">${getToolIcon(tc.toolName)} ${tc.toolName} (${tc.callId})</span>
+      <button class="drilldown-close" onclick="closeDrilldown()">ESC 닫기</button>
+    </div>
+    <div class="drilldown-grid">
+      <div class="drilldown-stat">
+        <div class="ds-label">툴명</div>
+        <div class="ds-value" style="color:var(--color-purple)">${tc.toolName}</div>
+      </div>
+      <div class="drilldown-stat">
+        <div class="ds-label">상태</div>
+        <div class="ds-value ${statusClass}">${statusText}</div>
+      </div>
+      <div class="drilldown-stat">
+        <div class="ds-label">레이턴시</div>
+        <div class="ds-value">${tc.duration != null ? tc.duration + 'ms' : '-'}</div>
+      </div>
+      <div class="drilldown-stat">
+        <div class="ds-label">출력 토큰</div>
+        <div class="ds-value">${tc.result?.outputTokens ?? '-'}</div>
+      </div>
+      <div class="drilldown-stat">
+        <div class="ds-label">Iteration</div>
+        <div class="ds-value">${tc.iteration ?? '-'}</div>
+      </div>
+      <div class="drilldown-stat">
+        <div class="ds-label">Loop ID</div>
+        <div class="ds-value" style="font-size:11px">${tc.loopId}</div>
+      </div>
+    </div>
+    <div class="drilldown-section">
+      <div class="drilldown-section-title">입력 (Input)</div>
+      <div class="drilldown-code">${escapeHtml(inputDisplay || '(없음)')}</div>
+    </div>
+    <div class="drilldown-section">
+      <div class="drilldown-section-title">출력 (Output)</div>
+      <div class="drilldown-code">${escapeHtml(outputDisplay || '(없음)')}</div>
+    </div>
+  </div>`;
+
+  // Update card selection visual
+  document.querySelectorAll('#explorerToolCards .tool-card').forEach(el => {
+    el.classList.toggle('selected', el.dataset.callid === callId);
+  });
+}
+
+// Improvement #1: closeDrilldown with slide-out animation
+function closeDrilldown() {
+  explorerState.selectedToolCall = null;
+  const panel = document.querySelector('#drilldownContainer .drilldown-panel');
+  if (panel) {
+    panel.classList.add('closing');
+    panel.addEventListener('animationend', () => {
+      document.getElementById('drilldownContainer').innerHTML =
+        '<div class="empty-state" style="min-height:200px;">Tool Call 카드를 클릭하면 상세 정보가 표시됩니다<br><span style="font-size:10px;color:var(--text-muted)">또는 <span class="kbd">Enter</span> 키로 선택된 단계의 도구를 드릴다운</span></div>';
+    }, { once: true });
+  } else {
+    document.getElementById('drilldownContainer').innerHTML =
+      '<div class="empty-state" style="min-height:200px;">Tool Call 카드를 클릭하면 상세 정보가 표시됩니다<br><span style="font-size:10px;color:var(--text-muted)">또는 <span class="kbd">Enter</span> 키로 선택된 단계의 도구를 드릴다운</span></div>';
+  }
+  document.querySelectorAll('#explorerToolCards .tool-card').forEach(el => el.classList.remove('selected'));
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ===== P3-04: Context Diff (Compaction Before/After) =====
+
+function updateContextDiff() {
+  const container = document.getElementById('contextDiffContainer');
+  if (state.compactions.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+
+  container.innerHTML = state.compactions.map(c => {
+    const reduction = ((1 - c.compressionRatio) * 100).toFixed(0);
+    const beforePct = 100;
+    const afterPct = (c.after.totalTokens / c.before.totalTokens * 100).toFixed(1);
+
+    return `<div class="context-diff">
+      <div class="context-diff-title">Compaction Diff: ${c.compactionId}</div>
+      <div class="diff-columns">
+        <div class="diff-col before">
+          <div class="diff-col-title">Before</div>
+          <div class="diff-row"><span class="diff-label">총 토큰</span><span class="diff-value">${fmt(c.before.totalTokens)}</span></div>
+          <div class="diff-row"><span class="diff-label">대화 토큰</span><span class="diff-value">${fmt(c.before.conversationTokens)}</span></div>
+          <div class="diff-row"><span class="diff-label">턴 수</span><span class="diff-value">${c.before.turnCount}</span></div>
+          <div style="margin-top:8px;">
+            <div class="compaction-bar-track"><div class="compaction-bar-fill before" style="width:${beforePct}%"></div></div>
+          </div>
+        </div>
+        <div class="diff-arrow">\u{2192}</div>
+        <div class="diff-col after">
+          <div class="diff-col-title">After</div>
+          <div class="diff-row"><span class="diff-label">총 토큰</span><span class="diff-value">${fmt(c.after.totalTokens)}</span></div>
+          <div class="diff-row"><span class="diff-label">대화 토큰</span><span class="diff-value">${fmt(c.after.conversationTokens)}</span></div>
+          <div class="diff-row"><span class="diff-label">턴 수</span><span class="diff-value">${c.after.turnCount}</span></div>
+          <div style="margin-top:8px;">
+            <div class="compaction-bar-track"><div class="compaction-bar-fill after" style="width:${afterPct}%"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="diff-ratio">${reduction}% 감소 (압축률: ${c.compressionRatio}) | 소요시간: ${fmtMs(c.duration)} | 모델: ${c.summaryModel}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== P3-05: Filter Logic =====
+
+function updateFilterOptions() {
+  // Tool name filter
+  const toolSelect = document.getElementById('filterTool');
+  const currentToolVal = toolSelect.value;
+  const toolNames = [...new Set(state.toolCalls.map(tc => tc.toolName))];
+  const toolOpts = '<option value="">전체</option>' + toolNames.map(n => `<option value="${n}"${n === currentToolVal ? ' selected' : ''}>${n}</option>`).join('');
+  toolSelect.innerHTML = toolOpts;
+
+  // Session filter
+  const sessionSelect = document.getElementById('filterSession');
+  const currentSessionVal = sessionSelect.value;
+  const sessions = [...new Set([state.sessionId, ...state.queue.sessions.map(s => s.sessionKey)])].filter(Boolean);
+  const sessionOpts = '<option value="">전체</option>' + sessions.map(s => `<option value="${s}"${s === currentSessionVal ? ' selected' : ''}>${s}</option>`).join('');
+  sessionSelect.innerHTML = sessionOpts;
+}
+
+function applyExplorerFilters() {
+  updateExplorerToolCalls();
+}
+
+// ===== P3-06: Search Logic =====
+
+function applyExplorerSearch() {
+  explorerState.searchQuery = document.getElementById('searchInput').value;
+  updateExplorerToolCalls();
+}
+
+// ===== P3-07: Config Tab Logic =====
+
+function updateConfigDisplay() {
+  const speed = document.getElementById('cfgSpeed').value;
+  document.getElementById('cfgSpeedVal').textContent = speed + 'x';
+}
+
+function applyConfig() {
+  // Simulation speed
+  const speed = parseFloat(document.getElementById('cfgSpeed').value);
+  configState.simSpeed = speed;
+
+  // Max phase display time
+  configState.maxPhaseTime = parseInt(document.getElementById('cfgMaxPhaseTime').value) || 800;
+
+  // Context thresholds
+  const normal = parseInt(document.getElementById('cfgThresholdNormal').value);
+  const caution = parseInt(document.getElementById('cfgThresholdCaution').value);
+  const warning = parseInt(document.getElementById('cfgThresholdWarning').value);
+
+  if (normal < caution && caution < warning && warning <= 100) {
+    CONTEXT_THRESHOLDS.normal.max = normal;
+    CONTEXT_THRESHOLDS.caution.max = caution;
+    CONTEXT_THRESHOLDS.warning.max = warning;
+  }
+
+  // Compaction settings
+  configState.compactionTarget = parseInt(document.getElementById('cfgCompactionTarget').value) || 16000;
+  configState.compactionTrigger = parseInt(document.getElementById('cfgCompactionTrigger').value) || 92;
+
+  // Re-render with new settings
+  if (state.context) renderContext();
+  renderTopBar();
+
+  addLog('\u{2699}\u{FE0F}', '<span class="highlight">설정 적용됨</span> - 속도: ' + speed + 'x', Date.now());
+  renderLog();
+}
+
+function resetConfig() {
+  document.getElementById('cfgSpeed').value = 1;
+  document.getElementById('cfgSpeedVal').textContent = '1x';
+  document.getElementById('cfgMaxPhaseTime').value = 800;
+  document.getElementById('cfgThresholdNormal').value = 70;
+  document.getElementById('cfgThresholdCaution').value = 85;
+  document.getElementById('cfgThresholdWarning').value = 95;
+  document.getElementById('cfgCompactionTarget').value = 16000;
+  document.getElementById('cfgCompactionTrigger').value = 92;
+
+  CONTEXT_THRESHOLDS.normal.max = 70;
+  CONTEXT_THRESHOLDS.caution.max = 85;
+  CONTEXT_THRESHOLDS.warning.max = 95;
+
+  configState.simSpeed = 1;
+  configState.maxPhaseTime = 800;
+  configState.compactionTarget = 16000;
+  configState.compactionTrigger = 92;
+
+  addLog('\u{2699}\u{FE0F}', '<span class="highlight">설정 초기화</span>', Date.now());
+  renderLog();
+}
+
+const configState = {
+  simSpeed: 1,
+  maxPhaseTime: 800,
+  compactionTarget: 16000,
+  compactionTrigger: 92,
+};
+
+// ===== P3-09: Keyboard Shortcuts =====
+
+document.addEventListener('keydown', (e) => {
+  // Don't intercept when typing in input fields
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+  const explorerActive = document.getElementById('tab-explorer').classList.contains('active');
+
+  switch (e.key) {
+    // Run 3: Shortcut modal toggle
+    case '?':
+    case '/':
+      e.preventDefault();
+      toggleShortcutModal();
+      break;
+
+    // Run 3: Space to toggle sim pause/play
+    case ' ':
+      e.preventDefault();
+      if (simEngine.running) simEngine.pause();
+      else simEngine.playScenario();
+      break;
+
+    // Tab switching with 1-4
+    case '1': switchTab('live'); break;
+    case '2': switchTab('analytics'); break;
+    case '3': switchTab('explorer'); break;
+    case '4': switchTab('config'); break;
+
+    // J/K step movement (Explorer)
+    case 'j':
+    case 'J':
+      if (explorerActive) { e.preventDefault(); explorerStepNext(); }
+      break;
+    case 'k':
+    case 'K':
+      if (explorerActive) { e.preventDefault(); explorerStepPrev(); }
+      break;
+
+    // Enter: drill-down into current step's tool call
+    case 'Enter':
+      if (explorerActive) {
+        e.preventDefault();
+        enterDrilldownFromStep();
+      }
+      break;
+
+    // Escape: close drill-down or shortcut modal
+    case 'Escape':
+      if (document.getElementById('shortcutModal').style.display !== 'none') {
+        closeShortcutModal();
+      } else if (explorerActive) {
+        e.preventDefault();
+        closeDrilldown();
+      }
+      break;
+  }
+});
+
+function switchTab(tabName) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const btn = document.querySelector(`.tab-btn[data-tab="${tabName}"]`);
+  if (btn) btn.classList.add('active');
+  const tab = document.getElementById('tab-' + tabName);
+  if (tab) tab.classList.add('active');
+
+  // Deferred chart drawing
+  if (tabName === 'analytics' && analyticsData._pendingDraw) {
+    setTimeout(() => drawAllCharts(), 50);
+  }
+  // Update explorer when switching to it
+  if (tabName === 'explorer') {
+    updateExplorerFromState();
+  }
+}
+
+function enterDrilldownFromStep() {
+  if (explorerState.currentStep < 0 || !state.agentLoop) return;
+  const phase = state.agentLoop.phases[explorerState.currentStep];
+  if (phase && phase.phase === 'tool_execution') {
+    // Find the tool call for this step
+    let toolIdx = 0;
+    for (let i = 0; i <= explorerState.currentStep; i++) {
+      if (state.agentLoop.phases[i].phase === 'tool_execution') toolIdx++;
+    }
+    const tc = state.toolCalls[toolIdx - 1];
+    if (tc) drilldownToolCall(tc.callId);
+  }
+}
+
+// ===== P3-08: TC-I02 Integration Test (Compaction During Run) =====
+// The test is checked in runTests() below
+
+// ===== Hook Explorer updates into simulation =====
+
+const origRenderAll = renderAll;
+// We replace renderAll to also update explorer
+function renderAllWithExplorer() {
+  origRenderAll();
+  if (document.getElementById('tab-explorer').classList.contains('active')) {
+    updateExplorerFromState();
+  }
+}
+
+// Patch: use new renderAll that includes explorer updates
+// We re-bind renderAll
+window._origRenderAll = renderAll;
+renderAll = function() {
+  _origRenderAll();
+  // Only update explorer if the tab is visible to avoid perf issues
+  if (document.getElementById('tab-explorer').classList.contains('active')) {
+    updateExplorerFromState();
+  }
+};
+
+// ===== Update SimulationEngine to use configState =====
+
+const origRunNextPhase = simEngine.runNextPhase.bind(simEngine);
+simEngine.runNextPhase = function() {
+  if (!this.running || this.phaseIndex >= SIM_LOOP_PHASES.length) {
+    this.complete();
+    return;
+  }
+
+  const phaseDef = SIM_LOOP_PHASES[this.phaseIndex];
+  const now = Date.now();
+
+  if (phaseDef.phase === 'inference' && this.phaseIndex > 2) {
+    this.iteration++;
+    state.agentLoop.iteration = this.iteration;
+  }
+
+  const phaseRec = {
+    phase: phaseDef.phase,
+    status: 'running',
+    startedAt: now,
+    completedAt: null,
+    duration: null,
+  };
+  state.agentLoop.phases.push(phaseRec);
+
+  addLog(PHASE_META[phaseDef.phase]?.icon || '\u{2699}\u{FE0F}',
+    `<span class="highlight">${PHASE_META[phaseDef.phase]?.label || phaseDef.phase}</span> 시작`, now);
+
+  if (phaseDef.phase === 'tool_execution' && phaseDef.toolName) {
+    const tc = {
+      callId: `tc-${String(this.toolCallIndex + 1).padStart(3, '0')}`,
+      loopId: 'loop-001',
+      iteration: this.iteration,
+      toolName: phaseDef.toolName,
+      input: phaseDef.toolName === 'web_search' ? { query: phaseDef.toolInput } : { file_path: phaseDef.toolInput },
+      inputPreview: `${phaseDef.toolName}("${phaseDef.toolInput}")`,
+      status: 'executing',
+      startedAt: now,
+      completedAt: null,
+      duration: null,
+      result: null,
+    };
+    state.toolCalls.push(tc);
+    this.toolCallIndex++;
+    state.agentLoop.toolCallCount = this.toolCallIndex;
+  }
+
+  renderAll();
+
+  // Apply speed and max phase time from config
+  const displayTime = Math.min(phaseDef.duration / configState.simSpeed, configState.maxPhaseTime);
+
+  this.timer = setTimeout(() => {
+    phaseRec.status = 'completed';
+    phaseRec.completedAt = Date.now();
+    phaseRec.duration = phaseDef.duration;
+
+    if (phaseDef.phase === 'tool_execution' && phaseDef.toolName) {
+      const tc = state.toolCalls[state.toolCalls.length - 1];
+      tc.status = 'completed';
+      tc.completedAt = Date.now();
+      tc.duration = phaseDef.duration;
+      tc.result = {
+        success: true,
+        outputTokens: phaseDef.toolOutputTokens || 0,
+        outputPreview: phaseDef.toolName === 'web_search' ? '서울 현재 기온 12\u00B0C, 맑음, 습도 45%...' : '---\nname: OpenClaw\ndescription: ...',
+      };
+      addLog('\u{2705}', `${getToolIcon(phaseDef.toolName)} <span class="highlight">${phaseDef.toolName}</span> 완료 \u{2192} ${phaseDef.toolOutputTokens} tok (${fmtMs(phaseDef.duration)})`, Date.now());
+    }
+
+    if (phaseDef.phase === 'streaming_reply') {
+      state.streaming = {
+        loopId: 'loop-001',
+        ttft: phaseDef.ttft || 320,
+        tokensPerSecond: phaseDef.tokensPerSecond || 40,
+        totalTokensStreamed: phaseDef.totalTokens || 500,
+        blockCount: phaseDef.blockCount || 3,
+        previewUpdates: phaseDef.previewUpdates || 12,
+        startedAt: phaseRec.startedAt,
+        duration: phaseDef.duration,
+      };
+      state.agentLoop.outputTokens = phaseDef.totalTokens || 500;
+      const inputTokens = state.context.totalUsed;
+      const outputTokens = state.agentLoop.outputTokens;
+      state.currentCost = calcCost(inputTokens, outputTokens, state.pricing);
+      addLog('\u{1F4E1}', `스트리밍 완료 \u{2192} TTFT: ${phaseDef.ttft}ms, ${phaseDef.tokensPerSecond} tok/s`, Date.now());
+    }
+
+    addLog(PHASE_META[phaseDef.phase]?.icon || '\u{2705}',
+      `${PHASE_META[phaseDef.phase]?.label || phaseDef.phase} 완료 (${fmtMs(phaseDef.duration)})`, Date.now());
+
+    this.phaseIndex++;
+    renderAll();
+    this.runNextPhase();
+  }, displayTime);
+};
+
+// ===== Init =====
+
+renderTopBar();
+renderAll();
+</script>
+</body>
+</html>

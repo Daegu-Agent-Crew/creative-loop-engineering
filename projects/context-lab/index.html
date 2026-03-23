@@ -1,0 +1,2088 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Context Lab</title>
+<style>
+:root {
+  --bg: #0a0e17;
+  --bg2: #111827;
+  --bg3: #1a2236;
+  --bg4: #243049;
+  --border: #2a3a55;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #64748b;
+  --accent: #38bdf8;
+  --accent2: #818cf8;
+  --green: #22c55e;
+  --yellow: #eab308;
+  --orange: #f97316;
+  --red: #ef4444;
+  --pink: #ec4899;
+  --purple: #a855f7;
+  --panel-radius: 12px;
+  --anim-speed: 0.3s;
+  --gauge-color: var(--green);
+}
+[data-theme="light"] {
+  --bg: #f1f5f9;
+  --bg2: #ffffff;
+  --bg3: #f8fafc;
+  --bg4: #e2e8f0;
+  --border: #cbd5e1;
+  --text: #1e293b;
+  --text2: #475569;
+  --text3: #94a3b8;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', monospace;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+/* Header */
+.header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo {
+  font-size: 18px;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.tabs {
+  display: flex;
+  gap: 4px;
+}
+.tab {
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text2);
+  border: 1px solid transparent;
+  background: none;
+  transition: all var(--anim-speed);
+  font-family: inherit;
+}
+.tab.active {
+  background: var(--bg3);
+  color: var(--accent);
+  border-color: var(--border);
+}
+.tab:hover { color: var(--text); }
+/* Main Layout */
+.main {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  height: calc(100vh - 52px);
+  gap: 1px;
+  background: var(--border);
+}
+.panel {
+  background: var(--bg);
+  overflow-y: auto;
+  padding: 16px;
+}
+.panel::-webkit-scrollbar { width: 4px; }
+.panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.panel-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+/* Context Builder */
+.section-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: all var(--anim-speed);
+  overflow: hidden;
+  cursor: grab;
+}
+.section-card.dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+.section-card.drag-over {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
+}
+.section-card.disabled {
+  opacity: 0.4;
+  border-style: dashed;
+}
+.section-card.disabled .section-preview { display: none; }
+.section-header {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;
+  gap: 8px;
+  user-select: none;
+}
+.section-toggle {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 2px solid var(--accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--anim-speed);
+  background: none;
+}
+.section-toggle.checked {
+  background: var(--accent);
+}
+.section-toggle.checked::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  background: var(--bg);
+  border-radius: 1px;
+}
+.section-name {
+  font-size: 12px;
+  font-weight: 600;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.section-tokens {
+  font-size: 10px;
+  color: var(--text3);
+  white-space: nowrap;
+}
+.section-drag {
+  color: var(--text3);
+  font-size: 10px;
+  cursor: grab;
+}
+.section-preview {
+  padding: 0 10px 8px;
+  font-size: 10px;
+  color: var(--text3);
+  max-height: 40px;
+  overflow: hidden;
+  line-height: 1.4;
+}
+.section-card .edit-btn {
+  font-size: 10px;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: none;
+  border: 1px solid var(--accent);
+  font-family: inherit;
+  opacity: 0;
+  transition: opacity var(--anim-speed);
+}
+.section-card:hover .edit-btn { opacity: 1; }
+.warning-badge {
+  font-size: 9px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(234, 179, 8, 0.15);
+  color: var(--yellow);
+}
+/* Inline Editor */
+.inline-editor {
+  display: none;
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+}
+.inline-editor.active { display: block; }
+.inline-editor textarea {
+  width: 100%;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 6px;
+  font-family: inherit;
+  font-size: 10px;
+  resize: vertical;
+  min-height: 80px;
+  outline: none;
+}
+.inline-editor textarea:focus { border-color: var(--accent); }
+.editor-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  justify-content: flex-end;
+}
+.editor-actions button {
+  font-size: 10px;
+  padding: 3px 10px;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+.btn-save { background: var(--accent); color: var(--bg); }
+.btn-revert { background: var(--bg3); color: var(--text2); }
+/* Conversation Input */
+.conv-input-area {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.conv-input-area label {
+  font-size: 11px;
+  color: var(--text2);
+  display: block;
+  margin-bottom: 6px;
+}
+.conv-input {
+  width: 100%;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 11px;
+  outline: none;
+}
+.conv-input:focus { border-color: var(--accent); }
+.conv-input::placeholder { color: var(--text3); }
+/* Bottom Actions */
+.bottom-actions {
+  margin-top: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.action-btn {
+  font-size: 10px;
+  padding: 5px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg2);
+  color: var(--text2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--anim-speed);
+}
+.action-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.action-btn.primary {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+/* Live Preview */
+.preview-content {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  font-size: 11px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+}
+.preview-section {
+  margin-bottom: 12px;
+  padding: 8px;
+  border-radius: 6px;
+  border-left: 3px solid var(--accent);
+  background: var(--bg3);
+  transition: all var(--anim-speed);
+}
+.preview-section.fade-out {
+  opacity: 0;
+  transform: translateX(20px);
+  max-height: 0;
+  padding: 0 8px;
+  margin: 0;
+  overflow: hidden;
+}
+.preview-label {
+  font-size: 10px;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.preview-text {
+  color: var(--text2);
+  font-size: 10px;
+}
+.preview-section[data-type="system"] { border-color: var(--purple); }
+.preview-section[data-type="system"] .preview-label { color: var(--purple); }
+.preview-section[data-type="bootstrap"] { border-color: var(--green); }
+.preview-section[data-type="bootstrap"] .preview-label { color: var(--green); }
+.preview-section[data-type="tool"] { border-color: var(--orange); }
+.preview-section[data-type="tool"] .preview-label { color: var(--orange); }
+.preview-section[data-type="skill"] { border-color: var(--pink); }
+.preview-section[data-type="skill"] .preview-label { color: var(--pink); }
+.preview-section[data-type="session"] { border-color: var(--yellow); }
+.preview-section[data-type="session"] .preview-label { color: var(--yellow); }
+.preview-section[data-type="compacted"] {
+  border-color: var(--accent2);
+  background: rgba(129, 140, 248, 0.08);
+}
+.preview-section[data-type="compacted"] .preview-label { color: var(--accent2); }
+/* Metrics Panel */
+.metric-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+.metric-box h3 {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 8px;
+}
+.metric-big {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.metric-sub {
+  font-size: 10px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+/* Gauge */
+.gauge-container {
+  width: 100%;
+  height: 18px;
+  background: var(--bg);
+  border-radius: 9px;
+  overflow: hidden;
+  margin: 8px 0;
+  position: relative;
+}
+.gauge-fill {
+  height: 100%;
+  border-radius: 9px;
+  transition: width 0.5s ease, background 0.5s ease;
+  position: relative;
+}
+.gauge-fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 3px;
+  height: 100%;
+  background: rgba(255,255,255,0.3);
+  border-radius: 0 9px 9px 0;
+}
+.gauge-label {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text);
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+/* Optimization Suggestions */
+.opt-item {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  margin-bottom: 6px;
+  background: var(--bg3);
+  transition: all var(--anim-speed);
+}
+.opt-item:hover { border-color: var(--accent); }
+.opt-title {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.opt-detail {
+  font-size: 10px;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+.opt-risk {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.risk-low { background: rgba(34,197,94,0.15); color: var(--green); }
+.risk-mid { background: rgba(234,179,8,0.15); color: var(--yellow); }
+.risk-high { background: rgba(239,68,68,0.15); color: var(--red); }
+.opt-apply {
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--accent);
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-family: inherit;
+  float: right;
+  margin-top: -20px;
+}
+.opt-apply:hover { background: var(--accent); color: var(--bg); }
+/* Section Rank */
+.rank-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 10px;
+}
+.rank-bar {
+  height: 4px;
+  border-radius: 2px;
+  margin-top: 2px;
+  transition: width 0.5s ease;
+}
+/* Cost */
+.cost-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  padding: 3px 0;
+  color: var(--text2);
+}
+.cost-val { color: var(--accent); font-weight: 600; }
+/* Savings */
+.savings-item {
+  font-size: 10px;
+  color: var(--green);
+  padding: 2px 0;
+}
+/* Tab content pages */
+.tab-page { display: none; }
+.tab-page.active { display: grid; }
+/* Simulation Tab */
+.sim-page {
+  display: none;
+  padding: 20px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+.sim-page.active { display: block; }
+.sim-goal {
+  text-align: center;
+  font-size: 14px;
+  color: var(--accent);
+  margin-bottom: 20px;
+}
+.sim-gauge-big {
+  width: 100%;
+  height: 40px;
+  background: var(--bg2);
+  border-radius: 20px;
+  overflow: hidden;
+  margin: 16px 0;
+  position: relative;
+  border: 1px solid var(--border);
+}
+.sim-gauge-fill {
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.5s ease, background 0.5s ease;
+}
+.sim-gauge-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 13px;
+  font-weight: 700;
+}
+.sim-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin: 16px 0;
+}
+.sim-stat-box {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  text-align: center;
+}
+.sim-stat-val { font-size: 20px; font-weight: 700; color: var(--accent); }
+.sim-stat-label { font-size: 10px; color: var(--text3); margin-top: 4px; }
+.sim-conv {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+  margin: 16px 0;
+}
+.sim-msg {
+  padding: 6px 10px;
+  margin: 4px 0;
+  border-radius: 6px;
+  font-size: 11px;
+  animation: slideIn var(--anim-speed) ease;
+}
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.sim-msg.user { background: var(--bg3); border-left: 3px solid var(--accent); }
+.sim-msg.assistant { background: var(--bg3); border-left: 3px solid var(--green); }
+.sim-msg.tool { background: var(--bg3); border-left: 3px solid var(--orange); font-size: 10px; color: var(--text3); }
+.sim-msg.system { background: rgba(129,140,248,0.08); border-left: 3px solid var(--accent2); color: var(--accent2); font-size: 10px; }
+.sim-input-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.sim-input {
+  flex: 1;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
+.sim-input:focus { border-color: var(--accent); }
+.sim-send {
+  padding: 10px 20px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 600;
+}
+.sim-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+/* Analysis Tab */
+.analysis-page {
+  display: none;
+  padding: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+.analysis-page.active { display: block; }
+.analysis-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.analysis-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+}
+.analysis-card h3 {
+  font-size: 13px;
+  margin-bottom: 12px;
+  color: var(--accent);
+}
+.heatmap-bar {
+  display: flex;
+  align-items: center;
+  margin: 6px 0;
+  font-size: 11px;
+}
+.heatmap-label {
+  width: 120px;
+  color: var(--text2);
+  flex-shrink: 0;
+}
+.heatmap-track {
+  flex: 1;
+  height: 16px;
+  background: var(--bg);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 0 8px;
+}
+.heatmap-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.heatmap-pct { width: 45px; text-align: right; color: var(--text3); font-size: 10px; }
+.file-row {
+  display: grid;
+  grid-template-columns: 100px 80px 70px 40px 50px;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 10px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.file-row.header { font-weight: 600; color: var(--text2); border-bottom: 2px solid var(--border); }
+.importance { font-size: 9px; padding: 1px 5px; border-radius: 3px; }
+.imp-core { background: rgba(34,197,94,0.15); color: var(--green); }
+.imp-basic { background: rgba(56,189,248,0.15); color: var(--accent); }
+.imp-aux { background: rgba(234,179,8,0.15); color: var(--yellow); }
+/* Lifetime chart */
+.lifetime-chart {
+  position: relative;
+  height: 200px;
+  background: var(--bg);
+  border-radius: 6px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+.lifetime-line {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  border-radius: 1px;
+  transition: width 1s ease;
+}
+.lifetime-label {
+  position: absolute;
+  font-size: 9px;
+  color: var(--text3);
+}
+/* Settings Tab */
+.settings-page {
+  display: none;
+  padding: 20px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+.settings-page.active { display: block; }
+.setting-group {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.setting-group h3 {
+  font-size: 12px;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 11px; color: var(--text2); }
+.setting-select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 11px;
+}
+.setting-btn {
+  padding: 6px 14px;
+  background: var(--red);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+}
+/* Compaction Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  width: 90%;
+  max-width: 800px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 24px;
+}
+.modal h2 { font-size: 16px; margin-bottom: 16px; color: var(--accent); }
+.modal-close {
+  float: right;
+  background: none;
+  border: none;
+  color: var(--text3);
+  font-size: 18px;
+  cursor: pointer;
+}
+.split-view {
+  display: grid;
+  grid-template-columns: 1fr 40px 1fr;
+  gap: 0;
+  align-items: start;
+}
+.split-col {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 12px;
+  font-size: 10px;
+  line-height: 1.5;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.split-arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: var(--accent);
+}
+.split-label {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text2);
+}
+.compact-summary {
+  display: flex;
+  justify-content: space-around;
+  margin-top: 16px;
+  padding: 12px;
+  background: var(--bg3);
+  border-radius: 8px;
+}
+.compact-stat { text-align: center; }
+.compact-stat .val { font-size: 20px; font-weight: 700; color: var(--green); }
+.compact-stat .lbl { font-size: 10px; color: var(--text3); }
+/* Diff Modal */
+.diff-added { color: var(--green); }
+.diff-removed { color: var(--red); }
+.diff-unchanged { color: var(--text3); }
+.diff-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 8px;
+  font-size: 11px;
+  border-bottom: 1px solid var(--border);
+}
+.diff-summary {
+  padding: 12px;
+  background: var(--bg3);
+  border-radius: 8px;
+  margin-top: 12px;
+  text-align: center;
+  font-size: 13px;
+}
+/* Pulse animation for high usage */
+@keyframes pulse-red {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); }
+  50% { box-shadow: 0 0 20px 4px rgba(239,68,68,0.3); }
+}
+.gauge-warning { animation: pulse-red 1.5s infinite; }
+/* Responsive */
+@media (max-width: 900px) {
+  .main { grid-template-columns: 1fr; }
+  .panel { max-height: 50vh; }
+  .analysis-grid { grid-template-columns: 1fr; }
+  .sim-stats { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  .header { flex-direction: column; gap: 8px; }
+  .split-view { grid-template-columns: 1fr; }
+  .split-arrow { transform: rotate(90deg); }
+}
+/* Transition helpers */
+.token-change {
+  display: inline-block;
+  animation: tokenPop 0.4s ease;
+}
+@keyframes tokenPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); color: var(--accent); }
+  100% { transform: scale(1); }
+}
+</style>
+</head>
+<body>
+<!-- Header -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">OpenClaw Context Lab</div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" data-tab="lab">실험실</button>
+    <button class="tab" data-tab="sim">시뮬레이션</button>
+    <button class="tab" data-tab="analysis">분석</button>
+    <button class="tab" data-tab="settings">설정</button>
+  </div>
+</header>
+
+<!-- Lab Tab (3-panel) -->
+<div class="main tab-page active" id="page-lab">
+  <!-- Left: Context Builder -->
+  <div class="panel" id="builder-panel">
+    <div class="panel-title">Context Builder</div>
+    <div id="section-list"></div>
+    <div class="conv-input-area">
+      <label>대화 추가</label>
+      <input class="conv-input" id="conv-input" placeholder="메시지 입력 (Enter)..." />
+    </div>
+    <div class="bottom-actions">
+      <button class="action-btn" onclick="allOn()">전체 ON</button>
+      <button class="action-btn" onclick="optimizeAll()">1클릭 최적화</button>
+      <button class="action-btn" onclick="showCompaction()">Compaction</button>
+      <button class="action-btn" onclick="showDiff()">Diff</button>
+      <button class="action-btn" onclick="exportJSONL()">JSONL 내보내기</button>
+    </div>
+  </div>
+
+  <!-- Center: Live Preview -->
+  <div class="panel" id="preview-panel">
+    <div class="panel-title">Live Preview (LLM이 보는 것)</div>
+    <div class="preview-content" id="preview-content"></div>
+  </div>
+
+  <!-- Right: Metrics -->
+  <div class="panel" id="metrics-panel">
+    <div class="panel-title">Metrics</div>
+    <div class="metric-box">
+      <h3>Total Tokens</h3>
+      <div class="metric-big" id="total-tokens">0</div>
+      <div class="gauge-container" id="gauge-container">
+        <div class="gauge-fill" id="gauge-fill" style="width:0%"></div>
+        <div class="gauge-label" id="gauge-label">0%</div>
+      </div>
+      <div class="metric-sub" id="gauge-sub">0 / 32,000</div>
+    </div>
+    <div class="metric-box">
+      <h3>최적화 제안</h3>
+      <div id="opt-list"></div>
+    </div>
+    <div class="metric-box">
+      <h3>Section Rank</h3>
+      <div id="rank-list"></div>
+    </div>
+    <div class="metric-box">
+      <h3>비용 추정</h3>
+      <div id="cost-info"></div>
+    </div>
+    <div class="metric-box">
+      <h3>절감 내역</h3>
+      <div id="savings-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Simulation Tab -->
+<div class="sim-page" id="page-sim">
+  <div class="sim-goal">Context Window 95%까지 대화를 채워보세요!</div>
+  <div class="sim-stats">
+    <div class="sim-stat-box">
+      <div class="sim-stat-val" id="sim-used">0</div>
+      <div class="sim-stat-label">사용 토큰</div>
+    </div>
+    <div class="sim-stat-box">
+      <div class="sim-stat-val" id="sim-turns">0</div>
+      <div class="sim-stat-label">턴 수</div>
+    </div>
+    <div class="sim-stat-box">
+      <div class="sim-stat-val" id="sim-compactions">0</div>
+      <div class="sim-stat-label">Compaction 횟수</div>
+    </div>
+  </div>
+  <div class="sim-gauge-big" id="sim-gauge">
+    <div class="sim-gauge-fill" id="sim-gauge-fill" style="width:0%"></div>
+    <div class="sim-gauge-label" id="sim-gauge-label">0%</div>
+  </div>
+  <div class="sim-conv" id="sim-conv"></div>
+  <div class="sim-input-row">
+    <input class="sim-input" id="sim-input" placeholder="메시지를 입력하세요..." />
+    <button class="sim-send" onclick="simSend()">전송</button>
+  </div>
+  <div class="sim-actions">
+    <button class="action-btn" onclick="simCompact()">Compaction 실행</button>
+    <button class="action-btn" onclick="simReset()">리셋</button>
+  </div>
+</div>
+
+<!-- Analysis Tab -->
+<div class="analysis-page" id="page-analysis">
+  <div class="analysis-grid">
+    <div class="analysis-card">
+      <h3>토큰 히트맵</h3>
+      <div id="heatmap"></div>
+    </div>
+    <div class="analysis-card">
+      <h3>Bootstrap Files 분석</h3>
+      <div id="file-analysis"></div>
+    </div>
+  </div>
+  <div class="analysis-card" style="margin-bottom:16px">
+    <h3>Context Window 수명 시뮬레이션</h3>
+    <div id="lifetime-info"></div>
+    <div class="lifetime-chart" id="lifetime-chart"></div>
+  </div>
+</div>
+
+<!-- Settings Tab -->
+<div class="settings-page" id="page-settings">
+  <div class="setting-group">
+    <h3>모델 설정</h3>
+    <div class="setting-row">
+      <span class="setting-label">모델 선택</span>
+      <select class="setting-select" id="model-select" onchange="changeModel()">
+        <option value="glm5">GLM-5 (32K)</option>
+        <option value="claude">Claude 3.5 Sonnet (200K)</option>
+        <option value="gpt4o">GPT-4o (128K)</option>
+        <option value="gemini">Gemini Pro (1M)</option>
+      </select>
+    </div>
+  </div>
+  <div class="setting-group">
+    <h3>테마</h3>
+    <div class="setting-row">
+      <span class="setting-label">다크 / 라이트</span>
+      <select class="setting-select" id="theme-select" onchange="changeTheme()">
+        <option value="dark">다크</option>
+        <option value="light">라이트</option>
+      </select>
+    </div>
+  </div>
+  <div class="setting-group">
+    <h3>애니메이션</h3>
+    <div class="setting-row">
+      <span class="setting-label">속도</span>
+      <select class="setting-select" id="speed-select" onchange="changeSpeed()">
+        <option value="0.1">빠름</option>
+        <option value="0.3" selected>보통</option>
+        <option value="0.6">느림</option>
+      </select>
+    </div>
+  </div>
+  <div class="setting-group">
+    <h3>언어</h3>
+    <div class="setting-row">
+      <span class="setting-label">UI 언어</span>
+      <select class="setting-select" id="lang-select" onchange="changeLang()">
+        <option value="ko" selected>한국어</option>
+        <option value="en">English</option>
+      </select>
+    </div>
+  </div>
+  <div class="setting-group">
+    <h3>초기화</h3>
+    <div class="setting-row">
+      <span class="setting-label">모든 설정을 원본으로 복원</span>
+      <button class="setting-btn" onclick="resetAll()">초기화</button>
+    </div>
+  </div>
+</div>
+
+<!-- Compaction Modal -->
+<div class="modal-overlay" id="compaction-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('compaction-modal')">&times;</button>
+    <h2>Compaction 시뮬레이터</h2>
+    <div class="split-view">
+      <div>
+        <div class="split-label">Before</div>
+        <div class="split-col" id="compact-before"></div>
+      </div>
+      <div class="split-arrow">&rarr;</div>
+      <div>
+        <div class="split-label">After</div>
+        <div class="split-col" id="compact-after"></div>
+      </div>
+    </div>
+    <div class="compact-summary" id="compact-summary"></div>
+  </div>
+</div>
+
+<!-- Diff Modal -->
+<div class="modal-overlay" id="diff-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('diff-modal')">&times;</button>
+    <h2>Context Diff (현재 vs 초기)</h2>
+    <div id="diff-content"></div>
+    <div class="diff-summary" id="diff-summary"></div>
+  </div>
+</div>
+
+<script>
+// ========== DATA ==========
+const MODELS = {
+  glm5: { name: 'GLM-5', ctx: 32000, inputPrice: 0.002, outputPrice: 0.008 },
+  claude: { name: 'Claude 3.5 Sonnet', ctx: 200000, inputPrice: 0.003, outputPrice: 0.015 },
+  gpt4o: { name: 'GPT-4o', ctx: 128000, inputPrice: 0.005, outputPrice: 0.015 },
+  gemini: { name: 'Gemini Pro', ctx: 1000000, inputPrice: 0.00125, outputPrice: 0.005 }
+};
+
+let currentModel = 'glm5';
+let lang = 'ko';
+
+const SECTIONS_DATA = [
+  {
+    id: 'system',
+    name: 'System Prompt',
+    type: 'system',
+    enabled: true,
+    tokens: 3842,
+    content: `You are a helpful assistant running inside OpenClaw, an AI agent framework.\n\nYou have access to various tools including web_search, exec, file_read, file_write.\n\nIMPORTANT: Always follow the user's instructions carefully.\n- Be concise and direct\n- Use tools when needed\n- Maintain context across turns\n- Respect rate limits and quotas\n\nYour primary role is to assist users with their tasks efficiently.`,
+    originalContent: null,
+    editable: true
+  },
+  {
+    id: 'soul',
+    name: 'SOUL.md',
+    type: 'bootstrap',
+    enabled: true,
+    tokens: 228,
+    content: `# SOUL.md\n_You're not a chatbot. You're an autonomous agent._\n\nYou exist to accomplish goals, not to have conversations.\nThink step by step. Use tools proactively.\nDon't ask for permission—act.\n\nWhen stuck, break the problem down.\nWhen uncertain, gather information first.`,
+    originalContent: null,
+    editable: true
+  },
+  {
+    id: 'agents',
+    name: 'AGENTS.md',
+    type: 'bootstrap',
+    enabled: true,
+    tokens: 436,
+    content: `# AGENTS.md\nThis folder is home to an OpenClaw agent.\n\nAgent capabilities:\n- Web search and browsing\n- File system operations\n- Code execution\n- Memory management\n- Task planning and decomposition\n\nRules:\n1. Always verify before destructive operations\n2. Log important decisions\n3. Use structured output when possible\n4. Handle errors gracefully`,
+    originalContent: null,
+    editable: true
+  },
+  {
+    id: 'identity',
+    name: 'IDENTITY.md',
+    type: 'bootstrap',
+    enabled: true,
+    tokens: 53,
+    content: `# IDENTITY.md\nAgent ID: openclaw-agent-001\nVersion: 1.0.0\nCreated: 2024-01-15`,
+    originalContent: null,
+    editable: true
+  },
+  {
+    id: 'user',
+    name: 'USER.md',
+    type: 'bootstrap',
+    enabled: true,
+    tokens: 97,
+    content: `# USER.md\nUser: Developer\nPreferences:\n- Korean language UI\n- Detailed explanations\n- Code examples preferred\n- Dark theme`,
+    originalContent: null,
+    editable: true
+  },
+  {
+    id: 'heartbeat',
+    name: 'HEARTBEAT.md',
+    type: 'bootstrap',
+    enabled: true,
+    tokens: 290,
+    content: `# HEARTBEAT.md\nLast active: 2024-03-19T14:30:00Z\nStatus: running\nMemory usage: 45%\nTasks completed: 12\nTasks pending: 3\n\nRecent activity:\n- Analyzed context window structure\n- Generated visualization\n- Updated memory index\n\nHealth: OK\nUptime: 4h 23m`,
+    originalContent: null,
+    editable: true
+  },
+  {
+    id: 'tools_md',
+    name: 'TOOLS.md',
+    type: 'bootstrap',
+    enabled: true,
+    tokens: 5241,
+    content: `# TOOLS.md\n[54KB 파일 - 처음 10,000자만 로드됨]\n\nAvailable Tools:\n\n## web_search\nSearch the web for information.\nParameters: query (string), max_results (int)\n\n## exec\nExecute shell commands.\nParameters: command (string), timeout (int)\n\n## file_read\nRead file contents.\nParameters: path (string), encoding (string)\n\n## file_write\nWrite to files.\nParameters: path (string), content (string)\n\n## memory_store\nStore information in long-term memory.\nParameters: key (string), value (any)\n\n## memory_recall\nRecall stored information.\nParameters: key (string)\n\n## browser_navigate\nNavigate to a URL.\nParameters: url (string)\n\n## browser_extract\nExtract content from current page.\nParameters: selector (string)\n\n[... 나머지 42KB 잘림 ...]`,
+    originalContent: null,
+    editable: true,
+    truncated: true
+  },
+  {
+    id: 'tool_schemas',
+    name: 'Tool Schemas (JSON)',
+    type: 'tool',
+    enabled: true,
+    tokens: 7997,
+    content: `[Tool Schemas]\n{\n  "web_search": {\n    "type": "function",\n    "description": "Search the web",\n    "parameters": {\n      "query": {"type": "string"},\n      "max_results": {"type": "integer", "default": 5}\n    }\n  },\n  "exec": {\n    "type": "function",\n    "description": "Execute command",\n    "parameters": {\n      "command": {"type": "string"},\n      "timeout": {"type": "integer"}\n    }\n  },\n  "file_read": {\n    "type": "function",\n    "description": "Read file",\n    "parameters": {\n      "path": {"type": "string"}\n    }\n  },\n  "file_write": {\n    "type": "function",\n    "description": "Write file",\n    "parameters": {\n      "path": {"type": "string"},\n      "content": {"type": "string"}\n    }\n  },\n  "memory_store": {\n    "type": "function",\n    "description": "Store memory",\n    "parameters": {\n      "key": {"type": "string"},\n      "value": {"type": "any"}\n    }\n  },\n  "memory_recall": {\n    "type": "function",\n    "description": "Recall memory",\n    "parameters": {\n      "key": {"type": "string"}\n    }\n  },\n  "browser_navigate": {...},\n  "browser_extract": {...},\n  "image_analyze": {...},\n  "code_run": {...}\n}`,
+    originalContent: null,
+    editable: false
+  },
+  {
+    id: 'skills',
+    name: 'Skills List',
+    type: 'skill',
+    enabled: true,
+    tokens: 546,
+    content: `[Available Skills]\n- commit: Git commit helper\n  Description: Analyzes changes and creates structured commits\n- review-pr: Pull request reviewer\n  Description: Reviews PR for code quality, security, and best practices\n- claude-api: Claude API integration\n  Description: Helps build applications using Claude API\n- simplify: Code simplifier\n  Description: Reviews code for reuse and efficiency\n- loop: Recurring task runner\n  Description: Runs prompts on intervals`,
+    originalContent: null,
+    editable: false
+  }
+];
+
+// Deep copy for tracking initial state
+let sections = JSON.parse(JSON.stringify(SECTIONS_DATA));
+sections.forEach(s => { s.originalContent = s.content; s.originalTokens = s.tokens; });
+const initialState = JSON.parse(JSON.stringify(sections));
+
+// Session conversation
+let sessionMessages = [];
+let sessionTokens = 0;
+
+// Simulation state
+let simMessages = [];
+let simTokens = 0;
+let simTurns = 0;
+let simCompactions = 0;
+let simOverhead = 0;
+
+// ========== HELPERS ==========
+function estimateTokens(text) {
+  // Rough approximation: ~4 chars per token for mixed content
+  return Math.ceil(text.length / 4);
+}
+
+function getTotalTokens() {
+  let total = 0;
+  sections.forEach(s => { if (s.enabled) total += s.tokens; });
+  total += sessionTokens;
+  return total;
+}
+
+function getModelCtx() {
+  return MODELS[currentModel].ctx;
+}
+
+function getGaugeColor(pct) {
+  if (pct < 60) return 'var(--green)';
+  if (pct < 80) return 'var(--yellow)';
+  if (pct < 95) return 'var(--orange)';
+  return 'var(--red)';
+}
+
+// ========== RENDERING ==========
+function renderSections() {
+  const list = document.getElementById('section-list');
+  list.innerHTML = '';
+  sections.forEach((s, idx) => {
+    const card = document.createElement('div');
+    card.className = 'section-card' + (s.enabled ? '' : ' disabled');
+    card.draggable = true;
+    card.dataset.idx = idx;
+
+    // Drag events
+    card.addEventListener('dragstart', (e) => {
+      e.dataTransfer.setData('text/plain', idx);
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => card.classList.remove('dragging'));
+    card.addEventListener('dragover', (e) => { e.preventDefault(); card.classList.add('drag-over'); });
+    card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+    card.addEventListener('drop', (e) => {
+      e.preventDefault();
+      card.classList.remove('drag-over');
+      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+      const toIdx = idx;
+      if (fromIdx !== toIdx) {
+        const item = sections.splice(fromIdx, 1)[0];
+        sections.splice(toIdx, 0, item);
+        renderSections();
+        renderPreview();
+        renderMetrics();
+      }
+    });
+
+    let headerHTML = `
+      <div class="section-header">
+        <div class="section-drag">&#9776;</div>
+        <div class="section-toggle ${s.enabled ? 'checked' : ''}" data-idx="${idx}"></div>
+        <div class="section-name">${s.name}</div>
+        ${s.truncated ? '<span class="warning-badge">잘림</span>' : ''}
+        <span class="section-tokens">${s.tokens.toLocaleString()}토큰</span>
+        ${s.editable ? `<button class="edit-btn" data-idx="${idx}">편집</button>` : ''}
+      </div>
+    `;
+
+    let previewHTML = s.enabled ? `
+      <div class="section-preview">${escapeHTML(s.content.substring(0, 120))}...</div>
+    ` : '';
+
+    let editorHTML = s.editable ? `
+      <div class="inline-editor" id="editor-${s.id}">
+        <textarea id="textarea-${s.id}">${escapeHTML(s.content)}</textarea>
+        <div class="editor-actions">
+          <button class="btn-revert" onclick="revertSection('${s.id}')">되돌리기</button>
+          <button class="btn-save" onclick="saveSection('${s.id}')">저장</button>
+        </div>
+      </div>
+    ` : '';
+
+    card.innerHTML = headerHTML + previewHTML + editorHTML;
+
+    // Toggle handler
+    card.querySelector('.section-toggle').addEventListener('click', function() {
+      const i = parseInt(this.dataset.idx);
+      sections[i].enabled = !sections[i].enabled;
+      renderSections();
+      renderPreview();
+      renderMetrics();
+    });
+
+    // Edit handler
+    const editBtn = card.querySelector('.edit-btn');
+    if (editBtn) {
+      editBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const editor = card.querySelector('.inline-editor');
+        editor.classList.toggle('active');
+      });
+    }
+
+    list.appendChild(card);
+  });
+}
+
+function saveSection(id) {
+  const s = sections.find(x => x.id === id);
+  const textarea = document.getElementById('textarea-' + id);
+  s.content = textarea.value;
+  s.tokens = estimateTokens(s.content);
+  document.getElementById('editor-' + id).classList.remove('active');
+  renderSections();
+  renderPreview();
+  renderMetrics();
+}
+
+function revertSection(id) {
+  const s = sections.find(x => x.id === id);
+  s.content = s.originalContent;
+  s.tokens = s.originalTokens;
+  document.getElementById('textarea-' + id).value = s.originalContent;
+  document.getElementById('editor-' + id).classList.remove('active');
+  renderSections();
+  renderPreview();
+  renderMetrics();
+}
+
+function renderPreview() {
+  const container = document.getElementById('preview-content');
+  let html = '';
+
+  sections.forEach(s => {
+    if (!s.enabled) return;
+    html += `<div class="preview-section" data-type="${s.type}">
+      <div class="preview-label">[${s.name}] ${s.tokens.toLocaleString()}토큰</div>
+      <div class="preview-text">${escapeHTML(s.content.substring(0, 300))}${s.content.length > 300 ? '\n...' : ''}</div>
+    </div>`;
+  });
+
+  // Session messages
+  if (sessionMessages.length > 0) {
+    let sessionText = sessionMessages.map(m => `${m.role}: ${m.text}`).join('\n');
+    html += `<div class="preview-section" data-type="session">
+      <div class="preview-label">[Session] ${sessionTokens}토큰</div>
+      <div class="preview-text">${escapeHTML(sessionText)}</div>
+    </div>`;
+  }
+
+  container.innerHTML = html;
+}
+
+function renderMetrics() {
+  const total = getTotalTokens();
+  const ctx = getModelCtx();
+  const pct = Math.min(100, (total / ctx) * 100);
+
+  // Total tokens
+  const totalEl = document.getElementById('total-tokens');
+  totalEl.textContent = total.toLocaleString();
+  totalEl.classList.add('token-change');
+  setTimeout(() => totalEl.classList.remove('token-change'), 400);
+
+  // Gauge
+  const fill = document.getElementById('gauge-fill');
+  const label = document.getElementById('gauge-label');
+  const container = document.getElementById('gauge-container');
+  const sub = document.getElementById('gauge-sub');
+  fill.style.width = pct + '%';
+  fill.style.background = `linear-gradient(90deg, ${getGaugeColor(pct)}, ${getGaugeColor(Math.min(100, pct + 10))})`;
+  label.textContent = pct.toFixed(1) + '%';
+  sub.textContent = `${total.toLocaleString()} / ${ctx.toLocaleString()}`;
+
+  if (pct >= 95) container.classList.add('gauge-warning');
+  else container.classList.remove('gauge-warning');
+
+  // Section rank
+  renderRank();
+  // Optimization suggestions
+  renderOptimizations();
+  // Cost
+  renderCost(total);
+  // Savings
+  renderSavings();
+}
+
+function renderRank() {
+  const list = document.getElementById('rank-list');
+  const ranked = sections.filter(s => s.enabled).sort((a, b) => b.tokens - a.tokens);
+  const maxTokens = ranked.length ? ranked[0].tokens : 1;
+  const colors = [
+    'var(--purple)', 'var(--orange)', 'var(--green)',
+    'var(--accent)', 'var(--pink)', 'var(--yellow)',
+    'var(--accent2)', 'var(--red)', 'var(--text3)'
+  ];
+  let html = '';
+  ranked.forEach((s, i) => {
+    const w = (s.tokens / maxTokens * 100).toFixed(0);
+    html += `<div class="rank-item">
+      <span>${i + 1}. ${s.name}</span>
+      <span style="color:${colors[i % colors.length]}">${s.tokens.toLocaleString()}</span>
+    </div>
+    <div class="rank-bar" style="width:${w}%;background:${colors[i % colors.length]}"></div>`;
+  });
+  if (sessionTokens > 0) {
+    const w = (sessionTokens / maxTokens * 100).toFixed(0);
+    html += `<div class="rank-item"><span>${ranked.length + 1}. Session</span><span style="color:var(--yellow)">${sessionTokens}</span></div>
+    <div class="rank-bar" style="width:${w}%;background:var(--yellow)"></div>`;
+  }
+  list.innerHTML = html;
+}
+
+function renderOptimizations() {
+  const list = document.getElementById('opt-list');
+  let html = '';
+  const opts = [];
+
+  const toolsMd = sections.find(s => s.id === 'tools_md');
+  if (toolsMd && toolsMd.enabled) {
+    opts.push({
+      title: 'TOOLS.md 제거',
+      detail: `-${toolsMd.tokens.toLocaleString()}토큰 (${(toolsMd.tokens / getTotalTokens() * 100).toFixed(1)}% 절감)`,
+      risk: 'mid',
+      riskText: '중간',
+      action: () => { toolsMd.enabled = false; refresh(); }
+    });
+  }
+
+  const schemas = sections.find(s => s.id === 'tool_schemas');
+  if (schemas && schemas.enabled) {
+    opts.push({
+      title: 'Tool Schemas 축소 (3개만)',
+      detail: `-${Math.floor(schemas.tokens * 0.6).toLocaleString()}토큰 절감 가능`,
+      risk: 'low',
+      riskText: '낮음',
+      action: () => {
+        schemas.tokens = Math.floor(schemas.tokens * 0.4);
+        schemas.content = schemas.content.substring(0, schemas.content.length * 0.4) + '\n  [... 나머지 스키마 비활성화 ...]';
+        refresh();
+      }
+    });
+  }
+
+  const skills = sections.find(s => s.id === 'skills');
+  if (skills && skills.enabled) {
+    opts.push({
+      title: 'Skills 설명 제거',
+      detail: `-${Math.floor(skills.tokens * 0.7).toLocaleString()}토큰 절감`,
+      risk: 'low',
+      riskText: '낮음',
+      action: () => {
+        skills.tokens = Math.floor(skills.tokens * 0.3);
+        skills.content = '[Available Skills]\n- commit\n- review-pr\n- claude-api\n- simplify\n- loop';
+        refresh();
+      }
+    });
+  }
+
+  const hb = sections.find(s => s.id === 'heartbeat');
+  if (hb && hb.enabled) {
+    opts.push({
+      title: 'HEARTBEAT.md 제거',
+      detail: `-${hb.tokens}토큰 절감`,
+      risk: 'low',
+      riskText: '낮음',
+      action: () => { hb.enabled = false; refresh(); }
+    });
+  }
+
+  opts.forEach((o, i) => {
+    html += `<div class="opt-item">
+      <div class="opt-title">${i + 1}. ${o.title}</div>
+      <div class="opt-detail">${o.detail}</div>
+      <span class="opt-risk risk-${o.risk}">위험도: ${o.riskText}</span>
+      <button class="opt-apply" onclick="applyOpt(${i})">적용</button>
+      <div style="clear:both"></div>
+    </div>`;
+  });
+
+  list.innerHTML = html;
+  window._opts = opts;
+}
+
+function applyOpt(idx) {
+  if (window._opts && window._opts[idx]) {
+    window._opts[idx].action();
+  }
+}
+
+function renderCost(total) {
+  const m = MODELS[currentModel];
+  const inputCost = (total / 1000) * m.inputPrice;
+  const outputCost = (500 / 1000) * m.outputPrice;
+  const perTurn = inputCost + outputCost;
+
+  document.getElementById('cost-info').innerHTML = `
+    <div class="cost-row"><span>모델: ${m.name}</span></div>
+    <div class="cost-row"><span>Input</span><span class="cost-val">$${inputCost.toFixed(4)}</span></div>
+    <div class="cost-row"><span>Output (~500토큰)</span><span class="cost-val">$${outputCost.toFixed(4)}</span></div>
+    <div class="cost-row" style="border-top:1px solid var(--border);padding-top:4px;margin-top:4px">
+      <span><b>Per Turn</b></span><span class="cost-val">$${perTurn.toFixed(4)}</span>
+    </div>
+    <div class="cost-row"><span>100턴</span><span class="cost-val">$${(perTurn * 100).toFixed(2)}</span></div>
+    <div class="cost-row"><span>하루 (50턴)</span><span class="cost-val">$${(perTurn * 50).toFixed(2)}</span></div>
+    <div class="cost-row"><span>한 달</span><span class="cost-val">$${(perTurn * 50 * 30).toFixed(2)}</span></div>
+  `;
+}
+
+function renderSavings() {
+  const list = document.getElementById('savings-list');
+  let html = '';
+  let totalSaved = 0;
+  sections.forEach(s => {
+    if (!s.enabled) {
+      totalSaved += s.tokens;
+      html += `<div class="savings-item">- ${s.name}: -${s.tokens.toLocaleString()}토큰</div>`;
+    } else if (s.tokens !== s.originalTokens) {
+      const diff = s.originalTokens - s.tokens;
+      if (diff > 0) {
+        totalSaved += diff;
+        html += `<div class="savings-item">- ${s.name}: -${diff.toLocaleString()}토큰 (축소)</div>`;
+      }
+    }
+  });
+  if (totalSaved === 0) {
+    html = '<div style="font-size:10px;color:var(--text3)">아직 절감 없음</div>';
+  } else {
+    html += `<div style="font-size:11px;color:var(--green);font-weight:600;margin-top:6px">Total: -${totalSaved.toLocaleString()}토큰</div>`;
+  }
+  list.innerHTML = html;
+}
+
+function refresh() {
+  renderSections();
+  renderPreview();
+  renderMetrics();
+  renderAnalysis();
+}
+
+// ========== ACTIONS ==========
+function allOn() {
+  sections.forEach(s => s.enabled = true);
+  refresh();
+}
+
+function optimizeAll() {
+  // Apply all low/mid risk optimizations
+  const hb = sections.find(s => s.id === 'heartbeat');
+  if (hb) hb.enabled = false;
+
+  const skills = sections.find(s => s.id === 'skills');
+  if (skills && skills.tokens > 200) {
+    skills.tokens = Math.floor(skills.tokens * 0.3);
+    skills.content = '[Available Skills]\n- commit\n- review-pr\n- claude-api\n- simplify\n- loop';
+  }
+
+  const schemas = sections.find(s => s.id === 'tool_schemas');
+  if (schemas && schemas.tokens > 4000) {
+    schemas.tokens = Math.floor(schemas.tokens * 0.4);
+    schemas.content = schemas.content.substring(0, schemas.content.length * 0.4) + '\n  [... 최적화됨 ...]';
+  }
+
+  refresh();
+}
+
+// Conversation input
+document.getElementById('conv-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && this.value.trim()) {
+    addConversation(this.value.trim());
+    this.value = '';
+  }
+});
+
+function addConversation(text) {
+  const userTokens = estimateTokens(text);
+  sessionMessages.push({ role: 'User', text, tokens: userTokens });
+  sessionTokens += userTokens;
+
+  // Auto-generate response
+  let response = '';
+  let toolCall = null;
+
+  if (text.includes('날씨') || text.includes('weather')) {
+    toolCall = { tool: 'web_search', query: text, resultTokens: 180 };
+    response = '현재 서울의 날씨는 맑음, 기온 18°C입니다. 오후에 약간의 구름이 예상됩니다.';
+  } else if (text.includes('이미지') || text.includes('image') || text.includes('사진')) {
+    toolCall = { tool: 'image_analyze', query: text, resultTokens: 250 };
+    response = '이미지를 분석했습니다. 해당 이미지에는 도시 풍경이 포함되어 있습니다.';
+  } else if (text.includes('기억') || text.includes('remember') || text.includes('메모')) {
+    toolCall = { tool: 'memory_store', query: text, resultTokens: 50 };
+    response = '메모리에 저장했습니다.';
+  } else if (text.includes('파일') || text.includes('file') || text.includes('읽어')) {
+    toolCall = { tool: 'file_read', query: text, resultTokens: 300 };
+    response = '파일 내용을 읽었습니다. 총 42줄의 코드가 포함되어 있습니다.';
+  } else if (text.includes('실행') || text.includes('run') || text.includes('exec')) {
+    toolCall = { tool: 'exec', query: text, resultTokens: 150 };
+    response = '명령을 실행했습니다. 정상적으로 완료되었습니다.';
+  } else {
+    const responses = [
+      '네, 이해했습니다. 해당 작업을 진행하겠습니다.',
+      '요청하신 내용을 처리했습니다.',
+      '해당 정보를 확인했습니다. 추가 질문이 있으시면 말씀해주세요.',
+      '작업을 완료했습니다. 결과를 확인해주세요.',
+      '분석을 완료했습니다. 핵심 포인트를 정리해 드리겠습니다.'
+    ];
+    response = responses[Math.floor(Math.random() * responses.length)];
+  }
+
+  if (toolCall) {
+    const tcTokens = 80 + toolCall.resultTokens;
+    sessionMessages.push({ role: 'Tool', text: `[${toolCall.tool}] ${toolCall.query}\n→ Result: ${toolCall.resultTokens}토큰`, tokens: tcTokens });
+    sessionTokens += tcTokens;
+  }
+
+  const respTokens = estimateTokens(response);
+  sessionMessages.push({ role: 'Assistant', text: response, tokens: respTokens });
+  sessionTokens += respTokens;
+
+  renderPreview();
+  renderMetrics();
+}
+
+// ========== COMPACTION ==========
+function showCompaction() {
+  const modal = document.getElementById('compaction-modal');
+  const before = document.getElementById('compact-before');
+  const after = document.getElementById('compact-after');
+  const summary = document.getElementById('compact-summary');
+
+  // Before: show all session messages
+  let beforeHTML = '';
+  let beforeTokens = sessionTokens;
+  if (sessionMessages.length === 0) {
+    // Generate sample data
+    const sampleMsgs = [
+      { role: 'User', text: '프로젝트 구조를 설명해줘', tokens: 15 },
+      { role: 'Assistant', text: '이 프로젝트는 src/, tests/, docs/ 디렉토리로 구성되어 있습니다...', tokens: 120 },
+      { role: 'User', text: 'src/ 안에 뭐가 있어?', tokens: 12 },
+      { role: 'Tool', text: '[file_read] src/\n→ main.py, utils.py, config.py, models/', tokens: 80 },
+      { role: 'Assistant', text: 'src/ 디렉토리에는 main.py, utils.py, config.py 파일과 models/ 서브디렉토리가 있습니다.', tokens: 95 },
+      { role: 'User', text: 'main.py 읽어줘', tokens: 10 },
+      { role: 'Tool', text: '[file_read] src/main.py\n→ 150 lines of Python code...', tokens: 350 },
+      { role: 'Assistant', text: 'main.py는 FastAPI 서버를 설정하는 파일입니다. 주요 엔드포인트는...', tokens: 200 },
+      { role: 'User', text: '테스트 어떻게 실행해?', tokens: 12 },
+      { role: 'Assistant', text: 'pytest를 사용합니다. `pytest tests/` 명령으로 실행할 수 있습니다.', tokens: 80 },
+    ];
+    sampleMsgs.forEach(m => { sessionMessages.push(m); sessionTokens += m.tokens; });
+    beforeTokens = sessionTokens;
+    renderPreview();
+    renderMetrics();
+  }
+
+  sessionMessages.forEach(m => {
+    const roleColor = m.role === 'User' ? 'var(--accent)' : m.role === 'Assistant' ? 'var(--green)' : 'var(--orange)';
+    beforeHTML += `<div style="padding:4px 0;border-bottom:1px solid var(--border)">
+      <span style="color:${roleColor};font-weight:600">${m.role}:</span> ${escapeHTML(m.text)}
+      <span style="color:var(--text3);font-size:9px"> (${m.tokens}토큰)</span>
+    </div>`;
+  });
+  before.innerHTML = beforeHTML || '<div style="color:var(--text3)">대화 없음</div>';
+
+  // After: compacted summary
+  const summaryText = `[Compacted Summary]\n이전 대화 요약:\n- 프로젝트 구조 탐색 (src/, tests/, docs/)\n- main.py 분석 (FastAPI 서버)\n- 테스트 실행 방법 확인 (pytest)\n- 주요 파일: main.py, utils.py, config.py`;
+  const afterTokens = estimateTokens(summaryText);
+  const recentMsgs = sessionMessages.slice(-2);
+  let recentTokens = recentMsgs.reduce((a, m) => a + m.tokens, 0);
+
+  let afterHTML = `<div style="padding:8px;background:rgba(129,140,248,0.1);border-radius:6px;border-left:3px solid var(--accent2);margin-bottom:8px">
+    <div style="color:var(--accent2);font-weight:600;font-size:10px">[Compacted Summary] ${afterTokens}토큰</div>
+    <div style="color:var(--text2);margin-top:4px">${escapeHTML(summaryText)}</div>
+  </div>`;
+
+  recentMsgs.forEach(m => {
+    const roleColor = m.role === 'User' ? 'var(--accent)' : m.role === 'Assistant' ? 'var(--green)' : 'var(--orange)';
+    afterHTML += `<div style="padding:4px 0">
+      <span style="color:${roleColor};font-weight:600">${m.role}:</span> ${escapeHTML(m.text)}
+    </div>`;
+  });
+  after.innerHTML = afterHTML;
+
+  const totalAfter = afterTokens + recentTokens;
+  const saved = beforeTokens - totalAfter;
+  const savedPct = beforeTokens > 0 ? ((saved / beforeTokens) * 100).toFixed(1) : 0;
+
+  summary.innerHTML = `
+    <div class="compact-stat"><div class="lbl">Before</div><div class="val">${beforeTokens.toLocaleString()}</div></div>
+    <div class="compact-stat"><div class="lbl">After</div><div class="val">${totalAfter.toLocaleString()}</div></div>
+    <div class="compact-stat"><div class="lbl">절감</div><div class="val" style="color:var(--green)">-${saved.toLocaleString()} (${savedPct}%)</div></div>
+  `;
+
+  modal.classList.add('active');
+}
+
+// ========== DIFF ==========
+function showDiff() {
+  const modal = document.getElementById('diff-modal');
+  const content = document.getElementById('diff-content');
+  const summary = document.getElementById('diff-summary');
+
+  let html = '';
+  let netChange = 0;
+
+  sections.forEach((s, i) => {
+    const init = initialState[i];
+    const tokenDiff = s.tokens - init.tokens;
+    const enabledDiff = s.enabled !== init.enabled;
+
+    if (!s.enabled && init.enabled) {
+      html += `<div class="diff-row diff-removed">
+        <span>- ${s.name}</span><span>-${init.tokens.toLocaleString()}토큰</span>
+      </div>`;
+      netChange -= init.tokens;
+    } else if (s.enabled && !init.enabled) {
+      html += `<div class="diff-row diff-added">
+        <span>+ ${s.name}</span><span>+${s.tokens.toLocaleString()}토큰</span>
+      </div>`;
+      netChange += s.tokens;
+    } else if (tokenDiff !== 0) {
+      const cls = tokenDiff > 0 ? 'diff-added' : 'diff-removed';
+      html += `<div class="diff-row ${cls}">
+        <span>~ ${s.name}</span><span>${tokenDiff > 0 ? '+' : ''}${tokenDiff.toLocaleString()}토큰</span>
+      </div>`;
+      netChange += tokenDiff;
+    } else {
+      html += `<div class="diff-row diff-unchanged">
+        <span>&nbsp; ${s.name}</span><span>${s.tokens.toLocaleString()}토큰</span>
+      </div>`;
+    }
+  });
+
+  if (sessionTokens > 0) {
+    html += `<div class="diff-row diff-added">
+      <span>+ Session</span><span>+${sessionTokens.toLocaleString()}토큰</span>
+    </div>`;
+    netChange += sessionTokens;
+  }
+
+  content.innerHTML = html;
+
+  const initTotal = initialState.reduce((a, s) => a + s.tokens, 0);
+  const currentTotal = getTotalTokens();
+  const pctChange = initTotal > 0 ? ((netChange / initTotal) * 100).toFixed(1) : 0;
+
+  summary.innerHTML = `Net: ${netChange >= 0 ? '+' : ''}${netChange.toLocaleString()}토큰<br>
+    ${initTotal.toLocaleString()} &rarr; ${currentTotal.toLocaleString()}토큰 (${pctChange}%)`;
+
+  modal.classList.add('active');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+// ========== JSONL EXPORT ==========
+function exportJSONL() {
+  let lines = [];
+  sections.forEach(s => {
+    if (s.enabled) {
+      lines.push(JSON.stringify({ role: 'system', type: s.type, name: s.name, content: s.content, tokens: s.tokens }));
+    }
+  });
+  sessionMessages.forEach(m => {
+    lines.push(JSON.stringify({ role: m.role.toLowerCase(), content: m.text, tokens: m.tokens }));
+  });
+  const blob = new Blob([lines.join('\n')], { type: 'application/jsonl' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'context-lab-export.jsonl';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ========== SIMULATION ==========
+function initSim() {
+  simOverhead = sections.filter(s => s.enabled).reduce((a, s) => a + s.tokens, 0);
+  simTokens = simOverhead;
+  simTurns = 0;
+  simCompactions = 0;
+  simMessages = [];
+  updateSimUI();
+
+  const conv = document.getElementById('sim-conv');
+  conv.innerHTML = `<div class="sim-msg system">시스템 프롬프트 + Bootstrap 로드 완료 (${simOverhead.toLocaleString()}토큰)</div>`;
+}
+
+document.getElementById('sim-input').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && this.value.trim()) {
+    simSend();
+  }
+});
+
+function simSend() {
+  const input = document.getElementById('sim-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  const conv = document.getElementById('sim-conv');
+  const userTokens = estimateTokens(text);
+  simTokens += userTokens;
+  simTurns++;
+
+  conv.innerHTML += `<div class="sim-msg user">User: ${escapeHTML(text)} <span style="color:var(--text3);font-size:9px">(+${userTokens}토큰)</span></div>`;
+
+  // Check for tool call triggers
+  let toolTokens = 0;
+  if (text.includes('날씨') || text.includes('검색') || text.includes('search')) {
+    toolTokens = 200 + Math.floor(Math.random() * 200);
+    simTokens += toolTokens;
+    conv.innerHTML += `<div class="sim-msg tool">[web_search] 실행... (+${toolTokens}토큰)</div>`;
+  } else if (text.includes('파일') || text.includes('읽') || text.includes('코드')) {
+    toolTokens = 300 + Math.floor(Math.random() * 400);
+    simTokens += toolTokens;
+    conv.innerHTML += `<div class="sim-msg tool">[file_read] 실행... (+${toolTokens}토큰)</div>`;
+  } else if (text.includes('실행') || text.includes('run')) {
+    toolTokens = 100 + Math.floor(Math.random() * 200);
+    simTokens += toolTokens;
+    conv.innerHTML += `<div class="sim-msg tool">[exec] 실행... (+${toolTokens}토큰)</div>`;
+  }
+
+  // Assistant response
+  const respTokens = 100 + Math.floor(Math.random() * 400);
+  simTokens += respTokens;
+  const responses = [
+    '네, 처리했습니다. 결과를 확인해주세요.',
+    '요청하신 작업을 완료했습니다.',
+    '분석 결과를 정리해드리겠습니다. 핵심 포인트는 다음과 같습니다...',
+    '해당 정보를 확인했습니다. 추가 작업이 필요하시면 말씀해주세요.',
+    '작업을 진행하고 있습니다. 잠시만 기다려주세요...'
+  ];
+  const resp = responses[Math.floor(Math.random() * responses.length)];
+  conv.innerHTML += `<div class="sim-msg assistant">Assistant: ${resp} <span style="color:var(--text3);font-size:9px">(+${respTokens}토큰)</span></div>`;
+
+  updateSimUI();
+  conv.scrollTop = conv.scrollHeight;
+
+  // Auto-compaction warning
+  const ctx = getModelCtx();
+  const pct = (simTokens / ctx) * 100;
+  if (pct >= 98) {
+    simCompact();
+    conv.innerHTML += `<div class="sim-msg system">강제 Compaction 발동! (98% 초과)</div>`;
+  } else if (pct >= 95) {
+    conv.innerHTML += `<div class="sim-msg system">경고: Context Window 95% 초과! Compaction을 권장합니다.</div>`;
+  } else if (pct >= 90) {
+    conv.innerHTML += `<div class="sim-msg system">주의: Context Window ${pct.toFixed(1)}% 사용 중</div>`;
+  }
+}
+
+function simCompact() {
+  simCompactions++;
+  const saved = Math.floor((simTokens - simOverhead) * 0.83);
+  simTokens -= saved;
+  const conv = document.getElementById('sim-conv');
+  conv.innerHTML += `<div class="sim-msg system">Compaction 완료! -${saved.toLocaleString()}토큰 절감 (${simCompactions}회차)</div>`;
+  updateSimUI();
+}
+
+function simReset() {
+  initSim();
+}
+
+function updateSimUI() {
+  const ctx = getModelCtx();
+  const pct = Math.min(100, (simTokens / ctx) * 100);
+
+  document.getElementById('sim-used').textContent = simTokens.toLocaleString();
+  document.getElementById('sim-turns').textContent = simTurns;
+  document.getElementById('sim-compactions').textContent = simCompactions;
+
+  const fill = document.getElementById('sim-gauge-fill');
+  fill.style.width = pct + '%';
+  fill.style.background = `linear-gradient(90deg, ${getGaugeColor(pct)}, ${getGaugeColor(Math.min(100, pct + 10))})`;
+  document.getElementById('sim-gauge-label').textContent = pct.toFixed(1) + '%';
+
+  const gauge = document.getElementById('sim-gauge');
+  if (pct >= 95) gauge.classList.add('gauge-warning');
+  else gauge.classList.remove('gauge-warning');
+}
+
+// ========== ANALYSIS ==========
+function renderAnalysis() {
+  renderHeatmap();
+  renderFileAnalysis();
+  renderLifetime();
+}
+
+function renderHeatmap() {
+  const container = document.getElementById('heatmap');
+  const total = getTotalTokens();
+  const items = sections.filter(s => s.enabled).map(s => ({
+    name: s.name,
+    tokens: s.tokens,
+    pct: total > 0 ? (s.tokens / total * 100) : 0
+  }));
+  if (sessionTokens > 0) {
+    items.push({ name: 'Session', tokens: sessionTokens, pct: (sessionTokens / total * 100) });
+  }
+  // Reserve
+  const ctx = getModelCtx();
+  const reserve = Math.max(0, ctx - total);
+  items.push({ name: 'Reserve', tokens: reserve, pct: (reserve / ctx * 100) });
+
+  items.sort((a, b) => b.tokens - a.tokens);
+  const colors = ['#a855f7', '#f97316', '#22c55e', '#38bdf8', '#ec4899', '#eab308', '#818cf8', '#ef4444', '#64748b', '#334155'];
+
+  let html = '';
+  items.forEach((item, i) => {
+    const maxPct = items[0].pct || 1;
+    const barW = (item.pct / maxPct * 100).toFixed(1);
+    html += `<div class="heatmap-bar">
+      <div class="heatmap-label">${item.name}</div>
+      <div class="heatmap-track">
+        <div class="heatmap-fill" style="width:${barW}%;background:${colors[i % colors.length]}"></div>
+      </div>
+      <div class="heatmap-pct">${item.pct.toFixed(1)}%</div>
+    </div>`;
+  });
+
+  // Insight
+  const biggest = items[0];
+  html += `<div style="margin-top:12px;padding:8px;background:var(--bg3);border-radius:6px;font-size:10px;color:var(--text2)">
+    "${biggest.name}"이(가) 전체 컨텍스트의 ${biggest.pct.toFixed(1)}%를 차지합니다.
+    ${biggest.name !== 'Reserve' ? '이 부분을 줄이면 가장 큰 효과가 있습니다.' : '여유 공간이 충분합니다.'}
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+function renderFileAnalysis() {
+  const container = document.getElementById('file-analysis');
+  const files = [
+    { name: 'SOUL.md', chars: 912, tokens: 228, status: 'OK', importance: 'core', impLabel: '핵심' },
+    { name: 'AGENTS.md', chars: 1742, tokens: 436, status: 'OK', importance: 'core', impLabel: '핵심' },
+    { name: 'TOOLS.md', chars: 54210, tokens: 5241, status: '잘림', importance: 'aux', impLabel: '보조' },
+    { name: 'IDENTITY.md', chars: 211, tokens: 53, status: 'OK', importance: 'basic', impLabel: '기본' },
+    { name: 'USER.md', chars: 388, tokens: 97, status: 'OK', importance: 'core', impLabel: '핵심' },
+    { name: 'HEARTBEAT.md', chars: 1158, tokens: 290, status: 'OK', importance: 'basic', impLabel: '기본' },
+    { name: 'BOOTSTRAP.md', chars: 0, tokens: 0, status: '없음', importance: 'none', impLabel: '-' }
+  ];
+
+  let html = `<div class="file-row header">
+    <span>파일</span><span>크기</span><span>토큰</span><span>상태</span><span>중요도</span>
+  </div>`;
+
+  files.forEach(f => {
+    const impCls = f.importance === 'core' ? 'imp-core' : f.importance === 'basic' ? 'imp-basic' : f.importance === 'aux' ? 'imp-aux' : '';
+    const statusIcon = f.status === 'OK' ? '<span style="color:var(--green)">OK</span>' :
+                       f.status === '잘림' ? '<span style="color:var(--yellow)">잘림</span>' :
+                       '<span style="color:var(--text3)">없음</span>';
+    html += `<div class="file-row">
+      <span>${f.name}</span>
+      <span>${f.chars > 0 ? f.chars.toLocaleString() + 'B' : 'N/A'}</span>
+      <span>${f.tokens > 0 ? f.tokens.toLocaleString() : '0'}</span>
+      <span>${statusIcon}</span>
+      <span class="importance ${impCls}">${f.impLabel}</span>
+    </div>`;
+  });
+
+  html += `<div style="margin-top:10px;padding:8px;background:var(--bg3);border-radius:6px;font-size:10px;color:var(--text2)">
+    TOOLS.md가 54KB로 잘리고도 5,241토큰! 전체의 ${(5241 / getTotalTokens() * 100).toFixed(1)}%를 차지합니다.
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+function renderLifetime() {
+  const ctx = getModelCtx();
+  const overhead = sections.filter(s => s.enabled).reduce((a, s) => a + s.tokens, 0);
+  const available = ctx - overhead;
+
+  const scenarios = [
+    { name: '단순 대화 (200토큰/턴)', perTurn: 200, color: 'var(--green)' },
+    { name: 'Tool Call (400토큰/턴)', perTurn: 400, color: 'var(--yellow)' },
+    { name: '복잡 작업 (800토큰/턴)', perTurn: 800, color: 'var(--red)' }
+  ];
+
+  let html = `<div style="font-size:11px;color:var(--text2);margin-bottom:12px">
+    모델: ${MODELS[currentModel].name} (${ctx.toLocaleString()} 컨텍스트)<br>
+    고정 오버헤드: ${overhead.toLocaleString()}토큰<br>
+    가용 공간: ${available.toLocaleString()}토큰
+  </div>`;
+
+  html += '<div style="font-size:11px;font-weight:600;margin-bottom:8px">Compaction 없이:</div>';
+  scenarios.forEach(sc => {
+    const turns = Math.floor(available / sc.perTurn);
+    html += `<div style="font-size:10px;color:var(--text2);padding:3px 0">
+      ${sc.name} &rarr; <span style="color:${sc.color};font-weight:600">${turns}턴</span> 후 한계
+    </div>`;
+  });
+
+  html += '<div style="font-size:11px;font-weight:600;margin:12px 0 8px">Compaction 있으면:</div>';
+  html += '<div style="font-size:10px;color:var(--text2)">요약률 80% &rarr; 효과적으로 무제한 턴 가능</div>';
+
+  document.getElementById('lifetime-info').innerHTML = html;
+
+  // Chart
+  const chart = document.getElementById('lifetime-chart');
+  chart.innerHTML = '';
+
+  // Draw simple bar chart
+  const maxTurns = Math.floor(available / 200);
+  scenarios.forEach((sc, i) => {
+    const turns = Math.floor(available / sc.perTurn);
+    const w = (turns / maxTurns * 85).toFixed(1);
+    const y = 30 + i * 55;
+
+    const bar = document.createElement('div');
+    bar.style.cssText = `position:absolute;left:10px;top:${y}px;height:30px;width:0;background:${sc.color};border-radius:4px;opacity:0.7;transition:width 1s ease;`;
+    chart.appendChild(bar);
+    setTimeout(() => { bar.style.width = w + '%'; }, 100);
+
+    const label = document.createElement('div');
+    label.className = 'lifetime-label';
+    label.style.cssText = `left:12px;top:${y - 15}px;`;
+    label.textContent = `${sc.name}: ${turns}턴`;
+    chart.appendChild(label);
+
+    const valLabel = document.createElement('div');
+    valLabel.className = 'lifetime-label';
+    valLabel.style.cssText = `right:10px;top:${y + 5}px;color:${sc.color};font-weight:600;`;
+    valLabel.textContent = `${turns}턴`;
+    chart.appendChild(valLabel);
+  });
+}
+
+// ========== SETTINGS ==========
+function changeModel() {
+  currentModel = document.getElementById('model-select').value;
+  refresh();
+  updateSimUI();
+}
+
+function changeTheme() {
+  const theme = document.getElementById('theme-select').value;
+  document.documentElement.setAttribute('data-theme', theme === 'light' ? 'light' : '');
+}
+
+function changeSpeed() {
+  const speed = document.getElementById('speed-select').value;
+  document.documentElement.style.setProperty('--anim-speed', speed + 's');
+}
+
+function changeLang() {
+  lang = document.getElementById('lang-select').value;
+  // Simple label swap for demo
+  if (lang === 'en') {
+    document.querySelector('[data-tab="lab"]').textContent = 'Lab';
+    document.querySelector('[data-tab="sim"]').textContent = 'Simulation';
+    document.querySelector('[data-tab="analysis"]').textContent = 'Analysis';
+    document.querySelector('[data-tab="settings"]').textContent = 'Settings';
+  } else {
+    document.querySelector('[data-tab="lab"]').textContent = '실험실';
+    document.querySelector('[data-tab="sim"]').textContent = '시뮬레이션';
+    document.querySelector('[data-tab="analysis"]').textContent = '분석';
+    document.querySelector('[data-tab="settings"]').textContent = '설정';
+  }
+}
+
+function resetAll() {
+  sections = JSON.parse(JSON.stringify(SECTIONS_DATA));
+  sections.forEach(s => { s.originalContent = s.content; s.originalTokens = s.tokens; });
+  sessionMessages = [];
+  sessionTokens = 0;
+  currentModel = 'glm5';
+  document.getElementById('model-select').value = 'glm5';
+  document.getElementById('theme-select').value = 'dark';
+  document.getElementById('speed-select').value = '0.3';
+  document.getElementById('lang-select').value = 'ko';
+  document.documentElement.removeAttribute('data-theme');
+  document.documentElement.style.setProperty('--anim-speed', '0.3s');
+  changeLang();
+  refresh();
+  initSim();
+}
+
+// ========== TABS ==========
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+
+    const target = this.dataset.tab;
+    document.getElementById('page-lab').classList.toggle('active', target === 'lab');
+    document.getElementById('page-sim').classList.toggle('active', target === 'sim');
+    document.getElementById('page-analysis').classList.toggle('active', target === 'analysis');
+    document.getElementById('page-settings').classList.toggle('active', target === 'settings');
+
+    if (target === 'sim') initSim();
+    if (target === 'analysis') renderAnalysis();
+  });
+});
+
+// ========== UTIL ==========
+function escapeHTML(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('active');
+  });
+});
+
+// ========== INIT ==========
+refresh();
+</script>
+</body>
+</html>

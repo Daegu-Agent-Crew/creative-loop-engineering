@@ -1,0 +1,737 @@
+// ============================================================
+// 맞고 고스톱 v7 - Part 1: Card Data, Utilities, Managers, Menu
+// ============================================================
+
+// === CARD DATA ===
+const MONTH_NAMES = ['','1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+const MONTH_FLOWERS = ['','🌸','🐦','🌺','🦅','🌿','🦋','🍂','🌕','🏵️','🍁','🌧️','🌳'];
+
+const ALL_CARDS = [];
+
+const CARD_DATA = {
+  1:  [{type:'gwang',icon:'🌞',name:'송학'},{type:'tti',icon:'🎀',name:'홍단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  2:  [{type:'dan',icon:'🐦',name:'매조'},{type:'tti',icon:'🎀',name:'홍단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  3:  [{type:'gwang',icon:'🌞',name:'벚꽃'},{type:'tti',icon:'🎀',name:'홍단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  4:  [{type:'dan',icon:'🐦',name:'흑싸리'},{type:'tti',icon:'🟦',name:'초단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  5:  [{type:'dan',icon:'🐦',name:'난초'},{type:'tti',icon:'🟦',name:'초단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  6:  [{type:'dan',icon:'🦋',name:'목단'},{type:'tti',icon:'🟦',name:'초단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  7:  [{type:'dan',icon:'🐗',name:'홍싸리'},{type:'tti',icon:'🟥',name:'청단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  8:  [{type:'gwang',icon:'🌕',name:'공산'},{type:'dan',icon:'🦢',name:'기러기'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  9:  [{type:'dan',icon:'🍶',name:'국진'},{type:'tti',icon:'🟥',name:'청단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  10: [{type:'dan',icon:'🦌',name:'단풍'},{type:'tti',icon:'🟥',name:'청단'},{type:'pi',icon:'·',name:'피'},{type:'pi',icon:'·',name:'피'}],
+  11: [{type:'gwang',icon:'🌞',name:'오동'},{type:'dan',icon:'🐦',name:'봉황'},{type:'pi',icon:'·',name:'피'},{type:'ssang-pi',icon:'··',name:'쌍피'}],
+  12: [{type:'gwang',icon:'🌞',name:'비광'},{type:'dan',icon:'🐦',name:'제비'},{type:'pi',icon:'·',name:'피'},{type:'ssang-pi',icon:'··',name:'쌍피'}],
+};
+
+let cardId = 0;
+for (let month = 1; month <= 12; month++) {
+  CARD_DATA[month].forEach((cd) => {
+    ALL_CARDS.push({
+      id: cardId++,
+      month: month,
+      type: cd.type,
+      icon: cd.icon,
+      name: cd.name,
+      flower: MONTH_FLOWERS[month],
+      monthName: MONTH_NAMES[month],
+    });
+  });
+}
+
+// === UTILITY ===
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// === SOUND MANAGER ===
+class SoundManager {
+  constructor() {
+    this.enabled = true;
+    this.volume = 0.5;
+    this.sounds = {};
+    this.ctx = null;
+    this.soundTheme = 'casual';
+  }
+
+  getContext() {
+    if (!this.ctx) {
+      try { this.ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+    }
+    return this.ctx;
+  }
+
+  setTheme(theme) {
+    this.soundTheme = theme;
+  }
+
+  // Generate sounds procedurally (no external URLs needed)
+  playTone(freq, duration, type = 'sine', vol = 0.3) {
+    if (!this.enabled) return;
+    const ctx = this.getContext();
+    if (!ctx) return;
+    try {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      gain.gain.value = vol * this.volume;
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch(e) {}
+  }
+
+  cardPlace() {
+    if (this.soundTheme === 'traditional') {
+      this.playTone(400, 0.15, 'triangle', 0.2);
+    } else {
+      this.playTone(800, 0.1, 'sine', 0.2);
+    }
+  }
+
+  cardFlip() {
+    if (this.soundTheme === 'traditional') {
+      this.playTone(300, 0.12, 'sine', 0.15);
+    } else {
+      this.playTone(600, 0.08, 'triangle', 0.15);
+    }
+  }
+
+  capture() {
+    if (this.soundTheme === 'traditional') {
+      this.playTone(600, 0.15, 'sine', 0.25);
+      setTimeout(() => this.playTone(800, 0.1, 'sine', 0.2), 80);
+    } else {
+      this.playTone(1200, 0.15, 'sine', 0.25);
+      setTimeout(() => this.playTone(1500, 0.1, 'sine', 0.2), 80);
+    }
+  }
+
+  bomb() {
+    if (this.soundTheme === 'traditional') {
+      this.playTone(150, 0.4, 'square', 0.4);
+      setTimeout(() => this.playTone(80, 0.3, 'square', 0.3), 150);
+    } else {
+      this.playTone(200, 0.4, 'sawtooth', 0.4);
+      setTimeout(() => this.playTone(100, 0.3, 'square', 0.3), 150);
+    }
+  }
+
+  win() { [0,100,200,300].forEach((d,i) => setTimeout(() => this.playTone(523 + i*100, 0.3, 'sine', 0.3), d)); }
+  lose() { this.playTone(200, 0.5, 'sawtooth', 0.2); }
+  button() { this.playTone(1000, 0.05, 'sine', 0.15); }
+  go() { this.playTone(880, 0.2, 'triangle', 0.3); setTimeout(() => this.playTone(1100, 0.3, 'triangle', 0.3), 150); }
+  notification() { this.playTone(660, 0.15, 'sine', 0.2); }
+  chat() { this.playTone(1400, 0.05, 'sine', 0.1); }
+
+  toggle() {
+    this.enabled = !this.enabled;
+    return this.enabled;
+  }
+
+  setVolume(vol) {
+    this.volume = Math.max(0, Math.min(1, vol));
+  }
+}
+
+const soundManager = new SoundManager();
+
+function updateSoundBtn() {
+  const btn1 = document.getElementById('sound-toggle-btn');
+  const btn2 = document.getElementById('game-sound-btn');
+  const text = soundManager.enabled ? '🔊 소리 ON' : '🔇 소리 OFF';
+  const short = soundManager.enabled ? '🔊' : '🔇';
+  if (btn1) btn1.textContent = text;
+  if (btn2) btn2.textContent = short;
+}
+
+function toggleSoundGlobal() {
+  soundManager.toggle();
+  soundManager.button();
+  updateSoundBtn();
+}
+
+// === CARD THEME SUPPORT ===
+let currentCardTheme = 'emoji'; // 'classic', 'simple', 'emoji'
+function setCardTheme(theme) { currentCardTheme = theme; if(game) game.render(); }
+function setSoundTheme(theme) { soundManager.setTheme(theme); }
+
+// === AI DIFFICULTY ===
+let aiDifficulty = 'medium'; // 'easy', 'medium', 'hard'
+
+// === STATISTICS ===
+class Statistics {
+  constructor() { this.load(); }
+
+  load() {
+    const data = localStorage.getItem('gostop_stats');
+    this.stats = data ? JSON.parse(data) : {
+      gamesPlayed: 0, wins: 0, totalScore: 0, highestScore: 0,
+      bombs: 0, ppuks: 0, heundeulgis: 0, chongtongs: 0,
+      goCount: 0, multiplayerWins: 0, multiplayerGames: 0
+    };
+  }
+
+  save() { localStorage.setItem('gostop_stats', JSON.stringify(this.stats)); }
+
+  recordGame(won, score, specialMoves, isMultiplayer) {
+    this.stats.gamesPlayed++;
+    if (won) this.stats.wins++;
+    this.stats.totalScore += score;
+    this.stats.highestScore = Math.max(this.stats.highestScore, score);
+    if (specialMoves.bomb) this.stats.bombs += specialMoves.bomb;
+    if (specialMoves.ppuk) this.stats.ppuks += specialMoves.ppuk;
+    if (specialMoves.heundeulgi) this.stats.heundeulgis++;
+    if (specialMoves.chongtong) this.stats.chongtongs++;
+    if (specialMoves.goCount) this.stats.goCount += specialMoves.goCount;
+    if (isMultiplayer) {
+      this.stats.multiplayerGames++;
+      if (won) this.stats.multiplayerWins++;
+    }
+    this.save();
+  }
+
+  getWinRate() {
+    return this.stats.gamesPlayed > 0
+      ? Math.round(this.stats.wins / this.stats.gamesPlayed * 100)
+      : 0;
+  }
+
+  getAverageScore() {
+    return this.stats.gamesPlayed > 0
+      ? Math.round(this.stats.totalScore / this.stats.gamesPlayed)
+      : 0;
+  }
+}
+
+const statistics = new Statistics();
+
+function showStats() {
+  const s = statistics.stats;
+  const wr = statistics.getWinRate();
+  const avg = statistics.getAverageScore();
+  const html = `
+    <div id="stats-overlay" onclick="if(event.target===this)this.remove()">
+      <div id="stats-content">
+        <h2>📊 통계</h2>
+        <div class="stats-grid">
+          <div class="stats-item"><div class="label">총 게임</div><div class="value">${s.gamesPlayed}</div></div>
+          <div class="stats-item"><div class="label">승률</div><div class="value">${wr}%</div></div>
+          <div class="stats-item"><div class="label">평균 점수</div><div class="value">${avg}</div></div>
+          <div class="stats-item"><div class="label">최고 점수</div><div class="value">${s.highestScore}</div></div>
+          <div class="stats-item"><div class="label">폭탄</div><div class="value">${s.bombs}</div></div>
+          <div class="stats-item"><div class="label">뻑</div><div class="value">${s.ppuks}</div></div>
+          <div class="stats-item"><div class="label">흔들기</div><div class="value">${s.heundeulgis}</div></div>
+          <div class="stats-item"><div class="label">총통</div><div class="value">${s.chongtongs}</div></div>
+          <div class="stats-item"><div class="label">고 횟수</div><div class="value">${s.goCount}</div></div>
+          <div class="stats-item"><div class="label">멀티 승</div><div class="value">${s.multiplayerWins}/${s.multiplayerGames}</div></div>
+        </div>
+        <button class="btn btn-secondary" onclick="this.closest('#stats-overlay').remove()">닫기</button>
+        <button class="btn btn-warning btn-small" onclick="if(confirm('통계를 초기화하시겠습니까?')){localStorage.removeItem('gostop_stats');statistics.load();this.closest('#stats-overlay').remove();showStats();}">초기화</button>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+}
+
+// === SAVE MANAGER ===
+class SaveManager {
+  static save(game) {
+    const data = {
+      version: '4.0',
+      timestamp: Date.now(),
+      deck: game.deck.map(c => c.id),
+      floor: game.floor.map(c => c.id),
+      ppukStacks: game.ppukStacks,
+      players: game.players.map(p => ({
+        hand: p.hand.map(c => c.id),
+        captured: {
+          gwang: p.captured.gwang.map(c => c.id),
+          tti: p.captured.tti.map(c => c.id),
+          dan: p.captured.dan.map(c => c.id),
+          pi: p.captured.pi.map(c => c.id),
+        },
+        goCount: p.goCount,
+        score: p.score,
+        heundeulgi: p.heundeulgi,
+        heundeulgiMonths: p.heundeulgiMonths,
+        ppukCount: p.ppukCount,
+        bombs: p.bombs,
+      })),
+      currentPlayer: game.currentPlayer,
+      turnCount: game.turnCount,
+    };
+    localStorage.setItem('gostop_save', JSON.stringify(data));
+    return true;
+  }
+
+  static load() {
+    const raw = localStorage.getItem('gostop_save');
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  static restoreCards(ids) {
+    return ids.map(id => ALL_CARDS[id]);
+  }
+
+  static hasSave() {
+    return !!localStorage.getItem('gostop_save');
+  }
+
+  static deleteSave() {
+    localStorage.removeItem('gostop_save');
+  }
+}
+
+function saveCurrentGame() {
+  if (!game) return;
+  if (SaveManager.save(game)) {
+    soundManager.button();
+    NotificationManager.show('💾 저장 완료!', '', 'success', 800);
+  }
+}
+
+function loadSavedGame() {
+  const data = SaveManager.load();
+  if (!data) {
+    alert('저장된 게임이 없습니다.');
+    return;
+  }
+  startSinglePlayer();
+  game.restoreFromSave(data);
+}
+
+// Ctrl+S quick save
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+    saveCurrentGame();
+  }
+});
+
+// === NOTIFICATION MANAGER ===
+const NotificationManager = {
+  queue: [],
+  showing: false,
+
+  async show(text, sub, type, duration = 1200) {
+    this.queue.push({ text, sub, type, duration });
+    if (!this.showing) this._next();
+  },
+
+  async _next() {
+    if (this.queue.length === 0) { this.showing = false; return; }
+    this.showing = true;
+    const { text, sub, type, duration } = this.queue.shift();
+    const overlay = document.getElementById('notification');
+    const box = document.getElementById('notification-box');
+    const textEl = document.getElementById('notification-text');
+    const subEl = document.getElementById('notification-sub');
+
+    textEl.textContent = text;
+    subEl.textContent = sub || '';
+    box.className = 'notification-box ' + (type || '');
+    overlay.classList.add('show');
+    soundManager.notification();
+
+    await delay(duration);
+    overlay.classList.remove('show');
+    await delay(300);
+    this._next();
+  },
+
+  showBomb() { soundManager.bomb(); return this.show('💣 폭탄!', '4장 모두 획득 + 피 1장', 'danger'); },
+  showPpuk(count) { return this.show('🔄 뻑!', count >= 3 ? '삼연뻑!' : `${count}뻑`, 'warning'); },
+  showJabppuk() { return this.show('😱 자뻑!', '피 2장 빼앗김', 'danger'); },
+  showHeundeulgi() { return this.show('👋 흔들기!', '승리시 점수 2배', 'info'); },
+  showChongtong() { return this.show('🎉 총통!', '즉시 승리! 10점', 'success', 2000); },
+  showGo(count) { soundManager.go(); return this.show(`${count}고!`, count >= 3 ? '점수 폭발!' : '계속 도전!', 'warning'); },
+  showPiBak() { return this.show('💥 피박!', '점수 2배', 'danger'); },
+  showGwangBak() { return this.show('💥 광박!', '점수 2배', 'danger'); },
+  showMultiplier(mult) { return this.show(`💰 x${mult}배!`, '최종 배수 적용', 'warning'); },
+  showFirstPpuk() { return this.show('🔥 첫뻑!', '첫 턴 뻑 보너스', 'danger'); },
+};
+
+// === THEME ===
+class ThemeManager {
+  constructor() {
+    this.theme = localStorage.getItem('gostop-theme') || 'light';
+    this.apply();
+  }
+  toggle() {
+    this.theme = this.theme === 'light' ? 'dark' : 'light';
+    localStorage.setItem('gostop-theme', this.theme);
+    this.apply();
+  }
+  apply() {
+    document.documentElement.setAttribute('data-theme', this.theme);
+  }
+}
+
+const themeManager = new ThemeManager();
+function toggleThemeGlobal() { themeManager.toggle(); }
+
+// === TUTORIAL ===
+class Tutorial {
+  constructor() {
+    this.step = 0;
+    this.steps = [
+      { title: '환영합니다!', text: '맞고 고스톱 튜토리얼에 오신 것을 환영합니다.\n화투 48장으로 진행하는 2인 카드 게임입니다.', highlight: null },
+      { title: '🎴 카드 종류', text: '광(🌞) - 가장 가치가 높은 카드\n띠(🎀🟦🟥) - 홍단, 초단, 청단\n동물(🐦🦋🐗) - 10끗 카드\n피(·) - 기본 카드', highlight: null },
+      { title: '🃏 카드 내기', text: '자기 차례에 손패에서 카드 1장을 바닥에 냅니다.\n같은 월의 카드가 바닥에 있으면 가져갈 수 있습니다.', highlight: '#player-hand' },
+      { title: '🎯 매칭 규칙', text: '바닥에 같은 월 카드 1장 → 둘 다 획득\n2장 → 하나 선택 후 획득\n0장 → 바닥에 놓기\n4장 모두 → 폭탄!', highlight: '.floor-area' },
+      { title: '💣 특수 규칙', text: '폭탄: 같은 월 3장 + 바닥 1장 → 모두 획득\n뻑: 덱에서 뽑은 카드가 같은 월 2장과 매치\n흔들기: 같은 월 3장 보유시 선언 → 승리시 2배', highlight: null },
+      { title: '🏆 점수 계산', text: '광 3장=3점, 4장=4점, 5장=15점\n띠 5장부터 1점씩\n홍단/초단/청단 각 3점\n동물 5장부터 1점씩\n피 10장부터 1점씩', highlight: null },
+      { title: '🎯 고/스톱', text: '7점 이상이면 고 또는 스톱을 선택합니다.\n고: 계속 진행 (위험하지만 점수 증가)\n스톱: 현재 점수로 승리!', highlight: null },
+      { title: '✅ 준비 완료!', text: '이제 게임을 시작해보세요!\n화이팅! 🎉', highlight: null },
+    ];
+  }
+
+  start() {
+    this.step = 0;
+    // Start a single player game as background
+    startSinglePlayer();
+    this.showStep();
+  }
+
+  showStep() {
+    const step = this.steps[this.step];
+    const container = document.getElementById('tutorial-container');
+
+    // Remove previous highlights
+    document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+
+    if (step.highlight) {
+      const el = document.querySelector(step.highlight);
+      if (el) el.classList.add('tutorial-highlight');
+    }
+
+    container.innerHTML = `
+      <div class="tutorial-overlay">
+        <div class="tutorial-backdrop" onclick="tutorial.skip()"></div>
+        <div class="tutorial-tooltip">
+          <h3>${step.title}</h3>
+          <p style="white-space:pre-line">${step.text}</p>
+          <div>
+            ${this.step > 0 ? '<button class="btn btn-secondary btn-small" onclick="tutorial.prev()">◀ 이전</button>' : ''}
+            ${this.step < this.steps.length - 1
+              ? '<button class="btn btn-primary" onclick="tutorial.next()">다음 ▶</button>'
+              : '<button class="btn btn-success" onclick="tutorial.complete()">시작하기!</button>'}
+            <button class="btn btn-warning btn-small" onclick="tutorial.skip()">건너뛰기</button>
+          </div>
+          <div class="tutorial-step-counter">${this.step + 1} / ${this.steps.length}</div>
+        </div>
+      </div>`;
+  }
+
+  next() {
+    soundManager.button();
+    if (this.step < this.steps.length - 1) {
+      this.step++;
+      this.showStep();
+    }
+  }
+
+  prev() {
+    soundManager.button();
+    if (this.step > 0) {
+      this.step--;
+      this.showStep();
+    }
+  }
+
+  skip() {
+    this.complete();
+  }
+
+  complete() {
+    soundManager.button();
+    document.getElementById('tutorial-container').innerHTML = '';
+    document.querySelectorAll('.tutorial-highlight').forEach(el => el.classList.remove('tutorial-highlight'));
+  }
+}
+
+let tutorial = new Tutorial();
+function startTutorial() {
+  tutorial = new Tutorial();
+  tutorial.start();
+}
+
+// === MULTIPLAYER CLIENT ===
+class MultiplayerClient {
+  constructor() {
+    this.ws = null;
+    this.roomId = null;
+    this.isHost = false;
+    this.playerIndex = -1;
+    this.playerName = '';
+    this.connected = false;
+  }
+
+  connect(serverUrl) {
+    return new Promise((resolve, reject) => {
+      try {
+        this.ws = new WebSocket(serverUrl);
+      } catch(e) {
+        reject(e);
+        return;
+      }
+
+      this.ws.onopen = () => {
+        this.connected = true;
+        resolve();
+      };
+
+      this.ws.onerror = () => {
+        reject(new Error('연결 실패'));
+      };
+
+      this.ws.onmessage = (e) => {
+        try { this.handleMessage(JSON.parse(e.data)); } catch(err) {}
+      };
+
+      this.ws.onclose = () => {
+        this.connected = false;
+        if (game && game.isMultiplayer && !game.gameOver) {
+          NotificationManager.show('⚠️ 연결 끊김', '상대방과의 연결이 끊어졌습니다.', 'danger', 2000);
+        }
+      };
+    });
+  }
+
+  send(msg) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(msg));
+    }
+  }
+
+  createRoom(playerName, password) {
+    this.isHost = true;
+    this.playerName = playerName;
+    this.send({ type: 'create_room', playerName, password });
+  }
+
+  joinRoom(roomId, playerName, password) {
+    this.playerName = playerName;
+    this.send({ type: 'join_room', roomId, playerName, password });
+  }
+
+  handleMessage(msg) {
+    switch(msg.type) {
+      case 'room_created':
+        this.roomId = msg.roomId;
+        this.playerIndex = msg.playerIndex;
+        this.showWaitingRoom(msg.roomId);
+        break;
+      case 'game_start':
+        this.playerIndex = msg.playerIndex;
+        this.roomId = msg.roomId;
+        this.startMultiplayerGame(msg);
+        break;
+      case 'join_failed':
+        alert(msg.reason);
+        break;
+      case 'play_card':
+      case 'draw_result':
+      case 'go_stop':
+      case 'match_choice':
+      case 'bomb_action':
+      case 'heundeulgi':
+      case 'game_state':
+        if (game && game.isMultiplayer) {
+          game.handleRemoteAction(msg);
+        }
+        break;
+      case 'opponent_disconnected':
+        NotificationManager.show('⚠️ 상대방 나감', `${msg.name}님이 나갔습니다.`, 'danger', 2000);
+        break;
+      case 'chat':
+        this.displayChat(msg);
+        break;
+      case 'new_game_request':
+        if (confirm(`${msg.from}님이 새 게임을 요청했습니다. 수락하시겠습니까?`)) {
+          if (game) game.newGame();
+        }
+        break;
+    }
+  }
+
+  showWaitingRoom(roomId) {
+    document.getElementById('main-menu').classList.add('hidden');
+    document.getElementById('game-screen').classList.add('hidden');
+
+    const modal = document.getElementById('modal-container');
+    modal.innerHTML = `
+      <div class="modal-overlay">
+        <div class="modal" id="waiting-room">
+          <h2>🎮 방 생성 완료!</h2>
+          <p>아래 코드를 상대방에게 공유하세요</p>
+          <div class="room-code">${roomId}</div>
+          <p class="waiting-dots">상대방 대기 중</p>
+          <button class="btn btn-warning" onclick="mpClient.cancelRoom()">취소</button>
+        </div>
+      </div>`;
+  }
+
+  cancelRoom() {
+    if (this.ws) this.ws.close();
+    document.getElementById('modal-container').innerHTML = '';
+    document.getElementById('main-menu').classList.remove('hidden');
+  }
+
+  startMultiplayerGame(msg) {
+    document.getElementById('modal-container').innerHTML = '';
+    document.getElementById('main-menu').classList.add('hidden');
+    document.getElementById('game-screen').classList.remove('hidden');
+    document.getElementById('chat-panel').classList.remove('hidden');
+
+    const names = msg.playerNames || ['Player 1', 'Player 2'];
+    const opponentName = names[1 - this.playerIndex] || '상대방';
+    document.getElementById('opponent-name-display').textContent = `🎮 ${opponentName}`;
+
+    game = new GoStopGame(true, this.playerIndex, this.isHost);
+    window.game = game;
+  }
+
+  displayChat(msg) {
+    soundManager.chat();
+    const container = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'chat-msg';
+    div.innerHTML = `<span class="sender">${this.escapeHtml(msg.sender)}:</span> ${this.escapeHtml(msg.text)}`;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+
+    // Auto-expand chat
+    document.getElementById('chat-panel').classList.remove('minimized');
+  }
+
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  disconnect() {
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+    this.connected = false;
+    this.roomId = null;
+    document.getElementById('chat-panel').classList.add('hidden');
+  }
+}
+
+let mpClient = new MultiplayerClient();
+
+function toggleChat() {
+  const panel = document.getElementById('chat-panel');
+  panel.classList.toggle('minimized');
+  const icon = document.getElementById('chat-toggle-icon');
+  icon.textContent = panel.classList.contains('minimized') ? '▲' : '▼';
+}
+
+function sendChat() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text || !mpClient.connected) return;
+  mpClient.send({ type: 'chat', text });
+  input.value = '';
+}
+
+async function connectAndCreate() {
+  const name = document.getElementById('player-name-input').value.trim() || 'Player';
+  const serverUrl = document.getElementById('server-url-input').value.trim() || 'ws://localhost:8080';
+
+  try {
+    mpClient = new MultiplayerClient();
+    await mpClient.connect(serverUrl);
+    mpClient.createRoom(name);
+  } catch(e) {
+    alert('서버 연결 실패: ' + e.message);
+  }
+}
+
+async function connectAndJoin() {
+  const name = document.getElementById('player-name-input').value.trim() || 'Player';
+  const serverUrl = document.getElementById('server-url-input').value.trim() || 'ws://localhost:8080';
+  const roomCode = document.getElementById('room-code-input').value.trim().toUpperCase();
+
+  if (!roomCode) { alert('방 코드를 입력하세요.'); return; }
+
+  try {
+    mpClient = new MultiplayerClient();
+    await mpClient.connect(serverUrl);
+    mpClient.joinRoom(roomCode, name);
+  } catch(e) {
+    alert('서버 연결 실패: ' + e.message);
+  }
+}
+
+// === CONFETTI ===
+function launchConfetti() {
+  const container = document.getElementById('confetti-container');
+  container.innerHTML = '';
+  const colors = ['#f1c40f','#e74c3c','#3498db','#2ecc71','#9b59b6','#e67e22','#1abc9c','#ff6b81'];
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + '%';
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDelay = Math.random() * 2 + 's';
+    piece.style.animationDuration = (2 + Math.random() * 2) + 's';
+    container.appendChild(piece);
+  }
+  setTimeout(() => { container.innerHTML = ''; }, 5000);
+}
+
+// === MENU NAVIGATION ===
+function startSinglePlayer() {
+  const diffRadio = document.querySelector('input[name="ai-diff"]:checked');
+  aiDifficulty = diffRadio ? diffRadio.value : 'medium';
+  document.getElementById('main-menu').classList.add('hidden');
+  document.getElementById('game-screen').classList.remove('hidden');
+  document.getElementById('opponent-name-display').textContent = '🤖 CPU (' + aiDifficulty.toUpperCase() + ')';
+  const diffDisplay = document.getElementById('ai-diff-display');
+  if (diffDisplay) diffDisplay.textContent = 'AI: ' + aiDifficulty.toUpperCase();
+  document.getElementById('chat-panel').classList.add('hidden');
+  game = new GoStopGame(false, 0, true);
+  window.game = game;
+}
+
+function backToMenu() {
+  if (game && !game.gameOver) {
+    if (!confirm('게임을 나가시겠습니까? (저장하지 않으면 진행 상황이 사라집니다)')) return;
+  }
+  if (mpClient.connected) mpClient.disconnect();
+  document.getElementById('game-screen').classList.add('hidden');
+  document.getElementById('main-menu').classList.remove('hidden');
+  document.getElementById('modal-container').innerHTML = '';
+  document.getElementById('tutorial-container').innerHTML = '';
+  game = null;
+}
+
+// === DOM READY ===
+document.addEventListener('DOMContentLoaded', () => {
+  updateSoundBtn();
+  document.querySelectorAll('.diff-option').forEach(label => {
+    label.addEventListener('click', function() {
+      document.querySelectorAll('.diff-option').forEach(l => l.classList.remove('active'));
+      this.classList.add('active');
+    });
+  });
+});

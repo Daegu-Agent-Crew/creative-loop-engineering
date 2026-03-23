@@ -1,0 +1,1170 @@
+<!-- structure.html - Portfolio Generator Structure -->
+<!-- Navigation -->
+<nav id="main-nav">
+  <div class="nav-container">
+    <a href="#hero" class="nav-logo">포트폴리오</a>
+    <button id="hamburger-btn" class="hamburger" aria-label="메뉴 열기">
+      <span></span><span></span><span></span>
+    </button>
+    <ul class="nav-links">
+      <li><a href="#hero" class="nav-link active" data-section="hero">홈</a></li>
+      <li><a href="#about" class="nav-link" data-section="about">소개</a></li>
+      <li><a href="#timeline" class="nav-link" data-section="timeline">타임라인</a></li>
+      <li><a href="#projects" class="nav-link" data-section="projects">프로젝트</a></li>
+      <li><a href="#code-snippet" class="nav-link" data-section="code-snippet">코드</a></li>
+      <li><a href="#demo" class="nav-link" data-section="demo">데모</a></li>
+    </ul>
+    <button id="theme-toggle" class="theme-toggle-btn" aria-label="테마 전환">
+      <span class="theme-icon">🌙</span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Nav Overlay -->
+<div id="mobile-nav-overlay" class="mobile-overlay hidden"></div>
+
+<!-- Hero Section -->
+<section id="hero" class="section hero-section">
+  <div class="hero-content">
+    <h1 class="hero-title">
+      <span class="typing-text" id="typing-text"></span>
+      <span class="cursor">|</span>
+    </h1>
+    <p class="hero-subtitle" id="hero-subtitle"></p>
+    <div class="hero-stats" id="hero-stats"></div>
+    <div class="tech-cloud" id="tech-cloud"></div>
+    <div class="hero-cta">
+      <a href="#projects" class="btn btn-primary">프로젝트 보기</a>
+      <a href="#about" class="btn btn-secondary">더 알아보기</a>
+    </div>
+  </div>
+</section>
+
+<!-- About Section -->
+<section id="about" class="section about-section">
+  <div class="section-container">
+    <h2 class="section-title">소개</h2>
+    <div class="about-grid" id="about-content">
+      <div class="about-bio" id="about-bio"></div>
+      <div class="about-contact" id="about-contact"></div>
+      <div class="about-export" id="about-export">
+        <h3>데이터 관리</h3>
+        <div class="export-buttons">
+          <button id="btn-export-pdf" class="btn btn-secondary">PDF 내보내기</button>
+          <button id="btn-export-json" class="btn btn-secondary">JSON 백업</button>
+          <label class="btn btn-secondary btn-import">
+            JSON 복원
+            <input type="file" id="import-json-input" accept=".json" hidden>
+          </label>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Timeline Section -->
+<section id="timeline" class="section timeline-section">
+  <div class="section-container">
+    <h2 class="section-title">타임라인</h2>
+    <div class="timeline-wrapper">
+      <div class="timeline-line"></div>
+      <div class="timeline-items" id="timeline-items"></div>
+    </div>
+    <div class="growth-chart-container">
+      <h3 class="chart-title">성장 그래프</h3>
+      <canvas id="growth-chart" width="800" height="300"></canvas>
+    </div>
+  </div>
+</section>
+
+<!-- Projects Section -->
+<section id="projects" class="section projects-section">
+  <div class="section-container">
+    <h2 class="section-title">프로젝트</h2>
+    <div class="projects-toolbar" id="projects-toolbar">
+      <div class="toolbar-left">
+        <input type="text" id="search-input" class="search-input" placeholder="프로젝트 검색...">
+        <select id="filter-tech" class="toolbar-select">
+          <option value="">모든 기술</option>
+        </select>
+        <select id="sort-select" class="toolbar-select">
+          <option value="date">날짜순</option>
+          <option value="lines">코드량순</option>
+          <option value="name">이름순</option>
+        </select>
+      </div>
+      <div class="toolbar-right">
+        <button id="btn-add-project" class="btn btn-primary">+ 프로젝트 추가</button>
+      </div>
+    </div>
+    <div class="projects-grid" id="projects-grid"></div>
+  </div>
+</section>
+
+<!-- Code Snippet Section -->
+<section id="code-snippet" class="section snippet-section">
+  <div class="section-container">
+    <h2 class="section-title">코드 하이라이트</h2>
+    <div class="snippet-tabs" id="snippet-tabs"></div>
+    <div class="snippet-viewer" id="snippet-viewer">
+      <div class="snippet-header" id="snippet-header"></div>
+      <pre class="snippet-code" id="snippet-code"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- Demo Section -->
+<section id="demo" class="section demo-section">
+  <div class="section-container">
+    <h2 class="section-title">라이브 데모</h2>
+    <div class="demo-selector" id="demo-selector"></div>
+    <div class="demo-area" id="demo-area">
+      <div class="demo-iframe-container">
+        <iframe id="demo-iframe" class="demo-iframe" sandbox="allow-scripts allow-same-origin"></iframe>
+      </div>
+      <div class="demo-gallery" id="demo-gallery"></div>
+    </div>
+    <p class="demo-placeholder" id="demo-placeholder">데모를 볼 프로젝트를 선택하세요.</p>
+  </div>
+</section>
+
+<!-- Modal: Project Add/Edit -->
+<div id="project-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modal-title">프로젝트 추가</h3>
+      <button class="modal-close" id="modal-close-btn">&times;</button>
+    </div>
+    <form id="project-form" class="modal-form">
+      <div class="form-group">
+        <label for="form-name">프로젝트 이름 *</label>
+        <input type="text" id="form-name" name="name" required>
+      </div>
+      <div class="form-group">
+        <label for="form-description">설명 *</label>
+        <textarea id="form-description" name="description" rows="3" required></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="form-version">버전</label>
+          <input type="text" id="form-version" name="version" placeholder="v1">
+        </div>
+        <div class="form-group">
+          <label for="form-date">날짜 *</label>
+          <input type="date" id="form-date" name="date" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="form-techStack">기술 스택 (쉼표 구분)</label>
+        <input type="text" id="form-techStack" name="techStack" placeholder="HTML, CSS, JavaScript">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="form-lines">코드 라인 수</label>
+          <input type="number" id="form-lines" name="lines" min="0">
+        </div>
+        <div class="form-group">
+          <label for="form-language">언어</label>
+          <select id="form-language" name="language">
+            <option value="javascript">JavaScript</option>
+            <option value="html">HTML</option>
+            <option value="css">CSS</option>
+            <option value="python">Python</option>
+            <option value="other">기타</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="form-link">링크</label>
+        <input type="url" id="form-link" name="link" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label for="form-image">이미지 URL</label>
+        <input type="url" id="form-image" name="image" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label for="form-codeSnippet">코드 스니펫</label>
+        <textarea id="form-codeSnippet" name="codeSnippet" rows="6" class="code-textarea"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" id="btn-delete-project" class="btn btn-danger hidden">삭제</button>
+        <div class="form-actions-right">
+          <button type="button" class="btn btn-secondary" id="btn-cancel-modal">취소</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-project">저장</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-modal" class="modal hidden">
+  <div class="modal-backdrop"></div>
+  <div class="modal-content modal-small">
+    <div class="modal-header">
+      <h3>프로젝트 삭제</h3>
+      <button class="modal-close" id="delete-modal-close">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p>정말로 이 프로젝트를 삭제하시겠습니까?</p>
+      <p class="delete-project-name" id="delete-project-name"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" id="btn-cancel-delete">취소</button>
+      <button class="btn btn-danger" id="btn-confirm-delete">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast Notification -->
+<div id="toast-container" class="toast-container"></div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const projectData = [
+  {
+    id: "matgo-v7",
+    name: "맞고 v7",
+    description: "한국 전통 카드 게임 고스톱을 웹으로 구현. AI 상대, 점수 계산, 애니메이션 포함.",
+    version: "v7",
+    date: "2025-12-01",
+    techStack: ["HTML", "CSS", "JavaScript", "Canvas"],
+    lines: 2958,
+    link: "",
+    image: "",
+    codeSnippet: `// 패 조합 판정\nfunction checkGo(hand) {\n  const groups = groupByMonth(hand);\n  return Object.values(groups)\n    .filter(g => g.length >= 3);\n}`,
+    language: "javascript",
+    screenshots: [],
+    demoUrl: ""
+  },
+  {
+    id: "openclaw-viz-v4",
+    name: "OpenClaw Visualizer v4",
+    description: "OpenClaw 에이전트 시스템의 실시간 상태를 시각화하는 대시보드.",
+    version: "v4",
+    date: "2026-01-15",
+    techStack: ["HTML", "CSS", "JavaScript", "Canvas", "SVG"],
+    lines: 3196,
+    link: "",
+    image: "",
+    codeSnippet: `// 노드 연결 시각화\nfunction drawConnections(ctx, nodes) {\n  nodes.forEach(node => {\n    node.connections.forEach(target => {\n      ctx.beginPath();\n      ctx.moveTo(node.x, node.y);\n      ctx.lineTo(target.x, target.y);\n      ctx.stroke();\n    });\n  });\n}`,
+    language: "javascript",
+    screenshots: [],
+    demoUrl: ""
+  },
+  {
+    id: "agent-core-viz",
+    name: "Agent Core 시각화",
+    description: "에이전트 코어의 3가지 측면을 시각화: 브레인 맵, 팩토리 프로세스, 미션 트래커.",
+    version: "v1",
+    date: "2026-01-20",
+    techStack: ["HTML", "CSS", "JavaScript", "Canvas"],
+    lines: 3500,
+    link: "",
+    image: "",
+    codeSnippet: `// 브레인 뉴런 네트워크\nclass Neuron {\n  constructor(x, y) {\n    this.x = x;\n    this.y = y;\n    this.connections = [];\n    this.activation = 0;\n  }\n  fire() {\n    this.activation = 1;\n    this.connections.forEach(n => n.receive(0.5));\n  }\n}`,
+    language: "javascript",
+    screenshots: [],
+    demoUrl: "",
+    subFiles: ["brain.html", "factory.html", "mission.html"]
+  },
+  {
+    id: "context-viz-v5",
+    name: "Context Visualizer v5",
+    description: "AI 컨텍스트 윈도우의 토큰 사용량, 메시지 구조를 실시간 시각화.",
+    version: "v5",
+    date: "2026-02-01",
+    techStack: ["HTML", "CSS", "JavaScript", "SVG"],
+    lines: 1989,
+    link: "",
+    image: "",
+    codeSnippet: `// 토큰 사용량 게이지\nfunction renderGauge(ctx, used, total) {\n  const ratio = used / total;\n  const angle = ratio * Math.PI * 2;\n  ctx.beginPath();\n  ctx.arc(cx, cy, r, 0, angle);\n  ctx.strokeStyle = ratio > 0.9 ? '#ff4444' : '#00d4ff';\n  ctx.stroke();\n}`,
+    language: "javascript",
+    screenshots: [],
+    demoUrl: ""
+  },
+  {
+    id: "prompt-explorer-v6",
+    name: "Prompt Explorer v6",
+    description: "프롬프트 패턴 탐색기. 카테고리별 분류, 검색, 즐겨찾기 기능.",
+    version: "v6",
+    date: "2026-02-10",
+    techStack: ["HTML", "CSS", "JavaScript"],
+    lines: 2200,
+    link: "",
+    image: "",
+    codeSnippet: `// 프롬프트 검색 엔진\nfunction searchPrompts(query, prompts) {\n  const terms = query.toLowerCase().split(/\\s+/);\n  return prompts.filter(p =>\n    terms.every(t =>\n      p.title.toLowerCase().includes(t) ||\n      p.body.toLowerCase().includes(t)\n    )\n  );\n}`,
+    language: "javascript",
+    screenshots: [],
+    demoUrl: ""
+  },
+  {
+    id: "context-lab-v7",
+    name: "Context Lab v7",
+    description: "컨텍스트 실험실. 다양한 프롬프트 전략의 효과를 A/B 테스트.",
+    version: "v7",
+    date: "2026-02-20",
+    techStack: ["HTML", "CSS", "JavaScript", "Canvas"],
+    lines: 2088,
+    link: "",
+    image: "",
+    codeSnippet: `// A/B 테스트 결과 비교\nfunction compareResults(a, b) {\n  return {\n    winner: a.score > b.score ? 'A' : 'B',\n    diff: Math.abs(a.score - b.score),\n    confidence: calculateConfidence(a, b)\n  };\n}`,
+    language: "javascript",
+    screenshots: [],
+    demoUrl: ""
+  },
+  {
+    id: "oc-devmon-v8",
+    name: "OC-DevMon v8",
+    description: "OpenClaw 개발 모니터링 대시보드. 빌드 상태, 에러 추적, 성능 메트릭.",
+    version: "v8",
+    date: "2026-03-01",
+    techStack: ["HTML", "CSS", "JavaScript", "Canvas", "SVG"],
+    lines: 4545,
+    link: "",
+    image: "",
+    codeSnippet: `// 실시간 메트릭 스트림\nclass MetricStream {\n  constructor(capacity = 100) {\n    this.buffer = [];\n    this.capacity = capacity;\n  }\n  push(value) {\n    this.buffer.push({ value, ts: Date.now() });\n    if (this.buffer.length > this.capacity)\n      this.buffer.shift();\n  }\n  average() {\n    return this.buffer.reduce((s, m) => s + m.value, 0)\n      / this.buffer.length;\n  }\n}`,
+    language: "javascript",
+    screenshots: [],
+    demoUrl: ""
+  },
+  {
+    id: "neural-map-v9",
+    name: "Neural Map v9",
+    description: "뉴럴 네트워크 구조를 인터랙티브 맵으로 시각화. 레이어별 탐색, 가중치 히트맵.",
+    version: "v9",
+    date: "2026-03-15",
+    techStack: ["HTML", "CSS", "JavaScript", "Canvas", "WebGL"],
+    lines: 4549,
+    link: "",
+    image: "",
+    codeSnippet: `// 레이어 가중치 히트맵\nfunction renderHeatmap(ctx, weights, w, h) {\n  const cellW = w / weights[0].length;\n  const cellH = h / weights.length;\n  weights.forEach((row, i) => {\n    row.forEach((val, j) => {\n      ctx.fillStyle = weightToColor(val);\n      ctx.fillRect(j * cellW, i * cellH, cellW, cellH);\n    });\n  });\n}`,
+    language: "javascript",
+    screenshots: [],
+    demoUrl: ""
+  }
+];
+
+// ============================================================
+// STATE
+// ============================================================
+const state = {
+  projects: [...projectData],
+  theme: 'dark',
+  activeSection: 'hero',
+  editingId: null,
+  sortBy: 'date',
+  filterTech: null,
+  searchQuery: '',
+  activeSnippetIndex: 0,
+  demoProjectId: null,
+  deleteTargetId: null
+};
+
+// ============================================================
+// UTILITY FUNCTIONS
+// ============================================================
+function $(sel) { return document.querySelector(sel); }
+function $$(sel) { return document.querySelectorAll(sel); }
+
+function generateId() {
+  return 'proj-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr);
+  return d.getFullYear() + '년 ' + (d.getMonth() + 1) + '월 ' + d.getDate() + '일';
+}
+
+function formatNumber(n) {
+  return n.toLocaleString('ko-KR');
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+function showToast(message, type) {
+  type = type || 'info';
+  const container = $('#toast-container');
+  const toast = document.createElement('div');
+  toast.className = 'toast toast-' + type;
+  toast.textContent = message;
+  container.appendChild(toast);
+  requestAnimationFrame(function() { toast.classList.add('show'); });
+  setTimeout(function() {
+    toast.classList.remove('show');
+    setTimeout(function() { toast.remove(); }, 300);
+  }, 3000);
+}
+
+// ============================================================
+// FILTERING, SORTING, SEARCHING
+// ============================================================
+function getAllTechStacks() {
+  const techSet = new Set();
+  state.projects.forEach(function(p) {
+    p.techStack.forEach(function(t) { techSet.add(t); });
+  });
+  return Array.from(techSet).sort();
+}
+
+function getFilteredProjects() {
+  var list = state.projects.slice();
+
+  // Search
+  if (state.searchQuery) {
+    var q = state.searchQuery.toLowerCase();
+    list = list.filter(function(p) {
+      return p.name.toLowerCase().includes(q) ||
+             p.description.toLowerCase().includes(q) ||
+             p.techStack.some(function(t) { return t.toLowerCase().includes(q); });
+    });
+  }
+
+  // Filter by tech
+  if (state.filterTech) {
+    list = list.filter(function(p) {
+      return p.techStack.includes(state.filterTech);
+    });
+  }
+
+  // Sort
+  list.sort(function(a, b) {
+    switch (state.sortBy) {
+      case 'date':
+        return new Date(b.date) - new Date(a.date);
+      case 'lines':
+        return b.lines - a.lines;
+      case 'name':
+        return a.name.localeCompare(b.name, 'ko');
+      default:
+        return 0;
+    }
+  });
+
+  return list;
+}
+
+function filterByTech(tech) {
+  state.filterTech = tech || null;
+  renderProjects();
+}
+
+function sortProjects(by) {
+  state.sortBy = by;
+  renderProjects();
+}
+
+// ============================================================
+// RENDER: HERO
+// ============================================================
+function renderHero() {
+  var totalLines = state.projects.reduce(function(s, p) { return s + p.lines; }, 0);
+  var totalProjects = state.projects.length;
+  var techs = getAllTechStacks();
+
+  // Stats
+  var statsEl = $('#hero-stats');
+  statsEl.innerHTML = '';
+  var stats = [
+    { label: '프로젝트', value: totalProjects },
+    { label: '총 코드 라인', value: formatNumber(totalLines) },
+    { label: '기술 스택', value: techs.length }
+  ];
+  stats.forEach(function(s) {
+    var div = document.createElement('div');
+    div.className = 'stat-item';
+    div.innerHTML = '<span class="stat-value">' + s.value + '</span><span class="stat-label">' + s.label + '</span>';
+    statsEl.appendChild(div);
+  });
+
+  // Tech cloud
+  var cloudEl = $('#tech-cloud');
+  cloudEl.innerHTML = '';
+  techs.forEach(function(t) {
+    var span = document.createElement('span');
+    span.className = 'tech-tag';
+    span.textContent = t;
+    span.addEventListener('click', function() {
+      $('#filter-tech').value = t;
+      filterByTech(t);
+      document.getElementById('projects').scrollIntoView({ behavior: 'smooth' });
+    });
+    cloudEl.appendChild(span);
+  });
+
+  // Subtitle
+  $('#hero-subtitle').textContent = '풀스택 개발자 | ' + totalProjects + '개 프로젝트 | ' + formatNumber(totalLines) + ' 라인';
+
+  // Typing effect
+  startTypingEffect();
+}
+
+function startTypingEffect() {
+  var texts = ['개발자 포트폴리오', '창의적인 웹 프로젝트', '코드로 만드는 세상'];
+  var textIndex = 0;
+  var charIndex = 0;
+  var isDeleting = false;
+  var typingEl = $('#typing-text');
+
+  function type() {
+    var current = texts[textIndex];
+    if (isDeleting) {
+      typingEl.textContent = current.substring(0, charIndex - 1);
+      charIndex--;
+    } else {
+      typingEl.textContent = current.substring(0, charIndex + 1);
+      charIndex++;
+    }
+
+    var delay = isDeleting ? 50 : 100;
+
+    if (!isDeleting && charIndex === current.length) {
+      delay = 2000;
+      isDeleting = true;
+    } else if (isDeleting && charIndex === 0) {
+      isDeleting = false;
+      textIndex = (textIndex + 1) % texts.length;
+      delay = 500;
+    }
+
+    setTimeout(type, delay);
+  }
+
+  type();
+}
+
+// ============================================================
+// RENDER: ABOUT
+// ============================================================
+function renderAbout() {
+  var bio = $('#about-bio');
+  bio.innerHTML =
+    '<h3>안녕하세요!</h3>' +
+    '<p>웹 기술을 활용한 인터랙티브 시각화와 도구 개발에 열정을 가진 개발자입니다. ' +
+    'HTML, CSS, JavaScript를 기반으로 캔버스, SVG, WebGL 등을 활용하여 ' +
+    '다양한 프로젝트를 만들고 있습니다.</p>' +
+    '<p>OpenClaw 에이전트 시스템 개발에 참여하고 있으며, ' +
+    'AI와 시각화의 결합에 특히 관심이 많습니다.</p>';
+
+  var contact = $('#about-contact');
+  contact.innerHTML =
+    '<h3>연락처</h3>' +
+    '<ul class="contact-list">' +
+    '<li><span class="contact-icon">📧</span> 이메일: developer@example.com</li>' +
+    '<li><span class="contact-icon">🔗</span> GitHub: github.com/developer</li>' +
+    '<li><span class="contact-icon">🌐</span> 웹사이트: developer.dev</li>' +
+    '</ul>';
+}
+
+// ============================================================
+// RENDER: TIMELINE
+// ============================================================
+function renderTimeline() {
+  var container = $('#timeline-items');
+  container.innerHTML = '';
+
+  var sorted = state.projects.slice().sort(function(a, b) {
+    return new Date(a.date) - new Date(b.date);
+  });
+
+  sorted.forEach(function(project, index) {
+    var item = document.createElement('div');
+    item.className = 'timeline-item' + (index % 2 === 0 ? ' left' : ' right');
+    item.innerHTML =
+      '<div class="timeline-dot"></div>' +
+      '<div class="timeline-card">' +
+        '<div class="timeline-date">' + formatDate(project.date) + '</div>' +
+        '<h4 class="timeline-title">' + escapeHtml(project.name) + '</h4>' +
+        '<p class="timeline-desc">' + escapeHtml(project.description) + '</p>' +
+        '<div class="timeline-meta">' +
+          '<span class="timeline-version">' + escapeHtml(project.version) + '</span>' +
+          '<span class="timeline-lines">' + formatNumber(project.lines) + ' 라인</span>' +
+        '</div>' +
+        '<div class="timeline-techs">' +
+          project.techStack.map(function(t) {
+            return '<span class="tech-badge">' + escapeHtml(t) + '</span>';
+          }).join('') +
+        '</div>' +
+      '</div>';
+    container.appendChild(item);
+  });
+
+  // Delegate growth chart rendering to interactions.js
+  var canvas = $('#growth-chart');
+  if (typeof renderGrowthChart === 'function') {
+    renderGrowthChart(canvas, sorted);
+  }
+}
+
+// ============================================================
+// RENDER: PROJECTS
+// ============================================================
+function renderProjects() {
+  var grid = $('#projects-grid');
+  grid.innerHTML = '';
+
+  var filtered = getFilteredProjects();
+
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><p>검색 결과가 없습니다.</p></div>';
+    return;
+  }
+
+  filtered.forEach(function(project) {
+    var card = document.createElement('div');
+    card.className = 'project-card';
+    card.setAttribute('data-id', project.id);
+
+    var imgHtml = project.image
+      ? '<div class="card-image"><img src="' + escapeHtml(project.image) + '" alt="' + escapeHtml(project.name) + '"></div>'
+      : '<div class="card-image card-placeholder"><span>' + escapeHtml(project.name.charAt(0)) + '</span></div>';
+
+    card.innerHTML =
+      imgHtml +
+      '<div class="card-body">' +
+        '<div class="card-header">' +
+          '<h3 class="card-title">' + escapeHtml(project.name) + '</h3>' +
+          '<span class="card-version">' + escapeHtml(project.version) + '</span>' +
+        '</div>' +
+        '<p class="card-desc">' + escapeHtml(project.description) + '</p>' +
+        '<div class="card-techs">' +
+          project.techStack.map(function(t) {
+            return '<span class="tech-badge">' + escapeHtml(t) + '</span>';
+          }).join('') +
+        '</div>' +
+        '<div class="card-footer">' +
+          '<span class="card-date">' + formatDate(project.date) + '</span>' +
+          '<span class="card-lines">' + formatNumber(project.lines) + ' 라인</span>' +
+        '</div>' +
+        '<div class="card-actions">' +
+          '<button class="btn btn-sm btn-secondary btn-edit" data-id="' + project.id + '">편집</button>' +
+          '<button class="btn btn-sm btn-secondary btn-view-code" data-id="' + project.id + '">코드</button>' +
+          (project.link ? '<a href="' + escapeHtml(project.link) + '" class="btn btn-sm btn-primary" target="_blank">링크</a>' : '') +
+        '</div>' +
+      '</div>';
+
+    grid.appendChild(card);
+  });
+
+  // Update tech filter dropdown
+  populateTechFilter();
+}
+
+function populateTechFilter() {
+  var select = $('#filter-tech');
+  var currentVal = select.value;
+  var techs = getAllTechStacks();
+
+  select.innerHTML = '<option value="">모든 기술</option>';
+  techs.forEach(function(t) {
+    var opt = document.createElement('option');
+    opt.value = t;
+    opt.textContent = t;
+    if (t === currentVal) opt.selected = true;
+    select.appendChild(opt);
+  });
+}
+
+// ============================================================
+// RENDER: CODE SNIPPET
+// ============================================================
+function renderSnippet(code, language) {
+  var viewer = $('#snippet-code');
+  // Delegate highlighting to interactions.js
+  if (typeof highlight === 'function') {
+    viewer.innerHTML = highlight(code, language);
+  } else {
+    viewer.innerHTML = '<code>' + escapeHtml(code) + '</code>';
+  }
+  if (typeof addLineNumbers === 'function') {
+    addLineNumbers();
+  }
+}
+
+function renderSnippetTabs() {
+  var tabs = $('#snippet-tabs');
+  tabs.innerHTML = '';
+
+  state.projects.forEach(function(p, i) {
+    if (!p.codeSnippet) return;
+    var btn = document.createElement('button');
+    btn.className = 'snippet-tab' + (i === state.activeSnippetIndex ? ' active' : '');
+    btn.textContent = p.name;
+    btn.setAttribute('data-index', i);
+    btn.addEventListener('click', function() {
+      state.activeSnippetIndex = i;
+      renderSnippetTabs();
+      renderSnippetContent();
+    });
+    tabs.appendChild(btn);
+  });
+
+  renderSnippetContent();
+}
+
+function renderSnippetContent() {
+  var project = state.projects[state.activeSnippetIndex];
+  if (!project) return;
+
+  var header = $('#snippet-header');
+  header.innerHTML =
+    '<span class="snippet-project">' + escapeHtml(project.name) + '</span>' +
+    '<span class="snippet-lang">' + escapeHtml(project.language) + '</span>';
+
+  renderSnippet(project.codeSnippet, project.language);
+}
+
+// ============================================================
+// RENDER: DEMO
+// ============================================================
+function renderDemo(project) {
+  var area = $('#demo-area');
+  var placeholder = $('#demo-placeholder');
+  var iframe = $('#demo-iframe');
+  var gallery = $('#demo-gallery');
+
+  if (!project) {
+    area.classList.add('hidden');
+    placeholder.classList.remove('hidden');
+    return;
+  }
+
+  placeholder.classList.add('hidden');
+  area.classList.remove('hidden');
+
+  if (project.demoUrl) {
+    iframe.src = project.demoUrl;
+    iframe.classList.remove('hidden');
+  } else {
+    iframe.src = '';
+    iframe.classList.add('hidden');
+  }
+
+  gallery.innerHTML = '';
+  if (project.screenshots && project.screenshots.length > 0) {
+    project.screenshots.forEach(function(url) {
+      var img = document.createElement('img');
+      img.src = url;
+      img.className = 'gallery-thumb';
+      img.alt = project.name + ' 스크린샷';
+      gallery.appendChild(img);
+    });
+  } else {
+    gallery.innerHTML = '<p class="gallery-empty">스크린샷이 없습니다.</p>';
+  }
+}
+
+function renderDemoSelector() {
+  var selector = $('#demo-selector');
+  selector.innerHTML = '';
+
+  state.projects.forEach(function(p) {
+    var btn = document.createElement('button');
+    btn.className = 'demo-select-btn' + (state.demoProjectId === p.id ? ' active' : '');
+    btn.textContent = p.name;
+    btn.addEventListener('click', function() {
+      state.demoProjectId = p.id;
+      renderDemoSelector();
+      renderDemo(p);
+    });
+    selector.appendChild(btn);
+  });
+}
+
+// ============================================================
+// MODAL: OPEN / CLOSE / SAVE / DELETE
+// ============================================================
+function openModal(projectId) {
+  var modal = $('#project-modal');
+  var form = $('#project-form');
+  var title = $('#modal-title');
+  var deleteBtn = $('#btn-delete-project');
+
+  form.reset();
+  state.editingId = projectId || null;
+
+  if (projectId) {
+    title.textContent = '프로젝트 편집';
+    deleteBtn.classList.remove('hidden');
+    var p = state.projects.find(function(proj) { return proj.id === projectId; });
+    if (p) {
+      $('#form-name').value = p.name;
+      $('#form-description').value = p.description;
+      $('#form-version').value = p.version || '';
+      $('#form-date').value = p.date;
+      $('#form-techStack').value = p.techStack.join(', ');
+      $('#form-lines').value = p.lines || '';
+      $('#form-language').value = p.language || 'javascript';
+      $('#form-link').value = p.link || '';
+      $('#form-image').value = p.image || '';
+      $('#form-codeSnippet').value = p.codeSnippet || '';
+    }
+  } else {
+    title.textContent = '프로젝트 추가';
+    deleteBtn.classList.add('hidden');
+    $('#form-date').value = new Date().toISOString().split('T')[0];
+  }
+
+  modal.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+  setTimeout(function() { $('#form-name').focus(); }, 100);
+}
+
+function closeModal() {
+  $('#project-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+  state.editingId = null;
+}
+
+function saveProject(formData) {
+  var techStack = formData.techStack
+    .split(',')
+    .map(function(s) { return s.trim(); })
+    .filter(function(s) { return s.length > 0; });
+
+  var projectObj = {
+    id: state.editingId || generateId(),
+    name: formData.name,
+    description: formData.description,
+    version: formData.version || 'v1',
+    date: formData.date,
+    techStack: techStack,
+    lines: parseInt(formData.lines) || 0,
+    link: formData.link || '',
+    image: formData.image || '',
+    codeSnippet: formData.codeSnippet || '',
+    language: formData.language || 'javascript',
+    screenshots: [],
+    demoUrl: ''
+  };
+
+  if (state.editingId) {
+    var idx = state.projects.findIndex(function(p) { return p.id === state.editingId; });
+    if (idx !== -1) {
+      // Preserve existing screenshots/demoUrl
+      projectObj.screenshots = state.projects[idx].screenshots || [];
+      projectObj.demoUrl = state.projects[idx].demoUrl || '';
+      if (state.projects[idx].subFiles) {
+        projectObj.subFiles = state.projects[idx].subFiles;
+      }
+      state.projects[idx] = projectObj;
+      showToast('프로젝트가 수정되었습니다.', 'success');
+    }
+  } else {
+    state.projects.push(projectObj);
+    showToast('프로젝트가 추가되었습니다.', 'success');
+  }
+
+  closeModal();
+  renderAll();
+}
+
+function deleteProject(id) {
+  state.deleteTargetId = id;
+  var project = state.projects.find(function(p) { return p.id === id; });
+  $('#delete-project-name').textContent = project ? project.name : '';
+  $('#delete-modal').classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+
+function confirmDelete() {
+  if (state.deleteTargetId) {
+    state.projects = state.projects.filter(function(p) {
+      return p.id !== state.deleteTargetId;
+    });
+    state.deleteTargetId = null;
+    $('#delete-modal').classList.add('hidden');
+    document.body.style.overflow = '';
+    closeModal();
+    showToast('프로젝트가 삭제되었습니다.', 'success');
+    renderAll();
+  }
+}
+
+function cancelDelete() {
+  state.deleteTargetId = null;
+  $('#delete-modal').classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
+// ============================================================
+// EXPORT / IMPORT
+// ============================================================
+function exportPDF() {
+  window.print();
+}
+
+function exportJSON() {
+  var data = JSON.stringify(state.projects, null, 2);
+  var blob = new Blob([data], { type: 'application/json' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'portfolio-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('JSON 백업이 다운로드되었습니다.', 'success');
+}
+
+function importJSON(file) {
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var imported = JSON.parse(e.target.result);
+      if (!Array.isArray(imported)) {
+        showToast('잘못된 파일 형식입니다.', 'error');
+        return;
+      }
+      state.projects = imported;
+      renderAll();
+      showToast(imported.length + '개 프로젝트를 복원했습니다.', 'success');
+    } catch (err) {
+      showToast('JSON 파싱 오류: ' + err.message, 'error');
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function setupNavigation() {
+  // Smooth scroll for nav links
+  $$('.nav-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      var targetId = this.getAttribute('href').slice(1);
+      var target = document.getElementById(targetId);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth' });
+        closeMobileMenu();
+      }
+    });
+  });
+
+  // IntersectionObserver for active section
+  var sections = $$('.section');
+  var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(entry) {
+      if (entry.isIntersecting) {
+        var id = entry.target.id;
+        state.activeSection = id;
+        updateActiveNavLink(id);
+        history.replaceState(null, '', '#' + id);
+      }
+    });
+  }, {
+    threshold: 0.3,
+    rootMargin: '-80px 0px 0px 0px'
+  });
+
+  sections.forEach(function(section) {
+    observer.observe(section);
+  });
+
+  // Hash navigation on load
+  if (window.location.hash) {
+    var target = document.getElementById(window.location.hash.slice(1));
+    if (target) {
+      setTimeout(function() {
+        target.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    }
+  }
+}
+
+function updateActiveNavLink(sectionId) {
+  $$('.nav-link').forEach(function(link) {
+    if (link.getAttribute('data-section') === sectionId) {
+      link.classList.add('active');
+    } else {
+      link.classList.remove('active');
+    }
+  });
+}
+
+// ============================================================
+// MOBILE MENU
+// ============================================================
+function setupMobileMenu() {
+  var hamburger = $('#hamburger-btn');
+  var navLinks = $('.nav-links');
+  var overlay = $('#mobile-nav-overlay');
+
+  hamburger.addEventListener('click', function() {
+    var isOpen = navLinks.classList.contains('open');
+    if (isOpen) {
+      closeMobileMenu();
+    } else {
+      navLinks.classList.add('open');
+      hamburger.classList.add('active');
+      overlay.classList.remove('hidden');
+    }
+  });
+
+  overlay.addEventListener('click', closeMobileMenu);
+}
+
+function closeMobileMenu() {
+  var navLinks = $('.nav-links');
+  var hamburger = $('#hamburger-btn');
+  var overlay = $('#mobile-nav-overlay');
+  if (navLinks) navLinks.classList.remove('open');
+  if (hamburger) hamburger.classList.remove('active');
+  if (overlay) overlay.classList.add('hidden');
+}
+
+// ============================================================
+// THEME TOGGLE
+// ============================================================
+function setupThemeToggle() {
+  var btn = $('#theme-toggle');
+  btn.addEventListener('click', function() {
+    state.theme = state.theme === 'dark' ? 'light' : 'dark';
+    applyTheme();
+  });
+
+  // Load saved theme
+  var saved = localStorage.getItem('portfolio-theme');
+  if (saved) state.theme = saved;
+  applyTheme();
+}
+
+function applyTheme() {
+  document.body.setAttribute('data-theme', state.theme);
+  var icon = $('.theme-icon');
+  icon.textContent = state.theme === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem('portfolio-theme', state.theme);
+}
+
+// ============================================================
+// EVENT DELEGATION & SETUP
+// ============================================================
+function setupEvents() {
+  // Project form submission
+  $('#project-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var fd = new FormData(this);
+    var data = {};
+    fd.forEach(function(val, key) { data[key] = val; });
+    saveProject(data);
+  });
+
+  // Modal close buttons
+  $('#modal-close-btn').addEventListener('click', closeModal);
+  $('#btn-cancel-modal').addEventListener('click', closeModal);
+  $('#project-modal .modal-backdrop').addEventListener('click', closeModal);
+
+  // Delete modal
+  $('#btn-delete-project').addEventListener('click', function() {
+    if (state.editingId) deleteProject(state.editingId);
+  });
+  $('#btn-confirm-delete').addEventListener('click', confirmDelete);
+  $('#btn-cancel-delete').addEventListener('click', cancelDelete);
+  $('#delete-modal-close').addEventListener('click', cancelDelete);
+  $('#delete-modal .modal-backdrop').addEventListener('click', cancelDelete);
+
+  // Add project button
+  $('#btn-add-project').addEventListener('click', function() {
+    openModal();
+  });
+
+  // Search
+  $('#search-input').addEventListener('input', function() {
+    state.searchQuery = this.value;
+    renderProjects();
+  });
+
+  // Filter
+  $('#filter-tech').addEventListener('change', function() {
+    filterByTech(this.value);
+  });
+
+  // Sort
+  $('#sort-select').addEventListener('change', function() {
+    sortProjects(this.value);
+  });
+
+  // Export/Import
+  $('#btn-export-pdf').addEventListener('click', exportPDF);
+  $('#btn-export-json').addEventListener('click', exportJSON);
+  $('#import-json-input').addEventListener('change', function() {
+    if (this.files.length > 0) {
+      importJSON(this.files[0]);
+      this.value = '';
+    }
+  });
+
+  // Event delegation for project cards
+  $('#projects-grid').addEventListener('click', function(e) {
+    var editBtn = e.target.closest('.btn-edit');
+    if (editBtn) {
+      openModal(editBtn.getAttribute('data-id'));
+      return;
+    }
+    var codeBtn = e.target.closest('.btn-view-code');
+    if (codeBtn) {
+      var projId = codeBtn.getAttribute('data-id');
+      var idx = state.projects.findIndex(function(p) { return p.id === projId; });
+      if (idx !== -1) {
+        state.activeSnippetIndex = idx;
+        renderSnippetTabs();
+        document.getElementById('code-snippet').scrollIntoView({ behavior: 'smooth' });
+      }
+      return;
+    }
+  });
+
+  // Escape key closes modals
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      if (!$('#delete-modal').classList.contains('hidden')) {
+        cancelDelete();
+      } else if (!$('#project-modal').classList.contains('hidden')) {
+        closeModal();
+      }
+    }
+  });
+}
+
+// ============================================================
+// RENDER ALL
+// ============================================================
+function renderAll() {
+  renderHero();
+  renderAbout();
+  renderTimeline();
+  renderProjects();
+  renderSnippetTabs();
+  renderDemoSelector();
+  renderDemo(null);
+}
+
+// ============================================================
+// INITIALIZATION
+// ============================================================
+function init() {
+  renderAll();
+  setupNavigation();
+  setupMobileMenu();
+  setupThemeToggle();
+  setupEvents();
+}
+
+// Run on DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>

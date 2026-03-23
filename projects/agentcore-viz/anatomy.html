@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Agent Core — 인체 해부학</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--surface:#161b22;--border:#30363d;
+  --brain:#a78bfa;--eye:#38bdf8;--lung:#34d399;--heart:#f87171;
+  --shield:#fbbf24;--memory:#f472b6;
+  --text:#e6edf3;--text2:#8b949e;
+}
+html,body{height:100%;font-family:'Segoe UI',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+
+/* Layout */
+.app{display:flex;height:100vh;flex-direction:row}
+.left-panel{flex:0 0 260px;padding:16px;border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+.center-panel{flex:1;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.right-panel{flex:0 0 280px;padding:16px;border-left:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+
+/* Header */
+h1{font-size:14px;color:var(--text2);text-transform:uppercase;letter-spacing:2px;text-align:center;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.subtitle{font-size:11px;color:var(--text2);text-align:center;margin-top:4px}
+
+/* Body silhouette */
+.body-container{position:relative;width:400px;height:600px}
+.silhouette{position:absolute;inset:0;display:flex;justify-content:center}
+.silhouette svg{width:300px;height:580px;filter:drop-shadow(0 0 20px rgba(100,150,255,0.08))}
+
+/* Organs */
+.organ{
+  position:absolute;cursor:pointer;z-index:10;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  transition:all 0.3s ease;
+}
+.organ-icon{
+  font-size:36px;filter:grayscale(0.3);
+  transition:all 0.3s ease;
+}
+.organ-label{
+  font-size:10px;color:var(--text2);white-space:nowrap;
+  background:rgba(13,17,23,0.8);padding:2px 6px;border-radius:4px;
+}
+.organ:hover .organ-icon{transform:scale(1.2);filter:grayscale(0) drop-shadow(0 0 12px currentColor)}
+.organ:hover .organ-label{color:var(--text)}
+.organ.active .organ-icon{filter:grayscale(0) drop-shadow(0 0 16px currentColor);transform:scale(1.15)}
+.organ.active .organ-label{color:#fff;font-weight:600}
+
+/* Organ positions */
+.organ-brain{top:30px;left:50%;transform:translateX(-50%);color:var(--brain)}
+.organ-eye{top:80px;left:50%;transform:translateX(-50%);color:var(--eye)}
+.organ-lung{top:185px;left:50%;transform:translateX(-50%);color:var(--lung)}
+.organ-heart{top:175px;left:calc(50% + 40px);color:var(--heart)}
+.organ-shield{top:290px;left:50%;transform:translateX(-50%);color:var(--shield)}
+.organ-memory{top:65px;left:calc(50% - 65px);color:var(--memory)}
+
+/* Pulse animation on heart */
+@keyframes heartbeat{
+  0%,100%{transform:scale(1)}
+  15%{transform:scale(1.15)}
+  30%{transform:scale(1)}
+  45%{transform:scale(1.1)}
+}
+.organ-heart .organ-icon{animation:heartbeat 1.2s infinite}
+
+/* Breathing on lung */
+@keyframes breathe{
+  0%,100%{transform:scale(1);opacity:0.85}
+  50%{transform:scale(1.08);opacity:1}
+}
+.organ-lung .organ-icon{animation:breathe 3s ease-in-out infinite}
+
+/* Brain wave */
+@keyframes brainPulse{
+  0%,100%{filter:drop-shadow(0 0 6px var(--brain))}
+  50%{filter:drop-shadow(0 0 18px var(--brain))}
+}
+.organ-brain.thinking .organ-icon{animation:brainPulse 0.6s ease-in-out infinite}
+
+/* Eye blink */
+@keyframes blink{
+  0%,90%,100%{transform:scaleY(1)}
+  95%{transform:scaleY(0.1)}
+}
+.organ-eye.receiving .organ-icon{animation:blink 3s infinite}
+
+/* Shield flash */
+@keyframes shieldFlash{
+  0%,100%{filter:drop-shadow(0 0 4px var(--shield))}
+  50%{filter:drop-shadow(0 0 20px var(--shield));transform:scale(1.1)}
+}
+.organ-shield.checking .organ-icon{animation:shieldFlash 0.8s ease infinite}
+
+/* Memory glow */
+@keyframes memGlow{
+  0%,100%{filter:drop-shadow(0 0 4px var(--memory))}
+  50%{filter:drop-shadow(0 0 14px var(--memory))}
+}
+.organ-memory.storing .organ-icon{animation:memGlow 1.5s ease infinite}
+
+/* Connection lines (nerve paths) */
+.nerve-paths{position:absolute;inset:0;pointer-events:none;z-index:5}
+.nerve-paths svg{width:100%;height:100%}
+.nerve-path{stroke:var(--border);stroke-width:1.5;fill:none;opacity:0.3;transition:all 0.5s}
+.nerve-path.active{stroke:var(--eye);stroke-width:2;opacity:0.8;filter:drop-shadow(0 0 4px var(--eye))}
+
+/* Signal particle */
+.signal{
+  position:absolute;width:6px;height:6px;border-radius:50%;
+  background:var(--eye);box-shadow:0 0 8px var(--eye);
+  z-index:15;pointer-events:none;opacity:0;
+}
+
+/* Vitals */
+.vital-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;
+}
+.vital-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.vital-name{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+.vital-value{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.vital-bar{height:4px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:6px}
+.vital-fill{height:100%;border-radius:2px;transition:width 0.8s ease,background 0.8s ease}
+.vital-unit{font-size:10px;color:var(--text2);margin-left:2px}
+
+/* EEG Canvas */
+.eeg-canvas{width:100%;height:50px;border-radius:4px;background:#0d1117;margin-top:4px}
+
+/* Status log */
+.log-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;flex:1;min-height:0;overflow-y:auto}
+.log-entry{font-size:11px;padding:3px 0;border-bottom:1px solid rgba(48,54,61,0.5);display:flex;gap:6px;align-items:baseline}
+.log-time{color:var(--text2);font-variant-numeric:tabular-nums;flex-shrink:0;font-size:10px}
+.log-msg{color:var(--text)}
+
+/* Detail panel (overlay) */
+.detail-overlay{
+  position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:100;
+  display:none;align-items:center;justify-content:center;
+  backdrop-filter:blur(4px);
+}
+.detail-overlay.show{display:flex}
+.detail-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:24px;max-width:520px;width:90%;max-height:80vh;overflow-y:auto;
+  position:relative;
+}
+.detail-close{position:absolute;top:12px;right:12px;background:none;border:none;color:var(--text2);cursor:pointer;font-size:18px}
+.detail-close:hover{color:var(--text)}
+.detail-title{font-size:20px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.detail-sub{font-size:12px;color:var(--text2);margin-bottom:16px}
+.detail-section{margin-bottom:14px}
+.detail-section h3{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;border-bottom:1px solid var(--border);padding-bottom:4px}
+.detail-section p,.detail-section li{font-size:13px;line-height:1.6;color:var(--text)}
+.detail-section ul{list-style:none;padding:0}
+.detail-section li::before{content:'→ ';color:var(--text2)}
+.detail-section .file{font-family:monospace;font-size:12px;color:var(--eye);background:rgba(56,189,248,0.1);padding:1px 6px;border-radius:3px;display:inline-block;margin:2px 0}
+.detail-section .hook{font-family:monospace;font-size:12px;color:var(--shield);background:rgba(251,191,36,0.1);padding:1px 6px;border-radius:3px;display:inline-block;margin:2px 0}
+
+/* Memory diagram */
+.mem-diagram{
+  background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:16px;margin-top:8px;position:relative;min-height:140px;
+}
+.mem-box{
+  border:1px solid;border-radius:6px;padding:10px;text-align:center;font-size:11px;
+  position:relative;
+}
+.mem-short{border-color:var(--eye);color:var(--eye);width:45%;display:inline-block;vertical-align:top}
+.mem-long{border-color:var(--memory);color:var(--memory);width:45%;display:inline-block;vertical-align:top;margin-left:6%}
+.mem-arrow{text-align:center;color:var(--text2);font-size:20px;margin:8px 0}
+.mem-search{
+  margin-top:10px;text-align:center;font-size:11px;color:var(--text2);
+  padding:8px;border:1px dashed var(--border);border-radius:6px;
+}
+.mem-search.searching{border-color:var(--memory);color:var(--memory);background:rgba(244,114,182,0.05)}
+.neural-dots{display:flex;justify-content:center;gap:4px;margin-top:6px}
+.neural-dot{
+  width:6px;height:6px;border-radius:50%;background:var(--border);
+  transition:all 0.3s;
+}
+.neural-dot.lit{background:var(--memory);box-shadow:0 0 6px var(--memory)}
+
+/* Simulation controls */
+.sim-controls{display:flex;gap:8px;flex-wrap:wrap}
+.sim-btn{
+  flex:1;min-width:80px;padding:8px 12px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);cursor:pointer;font-size:12px;
+  transition:all 0.2s;text-align:center;
+}
+.sim-btn:hover{border-color:var(--eye);color:var(--eye)}
+.sim-btn.running{border-color:var(--heart);color:var(--heart);animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.7}}
+
+/* Lifecycle bar */
+.lifecycle{display:flex;flex-direction:column;gap:2px;margin-top:4px}
+.lc-step{
+  display:flex;align-items:center;gap:6px;font-size:10px;padding:3px 6px;
+  border-radius:4px;color:var(--text2);transition:all 0.3s;
+}
+.lc-step.active{background:rgba(56,189,248,0.1);color:var(--eye)}
+.lc-step.done{color:var(--green,#34d399)}
+.lc-dot{width:6px;height:6px;border-radius:50%;background:var(--border);flex-shrink:0;transition:all 0.3s}
+.lc-step.active .lc-dot{background:var(--eye);box-shadow:0 0 6px var(--eye)}
+.lc-step.done .lc-dot{background:var(--green,#34d399)}
+
+/* Responsive */
+@media(max-width:1100px){
+  .app{flex-direction:column;height:auto}
+  .left-panel,.right-panel{flex:none;border:none;border-bottom:1px solid var(--border)}
+  .center-panel{min-height:500px}
+}
+@media(max-width:600px){
+  .body-container{width:300px;height:480px;transform:scale(0.85)}
+  .right-panel,.left-panel{padding:10px}
+  .vital-value{font-size:15px}
+}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Left Panel: Controls & Lifecycle -->
+  <div class="left-panel">
+    <div>
+      <h1>🫀 Agent Core</h1>
+      <div class="subtitle">인체 해부학 시각화</div>
+    </div>
+
+    <div class="vital-card">
+      <div class="vital-name">시뮬레이션</div>
+      <div class="sim-controls" style="margin-top:8px">
+        <button class="sim-btn" onclick="runSimulation()" id="simBtn">▶ 실행</button>
+        <button class="sim-btn" onclick="runAutoLoop()" id="autoBtn">🔁 자동</button>
+      </div>
+    </div>
+
+    <div class="vital-card">
+      <div class="vital-name">에이전트 루프 생명주기</div>
+      <div class="lifecycle" id="lifecycle">
+        <div class="lc-step" data-step="0"><div class="lc-dot"></div>👁️ 메시지 수신</div>
+        <div class="lc-step" data-step="1"><div class="lc-dot"></div>🫁 Queue 처리</div>
+        <div class="lc-step" data-step="2"><div class="lc-dot"></div>❤️ Session 로드</div>
+        <div class="lc-step" data-step="3"><div class="lc-dot"></div>🧠 Context 조립</div>
+        <div class="lc-step" data-step="4"><div class="lc-dot"></div>🧠 모델 추론</div>
+        <div class="lc-step" data-step="5"><div class="lc-dot"></div>🛡️ Tool Policy 검사</div>
+        <div class="lc-step" data-step="6"><div class="lc-dot"></div>🔧 Tool 실행</div>
+        <div class="lc-step" data-step="7"><div class="lc-dot"></div>🧠 결과 처리</div>
+        <div class="lc-step" data-step="8"><div class="lc-dot"></div>💾 메모리 플러시</div>
+        <div class="lc-step" data-step="9"><div class="lc-dot"></div>👁️ 응답 전송</div>
+      </div>
+    </div>
+
+    <div class="log-card">
+      <div class="vital-name" style="margin-bottom:8px">활동 로그</div>
+      <div id="logList"></div>
+    </div>
+  </div>
+
+  <!-- Center: Human Body -->
+  <div class="center-panel">
+    <div class="body-container" id="bodyContainer">
+      <!-- Silhouette -->
+      <div class="silhouette">
+        <svg viewBox="0 0 200 400" fill="none">
+          <!-- Head -->
+          <ellipse cx="100" cy="42" rx="28" ry="32" stroke="#30363d" stroke-width="1.2" fill="rgba(22,27,34,0.6)"/>
+          <!-- Neck -->
+          <rect x="90" y="72" width="20" height="16" rx="4" stroke="#30363d" stroke-width="1" fill="rgba(22,27,34,0.4)"/>
+          <!-- Torso -->
+          <path d="M60 88 Q55 88 50 100 L42 180 Q40 200 50 220 L60 260 Q65 270 70 270 L130 270 Q135 270 140 260 L150 220 Q160 200 158 180 L150 100 Q145 88 140 88 Z" stroke="#30363d" stroke-width="1.2" fill="rgba(22,27,34,0.5)"/>
+          <!-- Left arm -->
+          <path d="M50 100 Q30 110 22 150 L18 200 Q16 210 20 215" stroke="#30363d" stroke-width="1.2" fill="none"/>
+          <!-- Right arm -->
+          <path d="M150 100 Q170 110 178 150 L182 200 Q184 210 180 215" stroke="#30363d" stroke-width="1.2" fill="none"/>
+          <!-- Left leg -->
+          <path d="M70 270 L65 330 Q63 345 65 360 L68 390" stroke="#30363d" stroke-width="1.2" fill="none"/>
+          <!-- Right leg -->
+          <path d="M130 270 L135 330 Q137 345 135 360 L132 390" stroke="#30363d" stroke-width="1.2" fill="none"/>
+          <!-- Spine (subtle) -->
+          <line x1="100" y1="74" x2="100" y2="270" stroke="#30363d" stroke-width="0.6" stroke-dasharray="3,3" opacity="0.4"/>
+        </svg>
+      </div>
+
+      <!-- Nerve paths -->
+      <div class="nerve-paths">
+        <svg viewBox="0 0 400 600" id="nerveSvg">
+          <!-- Brain to Eye -->
+          <path class="nerve-path" id="nerve-brain-eye" d="M200 75 Q200 95 200 115"/>
+          <!-- Eye to Lung -->
+          <path class="nerve-path" id="nerve-eye-lung" d="M200 115 Q200 145 200 210"/>
+          <!-- Lung to Heart -->
+          <path class="nerve-path" id="nerve-lung-heart" d="M200 210 Q215 205 240 205"/>
+          <!-- Heart to Brain -->
+          <path class="nerve-path" id="nerve-heart-brain" d="M240 205 Q260 150 250 100 Q240 65 200 60"/>
+          <!-- Brain to Shield -->
+          <path class="nerve-path" id="nerve-brain-shield" d="M200 75 Q200 180 200 320"/>
+          <!-- Brain to Memory -->
+          <path class="nerve-path" id="nerve-brain-memory" d="M200 60 Q170 60 135 95"/>
+        </svg>
+      </div>
+
+      <!-- Organs -->
+      <div class="organ organ-brain" id="organ-brain" onclick="showDetail('brain')">
+        <div class="organ-icon">🧠</div>
+        <div class="organ-label">Agent Runtime</div>
+      </div>
+      <div class="organ organ-eye" id="organ-eye" onclick="showDetail('eye')">
+        <div class="organ-icon">👁️</div>
+        <div class="organ-label">Channel Adapters</div>
+      </div>
+      <div class="organ organ-lung" id="organ-lung" onclick="showDetail('lung')">
+        <div class="organ-icon">🫁</div>
+        <div class="organ-label">Queue</div>
+      </div>
+      <div class="organ organ-heart" id="organ-heart" onclick="showDetail('heart')">
+        <div class="organ-icon">❤️</div>
+        <div class="organ-label">Session Manager</div>
+      </div>
+      <div class="organ organ-shield" id="organ-shield" onclick="showDetail('shield')">
+        <div class="organ-icon">🛡️</div>
+        <div class="organ-label">Tool Policy</div>
+      </div>
+      <div class="organ organ-memory" id="organ-memory" onclick="showDetail('memory')">
+        <div class="organ-icon">💾</div>
+        <div class="organ-label">Memory (해마)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Panel: Vitals -->
+  <div class="right-panel">
+    <h1>바이탈 사인</h1>
+
+    <!-- Heart Rate -->
+    <div class="vital-card">
+      <div class="vital-header">
+        <span class="vital-name">❤️ 심박수</span>
+        <span><span class="vital-value" id="vHR">72</span><span class="vital-unit">bpm</span></span>
+      </div>
+      <div class="vital-bar"><div class="vital-fill" id="vHRBar" style="width:60%;background:var(--heart)"></div></div>
+      <div style="font-size:10px;color:var(--text2);margin-top:4px">메시지 처리 속도</div>
+    </div>
+
+    <!-- Blood Pressure -->
+    <div class="vital-card">
+      <div class="vital-header">
+        <span class="vital-name">🩸 혈압</span>
+        <span><span class="vital-value" id="vBP">120/80</span><span class="vital-unit">mmHg</span></span>
+      </div>
+      <div class="vital-bar"><div class="vital-fill" id="vBPBar" style="width:50%;background:linear-gradient(90deg,var(--eye),var(--heart))"></div></div>
+      <div style="font-size:10px;color:var(--text2);margin-top:4px">Context Window 압력</div>
+    </div>
+
+    <!-- Temperature -->
+    <div class="vital-card">
+      <div class="vital-header">
+        <span class="vital-name">🌡️ 체온</span>
+        <span><span class="vital-value" id="vTemp">36.5</span><span class="vital-unit">°C</span></span>
+      </div>
+      <div class="vital-bar"><div class="vital-fill" id="vTempBar" style="width:40%;background:var(--shield)"></div></div>
+      <div style="font-size:10px;color:var(--text2);margin-top:4px">모델 부하</div>
+    </div>
+
+    <!-- Respiration -->
+    <div class="vital-card">
+      <div class="vital-header">
+        <span class="vital-name">🫁 호흡수</span>
+        <span><span class="vital-value" id="vResp">16</span><span class="vital-unit">/min</span></span>
+      </div>
+      <div class="vital-bar"><div class="vital-fill" id="vRespBar" style="width:45%;background:var(--green, #34d399)"></div></div>
+      <div style="font-size:10px;color:var(--text2);margin-top:4px">Queue 처리량</div>
+    </div>
+
+    <!-- EEG -->
+    <div class="vital-card">
+      <div class="vital-header">
+        <span class="vital-name">🧠 EEG 뇌파</span>
+        <span><span class="vital-value" id="vEEG">α</span></span>
+      </div>
+      <canvas class="eeg-canvas" id="eegCanvas" width="248" height="50"></canvas>
+      <div style="font-size:10px;color:var(--text2);margin-top:4px">툴호출 빈도</div>
+    </div>
+
+    <!-- Oxygen -->
+    <div class="vital-card">
+      <div class="vital-header">
+        <span class="vital-name">💉 SpO₂</span>
+        <span><span class="vital-value" id="vO2">98</span><span class="vital-unit">%</span></span>
+      </div>
+      <div class="vital-bar"><div class="vital-fill" id="vO2Bar" style="width:98%;background:var(--eye)"></div></div>
+      <div style="font-size:10px;color:var(--text2);margin-top:4px">시스템 안정성</div>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Overlay -->
+<div class="detail-overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-card" id="detailCard"></div>
+</div>
+
+<script>
+// ── Organ detail data ──
+const organData = {
+  brain: {
+    icon: '🧠', name: 'Agent Runtime (pi-mono)', sub: '두뇌 — 사고와 추론의 중심',
+    color: 'var(--brain)',
+    desc: 'LLM 추론 + 툴호출 루프를 실행하는 핵심 런타임. Context Assembly → Model Inference → Tool Call 반복 루프를 관리합니다. 한 세션에 한 턴만 직렬 실행하여 레이스 컨디션을 방지합니다.',
+    hooks: ['before_model_resolve', 'before_prompt_build', 'before_agent_start', 'agent_end'],
+    files: ['SOUL.md', 'AGENTS.md', 'IDENTITY.md', 'TOOLS.md', 'HEARTBEAT.md', 'BOOTSTRAP.md'],
+    config: ['agent.timeout: 600초', 'agent.wait: 30초', 'bootstrapMaxChars: 20,000자', 'Context = System Prompt + Tool Schemas + Session History']
+  },
+  eye: {
+    icon: '👁️', name: 'Channel Adapters', sub: '눈/귀 — 감각 기관',
+    color: 'var(--eye)',
+    desc: 'TG/DC/WA/Slack/Email/Webhook 등 다양한 채널의 메시지를 통일된 형식으로 변환합니다. 외부 세계와의 모든 입출력은 이 감각 기관을 통해 이루어집니다.',
+    hooks: ['gateway_start', 'gateway_stop', 'message_received', 'message_sent'],
+    files: ['채널별 어댑터 모듈'],
+    config: ['Multi-channel 지원', '메시지 형식 정규화', '라우팅: peer.id → accountId → channel → 기본 에이전트']
+  },
+  lung: {
+    icon: '🫁', name: 'Queue', sub: '폐 — 호흡(메시지 흐름)',
+    color: 'var(--lung)',
+    desc: '수신-실행 분리, 순서보장, Exactly-once 처리를 담당합니다. 메시지가 질서 있게 흐르도록 호흡처럼 리듬을 유지합니다.',
+    hooks: ['message_received (큐 진입)', 'before_agent_start (큐 디큐)'],
+    files: ['Queue 모듈'],
+    config: ['순서 보장 (FIFO)', 'Exactly-once 처리', '세션 레인 직렬화']
+  },
+  heart: {
+    icon: '❤️', name: 'Session Manager', sub: '심장 — 맥박(세션 관리)',
+    color: 'var(--heart)',
+    desc: 'Context window 관리, 직렬화, JSONL 저장을 담당합니다. 심장이 혈액을 순환시키듯, 대화의 맥을 유지하고 압축(Compaction)을 통해 윈도우를 관리합니다.',
+    hooks: ['session_start', 'session_end'],
+    files: ['세션 JSONL 저장소'],
+    config: ['Context Window 관리', '자동 압축 (Compaction)', '압축 전 메모리 자동 플러시', 'System Prompt ~9,600토큰 + Tool Schemas ~8,000토큰+']
+  },
+  shield: {
+    icon: '🛡️', name: 'Tool Policy Pipeline', sub: '면역 시스템 — 보호/필터링',
+    color: 'var(--shield)',
+    desc: 'LLM이 요청한 툴 호출을 허가/거부/샌드박스 검사합니다. 면역 시스템처럼 위험한 행동을 필터링하여 시스템을 보호합니다.',
+    hooks: ['before_tool_call', 'after_tool_call', 'tool_result_persist'],
+    files: ['Tool Policy 설정'],
+    config: ['허가/거부/샌드박스 3단계', 'LLM → tool_call(JSON) → 검증 → 실행 → 결과', 'Hook 기반 확장']
+  },
+  memory: {
+    icon: '💾', name: 'Memory System', sub: '해마 — 기억 저장/검색',
+    color: 'var(--memory)',
+    desc: '단기기억(Context Window)과 장기기억(MEMORY.md + 일일 로그)을 관리합니다. BM25 + Vector 하이브리드 검색으로 의미 검색을 지원합니다.',
+    hooks: ['압축 전 자동 메모리 플러시'],
+    files: ['MEMORY.md (장기 큐레이션)', 'memory/YYYY-MM-DD.md (일일 로그)'],
+    config: ['memory_search: BM25 + Vector 하이브리드', 'memory_get: 파일 직접 읽기', '임베딩: openai/gemini/voyage/local 자동 선택', '메인 세션(개인 DM)에서만 MEMORY.md 로드'],
+    hasMemoryDiagram: true
+  }
+};
+
+// ── Detail panel ──
+function showDetail(key) {
+  const d = organData[key];
+  const overlay = document.getElementById('detailOverlay');
+  const card = document.getElementById('detailCard');
+
+  let html = `<button class="detail-close" onclick="closeDetail()">✕</button>`;
+  html += `<div class="detail-title" style="color:${d.color}">${d.icon} ${d.name}</div>`;
+  html += `<div class="detail-sub">${d.sub}</div>`;
+
+  html += `<div class="detail-section"><h3>역할</h3><p>${d.desc}</p></div>`;
+
+  html += `<div class="detail-section"><h3>Hook 포인트</h3><ul>`;
+  d.hooks.forEach(h => html += `<li><span class="hook">${h}</span></li>`);
+  html += `</ul></div>`;
+
+  html += `<div class="detail-section"><h3>관련 파일</h3><ul>`;
+  d.files.forEach(f => html += `<li><span class="file">${f}</span></li>`);
+  html += `</ul></div>`;
+
+  html += `<div class="detail-section"><h3>설정</h3><ul>`;
+  d.config.forEach(c => html += `<li>${c}</li>`);
+  html += `</ul></div>`;
+
+  if (d.hasMemoryDiagram) {
+    html += `<div class="detail-section"><h3>메모리 아키텍처</h3>`;
+    html += `<div class="mem-diagram">`;
+    html += `<div class="mem-box mem-short">📋 <b>단기기억</b><br><span style="font-size:10px;color:var(--text2)">Context Window<br>~200K 토큰<br>대화 진행 중 유지</span></div>`;
+    html += `<div class="mem-box mem-long">📚 <b>장기기억</b><br><span style="font-size:10px;color:var(--text2)">MEMORY.md + 일일 로그<br>영구 저장<br>큐레이션 기반</span></div>`;
+    html += `<div class="mem-arrow">⇄ 압축 시 자동 플러시</div>`;
+    html += `<div class="mem-search" id="memSearch">🔍 의미 검색 (BM25 + Vector)`;
+    html += `<div class="neural-dots" id="neuralDots">`;
+    for (let i = 0; i < 12; i++) html += `<div class="neural-dot"></div>`;
+    html += `</div></div>`;
+    html += `</div></div>`;
+
+    setTimeout(animateMemorySearch, 500);
+  }
+
+  card.innerHTML = html;
+  overlay.classList.add('show');
+}
+
+function closeDetail() {
+  document.getElementById('detailOverlay').classList.remove('show');
+}
+
+function animateMemorySearch() {
+  const search = document.getElementById('memSearch');
+  const dots = document.querySelectorAll('#neuralDots .neural-dot');
+  if (!search || !dots.length) return;
+
+  search.classList.add('searching');
+  let idx = 0;
+  const iv = setInterval(() => {
+    if (idx >= dots.length) { clearInterval(iv); return; }
+    dots[idx].classList.add('lit');
+    idx++;
+  }, 120);
+
+  setTimeout(() => {
+    search.classList.remove('searching');
+    dots.forEach(d => d.classList.remove('lit'));
+    setTimeout(animateMemorySearch, 2000);
+  }, 2500);
+}
+
+// ── EEG Drawing ──
+const eegCanvas = document.getElementById('eegCanvas');
+const eegCtx = eegCanvas.getContext('2d');
+let eegData = [];
+let eegIntensity = 0.3;
+
+function initEEG() {
+  for (let i = 0; i < eegCanvas.width; i++) eegData.push(0);
+}
+initEEG();
+
+function drawEEG() {
+  eegCtx.fillStyle = '#0d1117';
+  eegCtx.fillRect(0, 0, eegCanvas.width, eegCanvas.height);
+
+  const mid = eegCanvas.height / 2;
+  const newVal = (Math.sin(Date.now() * 0.008) * 8 + Math.sin(Date.now() * 0.023) * 5 + Math.random() * 6 - 3) * eegIntensity;
+  eegData.push(newVal);
+  eegData.shift();
+
+  eegCtx.beginPath();
+  eegCtx.strokeStyle = `rgba(167,139,250,${0.4 + eegIntensity * 0.6})`;
+  eegCtx.lineWidth = 1.5;
+  for (let i = 0; i < eegData.length; i++) {
+    const y = mid + eegData[i];
+    if (i === 0) eegCtx.moveTo(i, y);
+    else eegCtx.lineTo(i, y);
+  }
+  eegCtx.stroke();
+
+  // Grid lines
+  eegCtx.strokeStyle = 'rgba(48,54,61,0.3)';
+  eegCtx.lineWidth = 0.5;
+  for (let y = 10; y < eegCanvas.height; y += 12) {
+    eegCtx.beginPath(); eegCtx.moveTo(0, y); eegCtx.lineTo(eegCanvas.width, y); eegCtx.stroke();
+  }
+
+  requestAnimationFrame(drawEEG);
+}
+drawEEG();
+
+// ── Vitals ──
+let vitals = { hr: 72, bpS: 120, bpD: 80, temp: 36.5, resp: 16, o2: 98 };
+
+function updateVitals(overrides) {
+  Object.assign(vitals, overrides || {});
+  document.getElementById('vHR').textContent = vitals.hr;
+  document.getElementById('vHRBar').style.width = Math.min(100, vitals.hr / 1.5) + '%';
+
+  document.getElementById('vBP').textContent = vitals.bpS + '/' + vitals.bpD;
+  document.getElementById('vBPBar').style.width = Math.min(100, vitals.bpS / 2) + '%';
+
+  document.getElementById('vTemp').textContent = vitals.temp.toFixed(1);
+  document.getElementById('vTempBar').style.width = Math.min(100, (vitals.temp - 35) * 25) + '%';
+  const tempBar = document.getElementById('vTempBar');
+  tempBar.style.background = vitals.temp > 38 ? 'var(--heart)' : vitals.temp > 37.2 ? 'var(--shield)' : 'var(--green, #34d399)';
+
+  document.getElementById('vResp').textContent = vitals.resp;
+  document.getElementById('vRespBar').style.width = Math.min(100, vitals.resp * 3) + '%';
+
+  document.getElementById('vO2').textContent = vitals.o2;
+  document.getElementById('vO2Bar').style.width = vitals.o2 + '%';
+}
+
+// Idle fluctuation
+setInterval(() => {
+  if (simRunning) return;
+  updateVitals({
+    hr: 72 + Math.floor(Math.random() * 6 - 3),
+    temp: 36.5 + (Math.random() * 0.3 - 0.15),
+    resp: 16 + Math.floor(Math.random() * 2 - 1),
+    o2: 97 + Math.floor(Math.random() * 2)
+  });
+}, 2000);
+
+// ── Log ──
+function addLog(icon, msg) {
+  const list = document.getElementById('logList');
+  const t = new Date().toLocaleTimeString('ko-KR', { hour12: false });
+  const entry = document.createElement('div');
+  entry.className = 'log-entry';
+  entry.innerHTML = `<span class="log-time">${t}</span><span class="log-msg">${icon} ${msg}</span>`;
+  list.prepend(entry);
+  if (list.children.length > 50) list.lastChild.remove();
+}
+
+// ── Nerve activation ──
+function activateNerve(id, duration) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add('active');
+  setTimeout(() => el.classList.remove('active'), duration || 800);
+}
+
+// ── Lifecycle ──
+function setLifecycleStep(step) {
+  document.querySelectorAll('.lc-step').forEach((el, i) => {
+    el.classList.remove('active', 'done');
+    if (i < step) el.classList.add('done');
+    else if (i === step) el.classList.add('active');
+  });
+}
+
+function clearLifecycle() {
+  document.querySelectorAll('.lc-step').forEach(el => el.classList.remove('active', 'done'));
+}
+
+// ── Organ state helpers ──
+function activateOrgan(id, cls, duration) {
+  const el = document.getElementById('organ-' + id);
+  if (!el) return;
+  el.classList.add(cls || 'active');
+  if (duration) setTimeout(() => el.classList.remove(cls || 'active'), duration);
+}
+function deactivateOrgan(id, cls) {
+  const el = document.getElementById('organ-' + id);
+  if (el) el.classList.remove(cls || 'active');
+}
+
+// ── Simulation ──
+let simRunning = false;
+let autoLoop = null;
+
+const simSteps = [
+  { step: 0, organ: 'eye', cls: 'receiving', nerve: 'nerve-brain-eye',
+    vital: { hr: 80, resp: 20 }, eeg: 0.4, log: ['👁️', '메시지 수신 — Channel Adapter 활성화'], delay: 800 },
+  { step: 1, organ: 'lung', cls: 'active', nerve: 'nerve-eye-lung',
+    vital: { resp: 24 }, eeg: 0.5, log: ['🫁', 'Queue 처리 — 메시지 정렬 및 디큐'], delay: 700 },
+  { step: 2, organ: 'heart', cls: 'active', nerve: 'nerve-lung-heart',
+    vital: { hr: 95, bpS: 135, bpD: 88 }, eeg: 0.5, log: ['❤️', 'Session 로드 — Context Window 준비'], delay: 800 },
+  { step: 3, organ: 'brain', cls: 'thinking', nerve: 'nerve-heart-brain',
+    vital: { hr: 100, temp: 37.2 }, eeg: 0.7, log: ['🧠', 'Context Assembly — System Prompt + Bootstrap + History'], delay: 900 },
+  { step: 4, organ: 'brain', cls: 'thinking', nerve: null,
+    vital: { hr: 110, temp: 37.8, bpS: 145 }, eeg: 1.0, log: ['🧠', '모델 추론 중... (pi-mono LLM)'], delay: 1200 },
+  { step: 5, organ: 'shield', cls: 'checking', nerve: 'nerve-brain-shield',
+    vital: { hr: 105 }, eeg: 0.8, log: ['🛡️', 'Tool Policy 검사 — 허가/거부/샌드박스'], delay: 700 },
+  { step: 6, organ: 'shield', cls: 'checking', nerve: null,
+    vital: { temp: 38.0 }, eeg: 0.9, log: ['🔧', 'Tool 실행 → 결과 반환'], delay: 900 },
+  { step: 7, organ: 'brain', cls: 'thinking', nerve: 'nerve-heart-brain',
+    vital: { hr: 108, temp: 37.5 }, eeg: 1.0, log: ['🧠', '결과 처리 — 추가 추론 루프'], delay: 1000 },
+  { step: 8, organ: 'memory', cls: 'storing', nerve: 'nerve-brain-memory',
+    vital: { hr: 95, temp: 37.2 }, eeg: 0.6, log: ['💾', '메모리 플러시 — MEMORY.md 업데이트'], delay: 800 },
+  { step: 9, organ: 'eye', cls: 'receiving', nerve: 'nerve-brain-eye',
+    vital: { hr: 80, temp: 36.8, bpS: 125, bpD: 82, resp: 18 }, eeg: 0.4, log: ['👁️', '응답 전송 — Channel Adapter 출력'], delay: 800 }
+];
+
+async function runSimulation() {
+  if (simRunning) return;
+  simRunning = true;
+  const btn = document.getElementById('simBtn');
+  btn.classList.add('running');
+  btn.textContent = '⏳ 실행 중...';
+  addLog('🫀', '시뮬레이션 시작 — 에이전트 루프 활성화');
+
+  // Clear previous
+  clearLifecycle();
+  ['brain','eye','lung','heart','shield','memory'].forEach(o => {
+    deactivateOrgan(o, 'active'); deactivateOrgan(o, 'thinking');
+    deactivateOrgan(o, 'receiving'); deactivateOrgan(o, 'checking'); deactivateOrgan(o, 'storing');
+  });
+
+  for (const s of simSteps) {
+    setLifecycleStep(s.step);
+    activateOrgan(s.organ, s.cls, s.delay + 200);
+    if (s.nerve) activateNerve(s.nerve, s.delay);
+    updateVitals(s.vital);
+    eegIntensity = s.eeg;
+    if (s.log) addLog(s.log[0], s.log[1]);
+
+    const eegLabel = s.eeg >= 0.9 ? 'β+' : s.eeg >= 0.6 ? 'β' : 'α';
+    document.getElementById('vEEG').textContent = eegLabel;
+
+    await sleep(s.delay);
+  }
+
+  // Cool down
+  await sleep(500);
+  addLog('✅', '시뮬레이션 완료 — 바이탈 안정화');
+  updateVitals({ hr: 72, bpS: 120, bpD: 80, temp: 36.5, resp: 16, o2: 98 });
+  eegIntensity = 0.3;
+  document.getElementById('vEEG').textContent = 'α';
+  clearLifecycle();
+  simRunning = false;
+  btn.classList.remove('running');
+  btn.textContent = '▶ 실행';
+}
+
+function runAutoLoop() {
+  const btn = document.getElementById('autoBtn');
+  if (autoLoop) {
+    clearInterval(autoLoop);
+    autoLoop = null;
+    btn.textContent = '🔁 자동';
+    btn.classList.remove('running');
+    addLog('⏹️', '자동 루프 중지');
+    return;
+  }
+  btn.textContent = '⏹ 중지';
+  btn.classList.add('running');
+  addLog('🔁', '자동 루프 시작 (8초 간격)');
+  runSimulation();
+  autoLoop = setInterval(() => {
+    if (!simRunning) runSimulation();
+  }, 8000);
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ── Key handler ──
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeDetail();
+  if (e.key === ' ' && !simRunning) { e.preventDefault(); runSimulation(); }
+});
+
+// ── Init log ──
+addLog('🫀', 'OpenClaw Agent Core 해부학 시각화 초기화');
+addLog('ℹ️', '장기를 클릭하면 상세 정보를 볼 수 있습니다');
+addLog('ℹ️', 'Space 키 또는 ▶ 버튼으로 시뮬레이션 실행');
+</script>
+</body>
+</html>

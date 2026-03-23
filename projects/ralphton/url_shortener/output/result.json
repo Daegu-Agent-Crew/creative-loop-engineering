@@ -1,0 +1,21 @@
+{
+  "success": false,
+  "duration": 51.179069,
+  "rounds": 0,
+  "tests": 10,
+  "code_lines": 5,
+  "code": "_urls_return_different_codes`: Passed (different hashes).\n    *   `test_max_url_length_allowed`: Passed (length check is `<= 2048`).\n    *   `test_min_url_length`: Passed.\n    *   `test_expand_invalid_code_raises_keyerror`: Passed.\n    ",
+  "log": [
+    "\ud83d\udccb PRD loaded (332 chars)",
+    "\n\ud83d\udd0d Stage 1: Analyzing requirements...",
+    "   Found 10 requirements",
+    "\n\ud83e\uddea Stage 2: Generating tests (TDD)...",
+    "   Generated 10 tests",
+    "\n\ud83d\udcbb Stage 3: Implementing...",
+    "   Generated 5 lines of code",
+    "\n\ud83d\udc41\ufe0f Stage 4: Reviewing...",
+    "   \u26a0\ufe0f Needs fixes",
+    "\n\u2705 Stage 5: Final check...",
+    "   \u26a0\ufe0f FAIL"
+  ]
+}

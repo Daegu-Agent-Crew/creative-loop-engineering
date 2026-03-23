@@ -1,0 +1,1717 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Hub - 커뮤니케이션</title>
+<style>
+/* ═══════════════════════════════════════════════════
+   CSS Variables - Neural Dark Theme
+   ═══════════════════════════════════════════════════ */
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #0d1117;
+  --bg-tertiary: #161b22;
+  --bg-card: rgba(22, 27, 34, 0.8);
+  --border-color: #30363d;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --accent-blue: #58a6ff;
+  --accent-green: #3fb950;
+  --accent-purple: #d2a8ff;
+  --accent-orange: #f0883e;
+  --accent-yellow: #d29922;
+  --accent-red: #f85149;
+  --glass-bg: rgba(22, 27, 34, 0.6);
+  --glass-border: rgba(48, 54, 61, 0.5);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --transition: 0.3s ease;
+}
+
+[data-theme="light"] {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f6f8fa;
+  --bg-tertiary: #e1e4e8;
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --border-color: #d0d7de;
+  --text-primary: #24292f;
+  --text-secondary: #57606a;
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(208, 215, 222, 0.6);
+  --shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* ═══════════════════════════════════════════════════
+   Reset & Base
+   ═══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+  line-height: 1.6;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* ═══════════════════════════════════════════════════
+   NavBar
+   ═══════════════════════════════════════════════════ */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 56px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  z-index: 1000;
+}
+
+.navbar__logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent-blue);
+  margin-right: 32px;
+  letter-spacing: -0.5px;
+}
+
+.navbar__tabs {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+
+.navbar__tab {
+  padding: 8px 20px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.navbar__tab:hover {
+  background: rgba(88, 166, 255, 0.1);
+  color: var(--text-primary);
+}
+
+.navbar__tab--active {
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent-blue);
+}
+
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notification-badge {
+  position: relative;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all var(--transition);
+}
+
+.notification-badge:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.notification-badge__count {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--accent-red);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  display: none;
+}
+
+.notification-badge__count.visible { display: flex; }
+
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all var(--transition);
+}
+
+.theme-toggle:hover {
+  border-color: var(--accent-yellow);
+  color: var(--accent-yellow);
+}
+
+/* ═══════════════════════════════════════════════════
+   Main Layout
+   ═══════════════════════════════════════════════════ */
+.main-content {
+  margin-top: 56px;
+  padding: 20px;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* ═══════════════════════════════════════════════════
+   Dashboard Overview
+   ═══════════════════════════════════════════════════ */
+.dashboard-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.dashboard-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: all var(--transition);
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.dashboard-card.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.dashboard-card:hover {
+  border-color: var(--accent-blue);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.dashboard-card__label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.dashboard-card__value {
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.dashboard-card__value--blue { color: var(--accent-blue); }
+.dashboard-card__value--green { color: var(--accent-green); }
+.dashboard-card__value--purple { color: var(--accent-purple); }
+.dashboard-card__value--orange { color: var(--accent-orange); }
+
+.dashboard-card__sub {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════════
+   Communication Grid Layout
+   ═══════════════════════════════════════════════════ */
+.comm-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 16px;
+}
+
+.comm-grid__chat { grid-column: 1; grid-row: 1 / 3; }
+.comm-grid__tools { grid-column: 2; grid-row: 1; }
+.comm-grid__status { grid-column: 2; grid-row: 2; }
+
+/* ═══════════════════════════════════════════════════
+   Panels (Glass Card)
+   ═══════════════════════════════════════════════════ */
+.panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.panel.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.panel__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.panel__badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(88, 166, 255, 0.15);
+  color: var(--accent-blue);
+  font-weight: 600;
+}
+
+.panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+/* ═══════════════════════════════════════════════════
+   Chat Stream
+   ═══════════════════════════════════════════════════ */
+.chat-container {
+  height: 520px;
+}
+
+.chat-container .panel__body {
+  padding: 12px 16px;
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-msg {
+  display: flex;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  animation: msgSlideIn 0.3s ease;
+}
+
+@keyframes msgSlideIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-msg--agent {
+  background: rgba(88, 166, 255, 0.06);
+  border-left: 3px solid var(--accent-blue);
+}
+
+.chat-msg--agent[data-agent="ops"] { border-left-color: #58a6ff; }
+.chat-msg--agent[data-agent="flow"] { border-left-color: #3fb950; }
+.chat-msg--agent[data-agent="comm"] { border-left-color: #d2a8ff; }
+
+.chat-msg--user {
+  background: rgba(63, 185, 80, 0.06);
+  border-left: 3px solid var(--accent-green);
+  flex-direction: row-reverse;
+}
+
+.chat-msg--system {
+  background: rgba(210, 169, 34, 0.06);
+  border-left: 3px solid var(--accent-yellow);
+  font-style: italic;
+}
+
+.chat-msg--tool_call {
+  background: rgba(240, 136, 62, 0.06);
+  border-left: 3px solid var(--accent-orange);
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+
+.chat-msg--wf_event {
+  background: rgba(210, 168, 255, 0.06);
+  border-left: 3px solid var(--accent-purple);
+}
+
+.chat-msg__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+  color: #fff;
+}
+
+.chat-msg__avatar--ops { background: rgba(88, 166, 255, 0.3); color: #58a6ff; }
+.chat-msg__avatar--flow { background: rgba(63, 185, 80, 0.3); color: #3fb950; }
+.chat-msg__avatar--comm { background: rgba(210, 168, 255, 0.3); color: #d2a8ff; }
+.chat-msg__avatar--user { background: rgba(63, 185, 80, 0.3); color: #3fb950; }
+.chat-msg__avatar--system { background: rgba(210, 169, 34, 0.3); color: #d29922; }
+
+.chat-msg__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-msg__name {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.chat-msg__name--ops { color: #58a6ff; }
+.chat-msg__name--flow { color: #3fb950; }
+.chat-msg__name--comm { color: #d2a8ff; }
+
+.chat-msg__text {
+  font-size: 13px;
+  color: var(--text-primary);
+  word-break: break-word;
+}
+
+.chat-msg__time {
+  font-size: 10px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* Chat Input */
+.chat-input {
+  display: flex;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.chat-input__field {
+  flex: 1;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color var(--transition);
+}
+
+.chat-input__field:focus {
+  border-color: var(--accent-blue);
+}
+
+.chat-input__field::placeholder {
+  color: var(--text-secondary);
+}
+
+.chat-input__send {
+  background: var(--accent-blue);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  padding: 10px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.chat-input__send:hover {
+  background: #4090e0;
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════════
+   Tool Call Log
+   ═══════════════════════════════════════════════════ */
+.tool-log-container {
+  height: 300px;
+}
+
+.tool-log-entry {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(48, 54, 61, 0.3);
+  cursor: pointer;
+  transition: background var(--transition);
+  animation: msgSlideIn 0.3s ease;
+}
+
+.tool-log-entry:hover {
+  background: rgba(88, 166, 255, 0.04);
+}
+
+.tool-log-entry:last-child {
+  border-bottom: none;
+}
+
+.tool-log__timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 14px;
+  flex-shrink: 0;
+  padding-top: 4px;
+}
+
+.tool-log__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.tool-log__dot--success { background: var(--accent-green); box-shadow: 0 0 8px rgba(63, 185, 80, 0.4); }
+.tool-log__dot--error { background: var(--accent-red); box-shadow: 0 0 8px rgba(248, 81, 73, 0.4); }
+.tool-log__dot--pending { background: var(--accent-yellow); box-shadow: 0 0 8px rgba(210, 153, 34, 0.4); animation: pulse 1.5s infinite; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.tool-log__line {
+  width: 2px;
+  flex: 1;
+  background: var(--border-color);
+  margin-top: 4px;
+  min-height: 20px;
+}
+
+.tool-log__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.tool-log__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.tool-log__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.tool-log__status {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tool-log__status--success { background: rgba(63, 185, 80, 0.15); color: var(--accent-green); }
+.tool-log__status--error { background: rgba(248, 81, 73, 0.15); color: var(--accent-red); }
+.tool-log__status--pending { background: rgba(210, 153, 34, 0.15); color: var(--accent-yellow); }
+
+.tool-log__meta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.tool-log__detail {
+  display: none;
+  margin-top: 8px;
+  padding: 10px 12px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.tool-log-entry.expanded .tool-log__detail {
+  display: block;
+}
+
+/* ═══════════════════════════════════════════════════
+   System Status Cards
+   ═══════════════════════════════════════════════════ */
+.status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.status-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  transition: all var(--transition);
+}
+
+.status-card:hover {
+  border-color: var(--accent-blue);
+}
+
+.status-card__label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.status-card__value {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-bar__fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease;
+}
+
+.progress-bar__fill--blue { background: linear-gradient(90deg, #58a6ff, #388bfd); }
+.progress-bar__fill--green { background: linear-gradient(90deg, #3fb950, #2ea043); }
+.progress-bar__fill--orange { background: linear-gradient(90deg, #f0883e, #db6d28); }
+.progress-bar__fill--purple { background: linear-gradient(90deg, #d2a8ff, #bc8cff); }
+
+.status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.status-indicator__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-indicator__dot--online {
+  background: var(--accent-green);
+  box-shadow: 0 0 8px rgba(63, 185, 80, 0.5);
+  animation: pulse 2s infinite;
+}
+
+.status-indicator__dot--offline {
+  background: var(--accent-red);
+  box-shadow: 0 0 8px rgba(248, 81, 73, 0.5);
+}
+
+/* ═══════════════════════════════════════════════════
+   Notification Panel
+   ═══════════════════════════════════════════════════ */
+.notification-panel {
+  margin-top: 16px;
+}
+
+.notification-panel .panel__body {
+  max-height: 250px;
+}
+
+.notification-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 6px;
+  transition: background var(--transition);
+  cursor: pointer;
+  animation: msgSlideIn 0.3s ease;
+}
+
+.notification-item:hover {
+  background: rgba(88, 166, 255, 0.06);
+}
+
+.notification-item--unread {
+  border-left: 3px solid var(--accent-blue);
+}
+
+.notification-item--read {
+  opacity: 0.6;
+}
+
+.notification-item__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.notification-item__icon--success { background: rgba(63, 185, 80, 0.15); color: var(--accent-green); }
+.notification-item__icon--error { background: rgba(248, 81, 73, 0.15); color: var(--accent-red); }
+.notification-item__icon--pending { background: rgba(210, 153, 34, 0.15); color: var(--accent-yellow); }
+
+.notification-item__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.notification-item__title {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.notification-item__time {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* ═══════════════════════════════════════════════════
+   Mini Charts Section
+   ═══════════════════════════════════════════════════ */
+.charts-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.chart-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 20px;
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.chart-panel.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.chart-panel__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.chart-panel svg {
+  width: 100%;
+}
+
+/* ═══════════════════════════════════════════════════
+   Export Button
+   ═══════════════════════════════════════════════════ */
+.export-section {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.export-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 10px 24px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-btn:hover {
+  border-color: var(--accent-blue);
+  background: rgba(88, 166, 255, 0.1);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════════
+   Scroll Fade-in Animation
+   ═══════════════════════════════════════════════════ */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-in-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ═══════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .dashboard-overview {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .comm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .comm-grid__chat { grid-column: 1; grid-row: 1; }
+  .comm-grid__tools { grid-column: 1; grid-row: 2; }
+  .comm-grid__status { grid-column: 1; grid-row: 3; }
+
+  .charts-row {
+    grid-template-columns: 1fr;
+  }
+
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .navbar__logo { margin-right: 16px; }
+  .navbar__tab { padding: 8px 12px; font-size: 12px; }
+}
+
+@media (max-width: 480px) {
+  .dashboard-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .main-content { padding: 12px; }
+  .navbar { padding: 0 12px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     NavBar
+     ═══════════════════════════════════════════════════ -->
+<nav class="navbar">
+  <div class="navbar__logo">OpenClaw Hub</div>
+  <div class="navbar__tabs">
+    <button class="navbar__tab" data-tab="office">Office</button>
+    <button class="navbar__tab" data-tab="workflows">Workflows</button>
+    <button class="navbar__tab navbar__tab--active" data-tab="communicate">Communicate</button>
+  </div>
+  <div class="navbar__actions">
+    <button class="notification-badge" id="notifBadgeBtn" title="알림">
+      <span>&#x1F514;</span>
+      <span class="notification-badge__count" id="notifCount">0</span>
+    </button>
+    <button class="theme-toggle" id="themeToggle" title="테마 전환">&#x1F319;</button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     Main Content
+     ═══════════════════════════════════════════════════ -->
+<div class="main-content">
+
+  <!-- Dashboard Overview -->
+  <section class="dashboard-overview" id="dashboardOverview">
+    <div class="dashboard-card fade-in-up" data-delay="0">
+      <div class="dashboard-card__label">활성 에이전트</div>
+      <div class="dashboard-card__value dashboard-card__value--blue" id="activeAgents">3</div>
+      <div class="dashboard-card__sub">Ops / Flow / Comm 가동 중</div>
+    </div>
+    <div class="dashboard-card fade-in-up" data-delay="100">
+      <div class="dashboard-card__label">실행 중 워크플로우</div>
+      <div class="dashboard-card__value dashboard-card__value--green" id="runningWorkflows">2</div>
+      <div class="dashboard-card__sub">15개 중 12개 활성</div>
+    </div>
+    <div class="dashboard-card fade-in-up" data-delay="200">
+      <div class="dashboard-card__label">오늘의 작업</div>
+      <div class="dashboard-card__value dashboard-card__value--purple" id="todayTasks">24</div>
+      <div class="dashboard-card__sub">완료 18 / 진행 4 / 대기 2</div>
+    </div>
+    <div class="dashboard-card fade-in-up" data-delay="300">
+      <div class="dashboard-card__label">성공률</div>
+      <div class="dashboard-card__value dashboard-card__value--orange" id="successRate">96%</div>
+      <div class="dashboard-card__sub">최근 24시간 기준</div>
+    </div>
+  </section>
+
+  <!-- Communication Grid -->
+  <div class="comm-grid">
+
+    <!-- Chat Stream -->
+    <div class="comm-grid__chat">
+      <div class="panel chat-container fade-in-up" data-delay="100">
+        <div class="panel__header">
+          <span class="panel__title">채팅 스트림</span>
+          <span class="panel__badge" id="chatCount">0 메시지</span>
+        </div>
+        <div class="panel__body" id="chatMessages">
+          <div class="chat-messages" id="chatList"></div>
+        </div>
+        <div class="chat-input">
+          <input type="text" class="chat-input__field" id="chatInput" placeholder="메시지를 입력하세요...">
+          <button class="chat-input__send" id="chatSend">전송</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tool Call Log -->
+    <div class="comm-grid__tools">
+      <div class="panel tool-log-container fade-in-up" data-delay="200">
+        <div class="panel__header">
+          <span class="panel__title">툴콜 로그</span>
+          <span class="panel__badge" id="toolLogCount">실시간</span>
+        </div>
+        <div class="panel__body" id="toolLogBody"></div>
+      </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="comm-grid__status">
+      <div class="panel fade-in-up" data-delay="300">
+        <div class="panel__header">
+          <span class="panel__title">시스템 상태</span>
+          <span class="panel__badge">모니터링</span>
+        </div>
+        <div class="panel__body">
+          <div class="status-grid">
+            <div class="status-card">
+              <div class="status-card__label">메모리 사용량</div>
+              <div class="status-card__value" id="memoryValue">67%</div>
+              <div class="progress-bar">
+                <div class="progress-bar__fill progress-bar__fill--blue" id="memoryBar" style="width: 67%"></div>
+              </div>
+            </div>
+            <div class="status-card">
+              <div class="status-card__label">토큰 사용량</div>
+              <div class="status-card__value" id="tokenValue">45%</div>
+              <div class="progress-bar">
+                <div class="progress-bar__fill progress-bar__fill--purple" id="tokenBar" style="width: 45%"></div>
+              </div>
+            </div>
+            <div class="status-card">
+              <div class="status-card__label">API 상태</div>
+              <div class="status-indicator" id="apiStatus">
+                <span class="status-indicator__dot status-indicator__dot--online"></span>
+                <span>온라인</span>
+              </div>
+            </div>
+            <div class="status-card">
+              <div class="status-card__label">세션 시간</div>
+              <div class="status-card__value" id="sessionTimer">00:00:00</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Panel -->
+  <div class="notification-panel panel fade-in-up" data-delay="400">
+    <div class="panel__header">
+      <span class="panel__title">알림 패널</span>
+      <span class="panel__badge" id="notifPanelCount">0 알림</span>
+    </div>
+    <div class="panel__body" id="notifList"></div>
+  </div>
+
+  <!-- Mini Charts -->
+  <div class="charts-row">
+    <div class="chart-panel fade-in-up" data-delay="500">
+      <div class="chart-panel__title">에이전트 활동량</div>
+      <svg id="agentChart" viewBox="0 0 300 150"></svg>
+    </div>
+    <div class="chart-panel fade-in-up" data-delay="600">
+      <div class="chart-panel__title">워크플로우 성공률</div>
+      <svg id="successChart" viewBox="0 0 200 150"></svg>
+    </div>
+  </div>
+
+  <!-- Export -->
+  <div class="export-section fade-in-up" data-delay="700">
+    <button class="export-btn" id="exportBtn">
+      <span>&#x1F4E5;</span> JSON 내보내기
+    </button>
+  </div>
+
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════
+   EventBus - Publish/Subscribe Pattern
+   ═══════════════════════════════════════════════════ */
+class EventBus {
+  constructor() {
+    this._listeners = {};
+  }
+  on(event, callback) {
+    if (!this._listeners[event]) this._listeners[event] = [];
+    this._listeners[event].push(callback);
+    return () => this.off(event, callback);
+  }
+  off(event, callback) {
+    if (!this._listeners[event]) return;
+    this._listeners[event] = this._listeners[event].filter(cb => cb !== callback);
+  }
+  emit(event, data) {
+    if (!this._listeners[event]) return;
+    this._listeners[event].forEach(cb => cb(data));
+  }
+}
+
+const bus = new EventBus();
+
+/* ═══════════════════════════════════════════════════
+   Theme Manager
+   ═══════════════════════════════════════════════════ */
+class ThemeManager {
+  constructor() {
+    this.current = localStorage.getItem('openclaw-theme') || 'dark';
+    this.apply();
+    document.getElementById('themeToggle').addEventListener('click', () => this.toggle());
+  }
+  apply() {
+    if (this.current === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      document.getElementById('themeToggle').innerHTML = '&#x2600;&#xFE0F;';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      document.getElementById('themeToggle').innerHTML = '&#x1F319;';
+    }
+  }
+  toggle() {
+    this.current = this.current === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('openclaw-theme', this.current);
+    this.apply();
+    bus.emit('theme_changed', this.current);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Agent Definitions
+   ═══════════════════════════════════════════════════ */
+const AGENTS = [
+  { id: 'ops', name: 'Ops Agent', nameKo: '운영 에이전트', color: '#58a6ff', avatar: 'OP' },
+  { id: 'flow', name: 'Flow Agent', nameKo: '플로우 에이전트', color: '#3fb950', avatar: 'FL' },
+  { id: 'comm', name: 'Comm Agent', nameKo: '커뮤니케이션 에이전트', color: '#d2a8ff', avatar: 'CM' }
+];
+
+/* ═══════════════════════════════════════════════════
+   Simulated Chat Messages
+   ═══════════════════════════════════════════════════ */
+const SIMULATED_CONVERSATIONS = [
+  { type: 'system', text: '시스템 초기화 완료. 3개 에이전트 온라인.' },
+  { type: 'agent', agent: 'ops', text: '시스템 상태 점검을 시작합니다. 모든 서비스 정상 가동 중.' },
+  { type: 'agent', agent: 'flow', text: '오늘 예정된 워크플로우 12건 확인했습니다. 모닝 브리핑부터 시작합니다.' },
+  { type: 'agent', agent: 'comm', text: '알림 채널 연결 완료. 대기 중인 메시지 3건 발견.' },
+  { type: 'tool_call', text: 'fetch("weather-api") → 200 OK (142ms)' },
+  { type: 'agent', agent: 'ops', text: 'API 헬스체크 완료: weather-api, calendar-api, email-api 모두 정상.' },
+  { type: 'wf_event', text: '[모닝 브리핑] 워크플로우 실행 시작 - 4단계 중 1단계 진행 중' },
+  { type: 'agent', agent: 'flow', text: '날씨 데이터 수신 완료. 서울 현재 18°C, 맑음. 캘린더 이벤트 3건 확인.' },
+  { type: 'tool_call', text: 'analyze("priority-ranking") → 200 OK (328ms)' },
+  { type: 'agent', agent: 'comm', text: '브리핑 결과를 사용자에게 전송합니다. 우선순위: 팀 미팅 > 코드 리뷰 > 문서 작성' },
+  { type: 'wf_event', text: '[모닝 브리핑] 워크플로우 완료 - 성공' },
+  { type: 'agent', agent: 'ops', text: '메모리 사용량 67%, 토큰 소비 45%. 정상 범위 내입니다.' },
+  { type: 'agent', agent: 'flow', text: '다음 워크플로우: 캘린더 체크 (48시간 레이더). 대기 중.' },
+  { type: 'system', text: '스케줄 업데이트: 이메일 처리 워크플로우 13:00 실행 예정.' },
+  { type: 'agent', agent: 'comm', text: '최근 로그 분석 결과: 오류율 4%, 평균 응답 시간 234ms.' },
+  { type: 'tool_call', text: 'check("calendar-events", range: "48h") → 200 OK (89ms)' },
+  { type: 'agent', agent: 'ops', text: '서버 랙 온도 정상. CPU 사용률 32%. 안정적입니다.' },
+  { type: 'agent', agent: 'flow', text: '데이터 파이프라인 최적화 진행 중. 처리 속도 12% 향상.' },
+  { type: 'wf_event', text: '[캘린더 체크] 실행 완료 - 내일 회의 2건 발견' },
+  { type: 'agent', agent: 'comm', text: '사용자 알림 큐 처리 완료. 읽지 않은 알림 0건.' }
+];
+
+const USER_RESPONSES = [
+  '에이전트 상태를 확인해 주세요.',
+  '다음 워크플로우 스케줄은 어떻게 되나요?',
+  '시스템 리소스 현황을 알려주세요.',
+  '오늘의 작업 요약 부탁합니다.'
+];
+
+const AGENT_REPLIES = {
+  ops: [
+    '시스템 전체 상태 정상입니다. 활성 프로세스 12개, 대기 큐 비어 있습니다.',
+    '서버 모니터링 결과: 업타임 99.97%, 최근 장애 없음.',
+    'API 엔드포인트 7개 모두 응답 정상. 평균 레이턴시 156ms.'
+  ],
+  flow: [
+    '다음 예정 워크플로우: 이메일 처리 (13:00), 회의 준비 (13:30).',
+    '현재 2개 워크플로우 실행 중. 큐 대기 3건.',
+    '오늘 실행 완료된 워크플로우: 18건, 실패: 1건 (네트워크 타임아웃).'
+  ],
+  comm: [
+    '알림 채널 상태: Slack 연결됨, 이메일 연결됨, 푸시 활성화.',
+    '최근 1시간 로그: 정상 42건, 경고 2건, 오류 0건.',
+    '사용자 세션 활성 상태. 마지막 상호작용: 방금 전.'
+  ]
+};
+
+/* ═══════════════════════════════════════════════════
+   Simulated Tool Calls
+   ═══════════════════════════════════════════════════ */
+const TOOL_CALL_POOL = [
+  { name: 'fetch("weather-api")', detail: '{ "temp": 18, "condition": "clear", "humidity": 45 }', agent: 'ops' },
+  { name: 'fetch("calendar-api")', detail: '{ "events": 3, "next": "팀 미팅 14:00" }', agent: 'ops' },
+  { name: 'analyze("email-classify")', detail: '{ "urgent": 2, "normal": 15, "spam": 3 }', agent: 'comm' },
+  { name: 'notify("slack-channel")', detail: '{ "channel": "#general", "status": "delivered" }', agent: 'comm' },
+  { name: 'execute("data-pipeline")', detail: '{ "records": 1240, "processed": 1240, "errors": 0 }', agent: 'flow' },
+  { name: 'check("system-health")', detail: '{ "cpu": 32, "memory": 67, "disk": 54 }', agent: 'ops' },
+  { name: 'update("workflow-state")', detail: '{ "id": "morning-briefing", "status": "completed" }', agent: 'flow' },
+  { name: 'log("activity-tracker")', detail: '{ "agent": "flow", "action": "optimize", "duration": "4.2s" }', agent: 'flow' },
+  { name: 'fetch("email-api")', detail: '{ "unread": 5, "important": 2 }', agent: 'comm' },
+  { name: 'toggle("focus-mode")', detail: '{ "enabled": true, "until": "12:00" }', agent: 'ops' }
+];
+
+/* ═══════════════════════════════════════════════════
+   Workflow data for export
+   ═══════════════════════════════════════════════════ */
+const WORKFLOW_EXPORT_DATA = [
+  { id: 'morning-briefing', name: '모닝 브리핑', category: 'productivity', schedule: '0 7 * * *', enabled: true },
+  { id: 'check-calendar', name: '캘린더 체크', category: 'productivity', schedule: '0 8,18 * * *', enabled: true },
+  { id: 'email-processing', name: '이메일 처리', category: 'productivity', schedule: '0 9,13,17 * * *', enabled: true },
+  { id: 'prep-meeting', name: '회의 준비', category: 'productivity', schedule: '*/30 * * * *', enabled: true },
+  { id: 'activate-sleep-mode', name: '수면 모드 활성화', category: 'smart-home', schedule: '0 22 * * *', enabled: true },
+  { id: 'activate-focus-mode', name: '집중 모드 활성화', category: 'smart-home', schedule: '0 10 * * *', enabled: true },
+  { id: 'track-habits', name: '습관 추적', category: 'health', schedule: '0 21 * * *', enabled: true },
+  { id: 'plan-meals', name: '식단 계획', category: 'health', schedule: '0 18 * * 0', enabled: true },
+  { id: 'check-bills', name: '청구서 확인', category: 'finance', schedule: '0 8 * * 1', enabled: true },
+  { id: 'track-sleep', name: '수면 추적', category: 'health', schedule: '0 21 * * *', enabled: true },
+  { id: 'stretch-reminder', name: '스트레칭 알림', category: 'health', schedule: '0 10,14,16 * * *', enabled: true },
+  { id: 'plan-workouts', name: '운동 계획', category: 'health', schedule: '0 19 * * 0', enabled: false },
+  { id: 'mental-health-checkin', name: '멘탈 체크인', category: 'lifestyle', schedule: '0 18 * * *', enabled: true },
+  { id: 'build-overnight', name: '야간 빌드', category: 'productivity', schedule: '0 0 * * *', enabled: true },
+  { id: 'send-daily-summary', name: '일일 요약 전송', category: 'lifestyle', schedule: '0 21 * * *', enabled: true }
+];
+
+/* ═══════════════════════════════════════════════════
+   ChatStream Module
+   ═══════════════════════════════════════════════════ */
+class ChatStream {
+  constructor() {
+    this.chatList = document.getElementById('chatList');
+    this.chatBody = document.getElementById('chatMessages');
+    this.chatInput = document.getElementById('chatInput');
+    this.chatSend = document.getElementById('chatSend');
+    this.chatCountEl = document.getElementById('chatCount');
+    this.msgCount = 0;
+    this.simIndex = 0;
+
+    this.chatSend.addEventListener('click', () => this.sendUserMessage());
+    this.chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') this.sendUserMessage();
+    });
+
+    bus.on('tool_call', (data) => {
+      this.addMessage('tool_call', null, `${data.name} → ${data.status} (${data.latency}ms)`);
+    });
+    bus.on('workflow_event', (data) => {
+      this.addMessage('wf_event', null, data.text);
+    });
+  }
+
+  formatTime() {
+    const now = new Date();
+    return now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  }
+
+  addMessage(type, agent, text) {
+    const msg = document.createElement('div');
+    msg.className = `chat-msg chat-msg--${type}`;
+    if (agent) msg.setAttribute('data-agent', agent);
+
+    let avatarHTML = '';
+    let nameHTML = '';
+
+    if (type === 'agent' && agent) {
+      const agentData = AGENTS.find(a => a.id === agent);
+      avatarHTML = `<div class="chat-msg__avatar chat-msg__avatar--${agent}">${agentData.avatar}</div>`;
+      nameHTML = `<div class="chat-msg__name chat-msg__name--${agent}">${agentData.nameKo}</div>`;
+    } else if (type === 'user') {
+      avatarHTML = '<div class="chat-msg__avatar chat-msg__avatar--user">U</div>';
+      nameHTML = '<div class="chat-msg__name" style="color: var(--accent-green)">사용자</div>';
+    } else if (type === 'system') {
+      avatarHTML = '<div class="chat-msg__avatar chat-msg__avatar--system">SYS</div>';
+      nameHTML = '<div class="chat-msg__name" style="color: var(--accent-yellow)">시스템</div>';
+    } else if (type === 'tool_call') {
+      avatarHTML = '<div class="chat-msg__avatar" style="background:rgba(240,136,62,0.3);color:#f0883e;font-size:11px;">TC</div>';
+      nameHTML = '<div class="chat-msg__name" style="color: var(--accent-orange)">툴콜</div>';
+    } else if (type === 'wf_event') {
+      avatarHTML = '<div class="chat-msg__avatar" style="background:rgba(210,168,255,0.3);color:#d2a8ff;font-size:11px;">WF</div>';
+      nameHTML = '<div class="chat-msg__name" style="color: var(--accent-purple)">워크플로우</div>';
+    }
+
+    msg.innerHTML = `
+      ${avatarHTML}
+      <div class="chat-msg__content">
+        ${nameHTML}
+        <div class="chat-msg__text">${this.escapeHtml(text)}</div>
+        <div class="chat-msg__time">${this.formatTime()}</div>
+      </div>
+    `;
+
+    this.chatList.appendChild(msg);
+    this.msgCount++;
+    this.chatCountEl.textContent = this.msgCount + ' 메시지';
+    this.scrollToBottom();
+  }
+
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  scrollToBottom() {
+    requestAnimationFrame(() => {
+      this.chatBody.scrollTop = this.chatBody.scrollHeight;
+    });
+  }
+
+  sendUserMessage() {
+    const text = this.chatInput.value.trim();
+    if (!text) return;
+    this.chatInput.value = '';
+    this.addMessage('user', null, text);
+
+    // Simulate agent replies
+    setTimeout(() => {
+      const agent = AGENTS[Math.floor(Math.random() * AGENTS.length)];
+      const replies = AGENT_REPLIES[agent.id];
+      const reply = replies[Math.floor(Math.random() * replies.length)];
+      this.addMessage('agent', agent.id, reply);
+    }, 800 + Math.random() * 1200);
+  }
+
+  simulateNext() {
+    if (this.simIndex >= SIMULATED_CONVERSATIONS.length) {
+      this.simIndex = 0;
+    }
+    const msg = SIMULATED_CONVERSATIONS[this.simIndex];
+    this.addMessage(msg.type, msg.agent || null, msg.text);
+    this.simIndex++;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   ToolCallLog Module
+   ═══════════════════════════════════════════════════ */
+class ToolCallLog {
+  constructor() {
+    this.container = document.getElementById('toolLogBody');
+    this.countEl = document.getElementById('toolLogCount');
+    this.entries = [];
+  }
+
+  addEntry(toolData) {
+    const statuses = ['success', 'success', 'success', 'success', 'error', 'pending'];
+    const status = toolData.status || statuses[Math.floor(Math.random() * statuses.length)];
+    const latency = toolData.latency || Math.floor(50 + Math.random() * 500);
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    const entry = document.createElement('div');
+    entry.className = 'tool-log-entry';
+    entry.innerHTML = `
+      <div class="tool-log__timeline">
+        <div class="tool-log__dot tool-log__dot--${status}"></div>
+        <div class="tool-log__line"></div>
+      </div>
+      <div class="tool-log__info">
+        <div class="tool-log__header">
+          <span class="tool-log__name">${this.escapeHtml(toolData.name)}</span>
+          <span class="tool-log__status tool-log__status--${status}">${status}</span>
+        </div>
+        <div class="tool-log__meta">
+          <span>${timeStr}</span>
+          <span>${latency}ms</span>
+          <span>${toolData.agent || 'system'}</span>
+        </div>
+        <div class="tool-log__detail">${this.escapeHtml(toolData.detail || '상세 정보 없음')}</div>
+      </div>
+    `;
+
+    entry.addEventListener('click', () => {
+      entry.classList.toggle('expanded');
+    });
+
+    this.container.insertBefore(entry, this.container.firstChild);
+    this.entries.push({ ...toolData, status, latency, time: now });
+    this.countEl.textContent = this.entries.length + '건';
+
+    // Emit for chat
+    bus.emit('tool_call', { name: toolData.name, status: status === 'success' ? '200 OK' : status, latency });
+
+    // Resolve pending after delay
+    if (status === 'pending') {
+      setTimeout(() => {
+        const dot = entry.querySelector('.tool-log__dot');
+        const statusEl = entry.querySelector('.tool-log__status');
+        dot.className = 'tool-log__dot tool-log__dot--success';
+        statusEl.className = 'tool-log__status tool-log__status--success';
+        statusEl.textContent = 'success';
+      }, 2000 + Math.random() * 3000);
+    }
+  }
+
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  simulateRandom() {
+    const tool = TOOL_CALL_POOL[Math.floor(Math.random() * TOOL_CALL_POOL.length)];
+    this.addEntry(tool);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   System Status Module
+   ═══════════════════════════════════════════════════ */
+class SystemStatus {
+  constructor() {
+    this.sessionStart = Date.now();
+    this.memoryEl = document.getElementById('memoryValue');
+    this.memoryBar = document.getElementById('memoryBar');
+    this.tokenEl = document.getElementById('tokenValue');
+    this.tokenBar = document.getElementById('tokenBar');
+    this.timerEl = document.getElementById('sessionTimer');
+    this.memory = 67;
+    this.tokens = 45;
+
+    this.startTimer();
+    this.startFluctuations();
+  }
+
+  startTimer() {
+    setInterval(() => {
+      const elapsed = Math.floor((Date.now() - this.sessionStart) / 1000);
+      const h = String(Math.floor(elapsed / 3600)).padStart(2, '0');
+      const m = String(Math.floor((elapsed % 3600) / 60)).padStart(2, '0');
+      const s = String(elapsed % 60).padStart(2, '0');
+      this.timerEl.textContent = `${h}:${m}:${s}`;
+    }, 1000);
+  }
+
+  startFluctuations() {
+    setInterval(() => {
+      this.memory = Math.max(40, Math.min(90, this.memory + (Math.random() - 0.45) * 4));
+      this.tokens = Math.max(20, Math.min(80, this.tokens + (Math.random() - 0.4) * 3));
+      const memPct = Math.round(this.memory);
+      const tokPct = Math.round(this.tokens);
+      this.memoryEl.textContent = memPct + '%';
+      this.memoryBar.style.width = memPct + '%';
+      this.tokenEl.textContent = tokPct + '%';
+      this.tokenBar.style.width = tokPct + '%';
+    }, 5000);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Notification Panel Module
+   ═══════════════════════════════════════════════════ */
+class NotificationPanel {
+  constructor() {
+    this.container = document.getElementById('notifList');
+    this.countEl = document.getElementById('notifPanelCount');
+    this.badgeCount = document.getElementById('notifCount');
+    this.notifications = [];
+    this.unreadCount = 0;
+
+    document.getElementById('notifBadgeBtn').addEventListener('click', () => {
+      this.markAllRead();
+    });
+  }
+
+  addNotification(type, title) {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    const icons = { success: '&#x2713;', error: '&#x2717;', pending: '&#x23F3;' };
+
+    const item = document.createElement('div');
+    item.className = 'notification-item notification-item--unread';
+    item.innerHTML = `
+      <div class="notification-item__icon notification-item__icon--${type}">${icons[type]}</div>
+      <div class="notification-item__content">
+        <div class="notification-item__title">${this.escapeHtml(title)}</div>
+        <div class="notification-item__time">${timeStr}</div>
+      </div>
+    `;
+
+    item.addEventListener('click', () => {
+      if (item.classList.contains('notification-item--unread')) {
+        item.classList.remove('notification-item--unread');
+        item.classList.add('notification-item--read');
+        this.unreadCount = Math.max(0, this.unreadCount - 1);
+        this.updateBadge();
+      }
+    });
+
+    this.container.insertBefore(item, this.container.firstChild);
+    this.notifications.push({ type, title, time: now, read: false });
+    this.unreadCount++;
+    this.updateBadge();
+  }
+
+  markAllRead() {
+    this.container.querySelectorAll('.notification-item--unread').forEach(item => {
+      item.classList.remove('notification-item--unread');
+      item.classList.add('notification-item--read');
+    });
+    this.unreadCount = 0;
+    this.updateBadge();
+  }
+
+  updateBadge() {
+    this.countEl.textContent = this.notifications.length + ' 알림';
+    this.badgeCount.textContent = this.unreadCount;
+    if (this.unreadCount > 0) {
+      this.badgeCount.classList.add('visible');
+    } else {
+      this.badgeCount.classList.remove('visible');
+    }
+  }
+
+  escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Mini Charts (SVG)
+   ═══════════════════════════════════════════════════ */
+class MiniCharts {
+  constructor() {
+    this.agentActivity = { ops: 42, flow: 35, comm: 28 };
+    this.successRate = 96;
+    this.renderAgentChart();
+    this.renderSuccessChart();
+
+    bus.on('tool_call', () => {
+      const agents = ['ops', 'flow', 'comm'];
+      const agent = agents[Math.floor(Math.random() * agents.length)];
+      this.agentActivity[agent] += 1;
+      this.renderAgentChart();
+    });
+  }
+
+  renderAgentChart() {
+    const svg = document.getElementById('agentChart');
+    const data = this.agentActivity;
+    const maxVal = Math.max(data.ops, data.flow, data.comm, 1);
+    const barWidth = 60;
+    const gap = 30;
+    const maxHeight = 100;
+    const startX = 40;
+    const baseY = 130;
+
+    const colors = { ops: '#58a6ff', flow: '#3fb950', comm: '#d2a8ff' };
+    const labels = { ops: 'Ops', flow: 'Flow', comm: 'Comm' };
+
+    let html = '';
+    // Y-axis
+    html += `<line x1="30" y1="20" x2="30" y2="${baseY}" stroke="var(--border-color)" stroke-width="1"/>`;
+    // X-axis
+    html += `<line x1="30" y1="${baseY}" x2="280" y2="${baseY}" stroke="var(--border-color)" stroke-width="1"/>`;
+
+    let i = 0;
+    for (const key of ['ops', 'flow', 'comm']) {
+      const h = (data[key] / maxVal) * maxHeight;
+      const x = startX + i * (barWidth + gap);
+      const y = baseY - h;
+      html += `<rect x="${x}" y="${y}" width="${barWidth}" height="${h}" rx="4" fill="${colors[key]}" opacity="0.8">
+        <animate attributeName="height" from="0" to="${h}" dur="0.8s" fill="freeze"/>
+        <animate attributeName="y" from="${baseY}" to="${y}" dur="0.8s" fill="freeze"/>
+      </rect>`;
+      html += `<text x="${x + barWidth / 2}" y="${baseY + 16}" text-anchor="middle" fill="var(--text-secondary)" font-size="11">${labels[key]}</text>`;
+      html += `<text x="${x + barWidth / 2}" y="${y - 6}" text-anchor="middle" fill="var(--text-primary)" font-size="11" font-weight="600">${data[key]}</text>`;
+      i++;
+    }
+
+    svg.innerHTML = html;
+  }
+
+  renderSuccessChart() {
+    const svg = document.getElementById('successChart');
+    const rate = this.successRate;
+    const fail = 100 - rate;
+    const cx = 100, cy = 65, r = 50;
+
+    // Calculate arc
+    const successAngle = (rate / 100) * 360;
+    const successRad = (successAngle - 90) * (Math.PI / 180);
+    const startRad = -90 * (Math.PI / 180);
+
+    const x1 = cx + r * Math.cos(startRad);
+    const y1 = cy + r * Math.sin(startRad);
+    const x2 = cx + r * Math.cos(successRad);
+    const y2 = cy + r * Math.sin(successRad);
+    const largeArc = successAngle > 180 ? 1 : 0;
+
+    let html = '';
+    // Background circle
+    html += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="var(--border-color)" stroke-width="20"/>`;
+    // Success arc
+    html += `<path d="M${x1},${y1} A${r},${r} 0 ${largeArc},1 ${x2},${y2}" fill="none" stroke="var(--accent-green)" stroke-width="20" stroke-linecap="round">
+      <animate attributeName="stroke-dasharray" from="0 999" to="${(rate / 100) * 2 * Math.PI * r} 999" dur="1s" fill="freeze"/>
+    </path>`;
+    // Fail arc (remaining)
+    if (fail > 0) {
+      const failRad = ((successAngle + (fail / 100) * 360) - 90) * (Math.PI / 180);
+      const x3 = cx + r * Math.cos(failRad);
+      const y3 = cy + r * Math.sin(failRad);
+      html += `<path d="M${x2},${y2} A${r},${r} 0 0,1 ${x3},${y3}" fill="none" stroke="var(--accent-red)" stroke-width="20" stroke-linecap="round" opacity="0.6"/>`;
+    }
+    // Inner circle (donut hole)
+    html += `<circle cx="${cx}" cy="${cy}" r="32" fill="var(--bg-card)"/>`;
+    // Center text
+    html += `<text x="${cx}" y="${cy - 2}" text-anchor="middle" fill="var(--text-primary)" font-size="18" font-weight="700">${rate}%</text>`;
+    html += `<text x="${cx}" y="${cy + 14}" text-anchor="middle" fill="var(--text-secondary)" font-size="10">성공률</text>`;
+    // Legend
+    html += `<circle cx="30" cy="140" r="4" fill="var(--accent-green)"/>`;
+    html += `<text x="40" y="144" fill="var(--text-secondary)" font-size="10">성공 ${rate}%</text>`;
+    html += `<circle cx="110" cy="140" r="4" fill="var(--accent-red)" opacity="0.6"/>`;
+    html += `<text x="120" y="144" fill="var(--text-secondary)" font-size="10">실패 ${fail}%</text>`;
+
+    svg.innerHTML = html;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   NavBar Tab Switching
+   ═══════════════════════════════════════════════════ */
+function initNavTabs() {
+  document.querySelectorAll('.navbar__tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.navbar__tab').forEach(t => t.classList.remove('navbar__tab--active'));
+      tab.classList.add('navbar__tab--active');
+      bus.emit('tab_changed', tab.dataset.tab);
+    });
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   Scroll Fade-in Observer
+   ═══════════════════════════════════════════════════ */
+function initScrollAnimations() {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const delay = parseInt(entry.target.dataset.delay || '0');
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, delay);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.fade-in-up, .dashboard-card, .panel, .chart-panel').forEach(el => {
+    observer.observe(el);
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   JSON Export
+   ═══════════════════════════════════════════════════ */
+function initExport() {
+  document.getElementById('exportBtn').addEventListener('click', () => {
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      version: '1.0.0',
+      workflows: WORKFLOW_EXPORT_DATA,
+      settings: {
+        theme: localStorage.getItem('openclaw-theme') || 'dark',
+        agents: AGENTS.map(a => ({ id: a.id, name: a.nameKo }))
+      }
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'openclaw-hub-export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    bus.emit('notification', { type: 'success', title: 'JSON 내보내기 완료' });
+  });
+}
+
+/* ═══════════════════════════════════════════════════
+   Dashboard Counter Updates
+   ═══════════════════════════════════════════════════ */
+function initDashboardUpdates() {
+  let runningWf = 2;
+  let todayTasks = 24;
+
+  setInterval(() => {
+    // Fluctuate running workflows
+    runningWf = Math.max(0, Math.min(5, runningWf + Math.round(Math.random() * 2 - 1)));
+    document.getElementById('runningWorkflows').textContent = runningWf;
+
+    // Increment tasks occasionally
+    if (Math.random() < 0.3) {
+      todayTasks++;
+      document.getElementById('todayTasks').textContent = todayTasks;
+    }
+  }, 10000);
+}
+
+/* ═══════════════════════════════════════════════════
+   Notification Simulation Data
+   ═══════════════════════════════════════════════════ */
+const NOTIFICATION_POOL = [
+  { type: 'success', title: '모닝 브리핑 워크플로우 실행 완료' },
+  { type: 'success', title: '캘린더 체크 완료 - 내일 회의 2건' },
+  { type: 'success', title: '이메일 처리 완료 - 5건 분류됨' },
+  { type: 'error', title: '회의 준비 워크플로우 실패 - 타임아웃' },
+  { type: 'success', title: '습관 추적 데이터 저장 완료' },
+  { type: 'pending', title: '데이터 파이프라인 처리 중...' },
+  { type: 'success', title: '시스템 상태 점검 완료 - 정상' },
+  { type: 'success', title: '일일 요약 생성 및 전송 완료' },
+  { type: 'error', title: 'API 연결 실패 - 재시도 예정' },
+  { type: 'success', title: '스트레칭 알림 전송 완료' }
+];
+
+/* ═══════════════════════════════════════════════════
+   App Initialization
+   ═══════════════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', () => {
+  // Initialize core systems
+  const themeManager = new ThemeManager();
+  initNavTabs();
+  initScrollAnimations();
+  initExport();
+  initDashboardUpdates();
+
+  // Initialize modules
+  const chat = new ChatStream();
+  const toolLog = new ToolCallLog();
+  const sysStatus = new SystemStatus();
+  const notifications = new NotificationPanel();
+  const charts = new MiniCharts();
+
+  // Wire notification events
+  bus.on('notification', (data) => {
+    notifications.addNotification(data.type, data.title);
+  });
+
+  // Start simulation loop - chat messages
+  let chatInterval = setInterval(() => {
+    chat.simulateNext();
+  }, 3000 + Math.random() * 2000);
+
+  // Tool call simulation
+  let toolInterval = setInterval(() => {
+    toolLog.simulateRandom();
+  }, 4000 + Math.random() * 3000);
+
+  // Notification simulation
+  let notifIndex = 0;
+  let notifInterval = setInterval(() => {
+    if (notifIndex < NOTIFICATION_POOL.length) {
+      const notif = NOTIFICATION_POOL[notifIndex];
+      notifications.addNotification(notif.type, notif.title);
+      notifIndex++;
+    } else {
+      // Generate random from pool
+      const notif = NOTIFICATION_POOL[Math.floor(Math.random() * NOTIFICATION_POOL.length)];
+      notifications.addNotification(notif.type, notif.title);
+    }
+  }, 6000 + Math.random() * 4000);
+
+  // Workflow event simulation
+  const WF_EVENTS = [
+    '[모닝 브리핑] 워크플로우 실행 시작',
+    '[캘린더 체크] 48시간 일정 스캔 중',
+    '[이메일 처리] 분류 작업 진행 중',
+    '[습관 추적] 데이터 수집 완료',
+    '[집중 모드] 활성화 - 알림 차단 시작',
+    '[야간 빌드] 빌드 큐 대기 중'
+  ];
+
+  let wfEventInterval = setInterval(() => {
+    const evt = WF_EVENTS[Math.floor(Math.random() * WF_EVENTS.length)];
+    bus.emit('workflow_event', { text: evt });
+  }, 8000 + Math.random() * 5000);
+
+  // Add initial messages immediately
+  setTimeout(() => chat.simulateNext(), 500);
+  setTimeout(() => chat.simulateNext(), 1200);
+  setTimeout(() => chat.simulateNext(), 2000);
+  setTimeout(() => toolLog.simulateRandom(), 800);
+  setTimeout(() => toolLog.simulateRandom(), 1500);
+  setTimeout(() => {
+    notifications.addNotification('success', '시스템 초기화 완료');
+  }, 1000);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1334 @@
+/* ============================================================
+   Neural Map v10 - Team Edition
+   animations.css — Full Animation Suite & Neural Dark Theme
+   ============================================================ */
+
+/* ────────────────────────────────────────────────────────────
+   0. CSS Custom Properties (Neural Dark Theme)
+   ──────────────────────────────────────────────────────────── */
+
+:root {
+  /* Core palette */
+  --bg-deep:        #0a0e1a;
+  --surface:        rgba(15, 23, 42, 0.8);
+  --surface-light:  rgba(15, 23, 42, 0.6);
+  --border:         rgba(74, 158, 255, 0.15);
+  --border-hover:   rgba(74, 158, 255, 0.35);
+  --primary:        #4a9eff;
+  --primary-dim:    #4a9eff30;
+  --secondary:      #7c3aed;
+  --accent:         #06d6a0;
+  --error:          #ff6b6b;
+  --warning:        #ffa94d;
+  --text-primary:   #e2e8f0;
+  --text-secondary: #94a3b8;
+
+  /* Glassmorphism */
+  --glass-bg:       rgba(15, 23, 42, 0.6);
+  --glass-blur:     blur(20px);
+  --glass-border:   1px solid rgba(74, 158, 255, 0.15);
+  --glass-radius:   16px;
+
+  /* Shadows */
+  --shadow-glow:    0 0 20px rgba(74, 158, 255, 0.15);
+  --shadow-lift:    0 8px 32px rgba(0, 0, 0, 0.4);
+
+  /* Timing */
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-elastic:   cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-bounce:    cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ────────────────────────────────────────────────────────────
+   1. Global Reset & Base Theme
+   ──────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated aurora / nebula background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%, rgba(74, 158, 255, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 80% at 80% 70%, rgba(124, 58, 237, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 50% at 50% 50%, rgba(6, 214, 160, 0.04) 0%, transparent 60%);
+  animation: aurora-drift 20s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift {
+  0%   { transform: scale(1) translate(0, 0); opacity: 1; }
+  33%  { transform: scale(1.05) translate(-2%, 1%); opacity: 0.9; }
+  66%  { transform: scale(0.98) translate(1%, -1%); opacity: 1; }
+  100% { transform: scale(1.03) translate(-1%, 2%); opacity: 0.95; }
+}
+
+/* ────────────────────────────────────────────────────────────
+   2. Scrollbar Styling
+   ──────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 14, 26, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(74, 158, 255, 0.25);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 158, 255, 0.45);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 158, 255, 0.25) rgba(10, 14, 26, 0.5);
+}
+
+/* ────────────────────────────────────────────────────────────
+   3. Selection & Focus
+   ──────────────────────────────────────────────────────────── */
+
+::selection {
+  background: rgba(74, 158, 255, 0.3);
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-deep), 0 0 0 4px var(--primary);
+  border-radius: 4px;
+  transition: box-shadow 0.2s ease;
+}
+
+/* Animated focus ring */
+@keyframes focus-ring-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--bg-deep), 0 0 0 4px var(--primary); }
+  50%      { box-shadow: 0 0 0 2px var(--bg-deep), 0 0 0 4px var(--primary), 0 0 12px var(--primary-dim); }
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  animation: focus-ring-pulse 2s ease-in-out infinite;
+}
+
+/* ────────────────────────────────────────────────────────────
+   4. Glassmorphism Panels
+   ──────────────────────────────────────────────────────────── */
+
+.glass-panel {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  border-radius: var(--glass-radius);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-panel:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-glow);
+}
+
+/* ────────────────────────────────────────────────────────────
+   5. Thought Card Base
+   ──────────────────────────────────────────────────────────── */
+
+.thought-card {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--glass-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s var(--ease-out-expo),
+              box-shadow 0.3s ease,
+              border-color 0.3s ease;
+}
+
+.thought-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(74, 158, 255, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.thought-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(74, 158, 255, 0.08);
+  border-color: var(--border-hover);
+}
+
+/* ────────────────────────────────────────────────────────────
+   6. Thought Cascade Animation — 6 Phases
+   ──────────────────────────────────────────────────────────── */
+
+/* Phase 1: Fade in from left with slight rotation */
+@keyframes cascade-phase-1 {
+  0%   { opacity: 0; transform: translateX(-60px) rotate(-3deg); }
+  60%  { opacity: 0.8; transform: translateX(5px) rotate(0.5deg); }
+  100% { opacity: 1; transform: translateX(0) rotate(0); }
+}
+
+.cascade-phase-1 {
+  animation: cascade-phase-1 0.7s var(--ease-out-expo) both;
+}
+
+/* Phase 2: Scale up from 0.8 with blur clear */
+@keyframes cascade-phase-2 {
+  0%   { opacity: 0; transform: scale(0.8); filter: blur(8px); }
+  60%  { opacity: 0.9; transform: scale(1.02); filter: blur(1px); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+.cascade-phase-2 {
+  animation: cascade-phase-2 0.6s var(--ease-out-expo) both;
+}
+
+/* Phase 3: Slide in from bottom with bounce */
+@keyframes cascade-phase-3 {
+  0%   { opacity: 0; transform: translateY(80px); }
+  50%  { opacity: 1; transform: translateY(-12px); }
+  70%  { transform: translateY(6px); }
+  85%  { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+
+.cascade-phase-3 {
+  animation: cascade-phase-3 0.8s var(--ease-out-expo) both;
+}
+
+/* Phase 4: Flip in on Y axis */
+@keyframes cascade-phase-4 {
+  0%   { opacity: 0; transform: perspective(800px) rotateY(-90deg); }
+  40%  { opacity: 0.6; transform: perspective(800px) rotateY(15deg); }
+  70%  { transform: perspective(800px) rotateY(-5deg); }
+  100% { opacity: 1; transform: perspective(800px) rotateY(0deg); }
+}
+
+.cascade-phase-4 {
+  animation: cascade-phase-4 0.8s var(--ease-out-expo) both;
+  transform-origin: left center;
+}
+
+/* Phase 5: Elastic zoom in */
+@keyframes cascade-phase-5 {
+  0%   { opacity: 0; transform: scale(0.3); }
+  40%  { opacity: 1; transform: scale(1.12); }
+  60%  { transform: scale(0.95); }
+  75%  { transform: scale(1.05); }
+  90%  { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+.cascade-phase-5 {
+  animation: cascade-phase-5 0.9s var(--ease-elastic) both;
+}
+
+/* Phase 6: Glitch effect entry */
+@keyframes cascade-phase-6 {
+  0%   { opacity: 0; transform: translate(-5px, 3px); }
+  10%  { opacity: 0.4; transform: translate(4px, -2px); }
+  20%  { opacity: 0; transform: translate(-3px, 5px); }
+  30%  { opacity: 0.7; transform: translate(6px, -1px); }
+  40%  { opacity: 0.3; transform: translate(-2px, -4px); }
+  50%  { opacity: 0.9; transform: translate(3px, 2px); }
+  60%  { opacity: 0.5; transform: translate(-4px, -3px); }
+  70%  { opacity: 1; transform: translate(2px, 1px); }
+  80%  { opacity: 0.8; transform: translate(-1px, -2px); }
+  90%  { opacity: 1; transform: translate(1px, 0); }
+  100% { opacity: 1; transform: translate(0, 0); }
+}
+
+.cascade-phase-6 {
+  animation: cascade-phase-6 0.7s steps(2, jump-none) both;
+}
+
+/* Stagger delays for multiple cards */
+.thought-card:nth-child(1)  { animation-delay: 0s; }
+.thought-card:nth-child(2)  { animation-delay: 0.08s; }
+.thought-card:nth-child(3)  { animation-delay: 0.16s; }
+.thought-card:nth-child(4)  { animation-delay: 0.24s; }
+.thought-card:nth-child(5)  { animation-delay: 0.32s; }
+.thought-card:nth-child(6)  { animation-delay: 0.40s; }
+.thought-card:nth-child(7)  { animation-delay: 0.48s; }
+.thought-card:nth-child(8)  { animation-delay: 0.56s; }
+.thought-card:nth-child(9)  { animation-delay: 0.64s; }
+.thought-card:nth-child(10) { animation-delay: 0.72s; }
+
+/* ────────────────────────────────────────────────────────────
+   7. Synapse Lines with Particle Effects
+   ──────────────────────────────────────────────────────────── */
+
+.synapse-line {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  border-radius: 1px;
+  box-shadow: 0 0 8px rgba(74, 158, 255, 0.4),
+              0 0 20px rgba(74, 158, 255, 0.15);
+  overflow: visible;
+  animation: synapse-glow 3s ease-in-out infinite alternate;
+}
+
+/* SVG-based synapse for curved paths */
+.synapse-line-svg {
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-dasharray: 8 6;
+  stroke-dashoffset: 0;
+  fill: none;
+  filter: drop-shadow(0 0 4px rgba(74, 158, 255, 0.5));
+  animation: synapse-flow 1.5s linear infinite;
+}
+
+@keyframes synapse-flow {
+  to { stroke-dashoffset: -28; }
+}
+
+@keyframes synapse-glow {
+  0%   { box-shadow: 0 0 6px rgba(74, 158, 255, 0.3), 0 0 15px rgba(74, 158, 255, 0.1); }
+  100% { box-shadow: 0 0 12px rgba(74, 158, 255, 0.6), 0 0 30px rgba(74, 158, 255, 0.2); }
+}
+
+/* Particle effect — leading dot */
+.synapse-line::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary), 0 0 20px rgba(74, 158, 255, 0.5);
+  top: 50%;
+  transform: translateY(-50%);
+  animation: particle-travel 2.5s linear infinite;
+}
+
+@keyframes particle-travel {
+  0%   { left: -3px; opacity: 0; }
+  5%   { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { left: calc(100% - 3px); opacity: 0; }
+}
+
+/* Particle effect — sin-wave secondary dot */
+.synapse-line::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  top: 50%;
+  animation: particle-wave 3s linear infinite 0.8s;
+}
+
+@keyframes particle-wave {
+  0%   { left: -2px; transform: translateY(calc(-50% + 0px)); opacity: 0; }
+  5%   { opacity: 0.8; }
+  25%  { transform: translateY(calc(-50% + 8px)); }
+  50%  { transform: translateY(calc(-50% - 8px)); }
+  75%  { transform: translateY(calc(-50% + 8px)); }
+  90%  { opacity: 0.8; }
+  100% { left: calc(100% - 2px); transform: translateY(calc(-50% + 0px)); opacity: 0; }
+}
+
+/* ────────────────────────────────────────────────────────────
+   8. Agent Avatar — 5 States
+   ──────────────────────────────────────────────────────────── */
+
+.agent-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  overflow: visible;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  flex-shrink: 0;
+}
+
+.agent-avatar img,
+.agent-avatar .avatar-icon {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* --- IDLE: gentle pulse/breathing --- */
+@keyframes avatar-idle-breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 12px var(--primary-dim); }
+  50%      { transform: scale(1.03); box-shadow: 0 0 20px var(--primary-dim); }
+}
+
+.agent-avatar.idle {
+  border-color: var(--primary-dim);
+  animation: avatar-idle-breathe 4s ease-in-out infinite;
+}
+
+/* --- THINKING: rotating ring + bright pulse --- */
+@keyframes avatar-think-ring {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes avatar-think-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(74, 158, 255, 0.4); }
+  50%      { box-shadow: 0 0 30px rgba(74, 158, 255, 0.7); }
+}
+
+.agent-avatar.thinking {
+  border-color: var(--primary);
+  animation: avatar-think-pulse 1.5s ease-in-out infinite;
+}
+
+.agent-avatar.thinking::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--primary);
+  border-right-color: var(--primary);
+  animation: avatar-think-ring 1.2s linear infinite;
+}
+
+/* Orbital dots */
+.agent-avatar.thinking::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--primary);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--primary);
+  top: -10px;
+  left: 50%;
+  transform-origin: 50% calc(50% + 38px);
+  animation: avatar-think-ring 2s linear infinite reverse;
+}
+
+/* --- TOOL_CALLING: hexagon morph + scanning line + amber --- */
+@keyframes avatar-tool-morph {
+  0%, 100% { border-radius: 50%; }
+  50%      { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+}
+
+@keyframes avatar-tool-scan {
+  0%   { top: 0; opacity: 1; }
+  100% { top: 100%; opacity: 0.3; }
+}
+
+.agent-avatar.tool_calling {
+  border-color: var(--warning);
+  box-shadow: 0 0 20px rgba(255, 169, 77, 0.3);
+  animation: avatar-tool-morph 2s ease-in-out infinite;
+}
+
+.agent-avatar.tool_calling::before {
+  content: '';
+  position: absolute;
+  width: 80%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--warning), transparent);
+  box-shadow: 0 0 8px var(--warning);
+  left: 10%;
+  animation: avatar-tool-scan 1.5s ease-in-out infinite;
+}
+
+/* --- SPEAKING: wave/ripple emanation + green --- */
+@keyframes avatar-speak-ripple {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.agent-avatar.speaking {
+  border-color: #69db7c;
+  box-shadow: 0 0 15px rgba(105, 219, 124, 0.3);
+}
+
+.agent-avatar.speaking::before,
+.agent-avatar.speaking::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #69db7c;
+  animation: avatar-speak-ripple 1.5s ease-out infinite;
+}
+
+.agent-avatar.speaking::after {
+  animation-delay: 0.5s;
+}
+
+/* --- ERROR: shake + red flash + glitch --- */
+@keyframes avatar-error-shake {
+  0%, 100% { transform: translateX(0); }
+  10%      { transform: translateX(-4px); }
+  20%      { transform: translateX(4px); }
+  30%      { transform: translateX(-3px); }
+  40%      { transform: translateX(3px); }
+  50%      { transform: translateX(-2px); }
+  60%      { transform: translateX(2px); }
+  70%      { transform: translateX(-1px); }
+  80%      { transform: translateX(1px); }
+}
+
+@keyframes avatar-error-flash {
+  0%, 100% { box-shadow: 0 0 15px rgba(255, 107, 107, 0.3); }
+  50%      { box-shadow: 0 0 30px rgba(255, 107, 107, 0.7); }
+}
+
+.agent-avatar.error {
+  border-color: var(--error);
+  animation: avatar-error-shake 0.6s ease-in-out, avatar-error-flash 1s ease-in-out infinite;
+}
+
+.agent-avatar.error::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 107, 107, 0.15);
+  animation: avatar-error-flash 0.8s ease-in-out infinite;
+}
+
+/* ────────────────────────────────────────────────────────────
+   9. Speech Bubble with Typing Effect
+   ──────────────────────────────────────────────────────────── */
+
+.speech-bubble {
+  position: relative;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  border-radius: 16px 16px 16px 4px;
+  padding: 14px 18px;
+  max-width: 520px;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0;
+  transform: scale(0.9) translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s var(--ease-out-expo);
+}
+
+/* Tail / arrow */
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: 12px;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 10px 10px 0;
+  border-color: transparent var(--glass-bg) transparent transparent;
+  filter: drop-shadow(-1px 0 0 rgba(74, 158, 255, 0.15));
+}
+
+/* Active state — appear */
+.speech-bubble.active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* Typing indicator — three bouncing dots */
+.speech-bubble.typing {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  min-width: 72px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.speech-bubble.typing .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  animation: typing-bounce 1.4s ease-in-out infinite;
+}
+
+.speech-bubble.typing .dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.speech-bubble.typing .dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%           { transform: translateY(-8px); opacity: 1; }
+}
+
+/* Text cursor blink */
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: var(--primary);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursor-blink 1s steps(1) infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ────────────────────────────────────────────────────────────
+   10. Floating, Glow, Pulse Utility Animations
+   ──────────────────────────────────────────────────────────── */
+
+/* Floating — smooth up/down */
+@keyframes float-updown {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+.floating {
+  animation: float-updown 3s ease-in-out infinite;
+}
+
+/* Glow — pulsing box-shadow */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(74, 158, 255, 0.3), 0 0 20px rgba(74, 158, 255, 0.1); }
+  50%      { box-shadow: 0 0 20px rgba(74, 158, 255, 0.5), 0 0 40px rgba(74, 158, 255, 0.2); }
+}
+
+.glow {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Pulse — scale pulse */
+@keyframes scale-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+
+.pulse {
+  animation: scale-pulse 2s ease-in-out infinite;
+}
+
+/* ────────────────────────────────────────────────────────────
+   11. Neural Nodes
+   ──────────────────────────────────────────────────────────── */
+
+.neural-node {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 10px rgba(74, 158, 255, 0.4);
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  cursor: pointer;
+}
+
+.neural-node:hover {
+  transform: scale(1.3);
+  box-shadow: 0 0 18px rgba(74, 158, 255, 0.6);
+}
+
+/* Active node */
+.neural-node.active {
+  background: #70b8ff;
+  transform: scale(1.4);
+  box-shadow: 0 0 24px rgba(74, 158, 255, 0.7), 0 0 48px rgba(74, 158, 255, 0.3);
+}
+
+/* Processing node — spinning ring */
+@keyframes node-spin {
+  to { transform: rotate(360deg); }
+}
+
+.neural-node.processing::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-right-color: var(--accent);
+  animation: node-spin 1s linear infinite;
+}
+
+.neural-node.processing {
+  animation: scale-pulse 1.5s ease-in-out infinite;
+}
+
+/* Connection line between nodes */
+.node-connection {
+  position: absolute;
+  height: 1px;
+  background: linear-gradient(90deg, var(--primary), rgba(74, 158, 255, 0.2));
+  transform-origin: left center;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.node-connection.active {
+  height: 2px;
+  opacity: 1;
+  box-shadow: 0 0 6px rgba(74, 158, 255, 0.4);
+}
+
+/* ────────────────────────────────────────────────────────────
+   12. Tabs
+   ──────────────────────────────────────────────────────────── */
+
+.tab {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 1px;
+  transition: width 0.3s var(--ease-out-expo), left 0.3s var(--ease-out-expo);
+}
+
+.tab:hover::after {
+  width: 60%;
+  left: 20%;
+}
+
+.tab.active {
+  color: var(--primary);
+}
+
+.tab.active::after {
+  width: 100%;
+  left: 0;
+  box-shadow: 0 0 8px rgba(74, 158, 255, 0.4);
+}
+
+/* ────────────────────────────────────────────────────────────
+   13. Buttons
+   ──────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.2s ease,
+              box-shadow 0.3s ease,
+              border-color 0.3s ease,
+              background 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-hover);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 12px rgba(74, 158, 255, 0.1);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), #3a7edf);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 20px rgba(74, 158, 255, 0.3);
+}
+
+.btn-danger {
+  border-color: rgba(255, 107, 107, 0.3);
+}
+
+.btn-danger:hover {
+  border-color: var(--error);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 12px rgba(255, 107, 107, 0.2);
+}
+
+/* ────────────────────────────────────────────────────────────
+   14. Progress Bar
+   ──────────────────────────────────────────────────────────── */
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(74, 158, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar .fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 2px;
+  transition: width 0.4s var(--ease-out-expo);
+  position: relative;
+}
+
+.progress-bar .fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 20px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4));
+  animation: progress-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes progress-shimmer {
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
+}
+
+/* Indeterminate progress */
+.progress-bar.indeterminate .fill {
+  width: 30% !important;
+  animation: progress-slide 1.5s var(--ease-out-expo) infinite;
+}
+
+@keyframes progress-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+/* ────────────────────────────────────────────────────────────
+   15. Card Hover Lift
+   ──────────────────────────────────────────────────────────── */
+
+.card-lift {
+  transition: transform 0.3s var(--ease-out-expo), box-shadow 0.3s ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift), var(--shadow-glow);
+}
+
+/* ────────────────────────────────────────────────────────────
+   16. Input Styling
+   ──────────────────────────────────────────────────────────── */
+
+.input,
+input[type="text"],
+input[type="search"],
+textarea {
+  background: rgba(10, 14, 26, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  width: 100%;
+}
+
+.input:hover,
+input[type="text"]:hover,
+input[type="search"]:hover,
+textarea:hover {
+  border-color: var(--border-hover);
+}
+
+.input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* ────────────────────────────────────────────────────────────
+   17. Smooth Transitions for Interactive Elements
+   ──────────────────────────────────────────────────────────── */
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+a:hover {
+  color: #70b8ff;
+}
+
+/* Generic transition utility */
+.transition-all {
+  transition: all 0.3s var(--ease-out-expo);
+}
+
+.transition-fast {
+  transition: all 0.15s ease;
+}
+
+/* Fade in utility */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.fade-in {
+  animation: fade-in 0.4s ease both;
+}
+
+/* Slide up utility */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+  animation: slide-up 0.5s var(--ease-out-expo) both;
+}
+
+/* ────────────────────────────────────────────────────────────
+   18. Thought Feed & Layout Panels
+   ──────────────────────────────────────────────────────────── */
+
+.thought-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.sidebar {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--glass-bg);
+  border-right: 1px solid var(--border);
+  transition: width 0.3s var(--ease-out-expo), transform 0.3s var(--ease-out-expo);
+}
+
+.panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   19. Status Badges
+   ──────────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: transform 0.2s ease;
+}
+
+.badge-primary {
+  background: rgba(74, 158, 255, 0.15);
+  color: var(--primary);
+  border-color: rgba(74, 158, 255, 0.25);
+}
+
+.badge-success {
+  background: rgba(6, 214, 160, 0.15);
+  color: var(--accent);
+  border-color: rgba(6, 214, 160, 0.25);
+}
+
+.badge-warning {
+  background: rgba(255, 169, 77, 0.15);
+  color: var(--warning);
+  border-color: rgba(255, 169, 77, 0.25);
+}
+
+.badge-error {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--error);
+  border-color: rgba(255, 107, 107, 0.25);
+}
+
+/* Status dot inside badge */
+.badge .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: scale-pulse 2s ease-in-out infinite;
+}
+
+/* ────────────────────────────────────────────────────────────
+   20. Tooltip
+   ──────────────────────────────────────────────────────────── */
+
+.tooltip {
+  position: relative;
+}
+
+.tooltip::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 6px 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 1000;
+}
+
+.tooltip:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ────────────────────────────────────────────────────────────
+   21. Skeleton Loading
+   ──────────────────────────────────────────────────────────── */
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(74, 158, 255, 0.05) 25%,
+    rgba(74, 158, 255, 0.1) 50%,
+    rgba(74, 158, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s linear infinite;
+  border-radius: 8px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   22. Notification / Toast
+   ──────────────────────────────────────────────────────────── */
+
+@keyframes toast-in {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes toast-out {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(120%); opacity: 0; }
+}
+
+.toast {
+  animation: toast-in 0.4s var(--ease-out-expo) both;
+}
+
+.toast.dismissing {
+  animation: toast-out 0.3s ease-in both;
+}
+
+/* ────────────────────────────────────────────────────────────
+   23. Modal / Overlay
+   ──────────────────────────────────────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+}
+
+.modal-content {
+  backdrop-filter: var(--glass-blur);
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  border-radius: var(--glass-radius);
+  padding: 24px;
+  max-width: 520px;
+  width: 90%;
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.3s var(--ease-out-expo);
+}
+
+.modal-overlay.active .modal-content {
+  transform: scale(1) translateY(0);
+}
+
+/* ────────────────────────────────────────────────────────────
+   24. Mobile Responsive (768px breakpoint)
+   ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  :root {
+    --glass-radius: 12px;
+  }
+
+  .thought-card {
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  /* Reduce animation complexity */
+  .cascade-phase-1 { animation-duration: 0.4s; }
+  .cascade-phase-2 { animation-duration: 0.35s; }
+  .cascade-phase-3 { animation-duration: 0.45s; }
+  .cascade-phase-4 { animation-duration: 0.45s; }
+  .cascade-phase-5 { animation-duration: 0.5s; }
+  .cascade-phase-6 { animation-duration: 0.4s; }
+
+  /* Simplify particle effects */
+  .synapse-line::after {
+    display: none;
+  }
+
+  .agent-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .speech-bubble {
+    max-width: 85vw;
+  }
+
+  /* Stack layouts */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .thought-feed {
+    padding: 10px;
+  }
+
+  .btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .tab {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  /* Reduce floating amplitude */
+  @keyframes float-updown {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   25. Performance & Accessibility
+   ──────────────────────────────────────────────────────────── */
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  body::before {
+    animation: none;
+  }
+
+  .floating,
+  .glow,
+  .pulse {
+    animation: none;
+  }
+
+  .synapse-line::before,
+  .synapse-line::after {
+    animation: none;
+    display: none;
+  }
+}
+
+/* Will-change hints — applied sparingly */
+.agent-avatar.thinking,
+.agent-avatar.speaking {
+  will-change: transform, box-shadow;
+}
+
+.synapse-line::before {
+  will-change: left, opacity;
+}
+
+.cascade-phase-1,
+.cascade-phase-2,
+.cascade-phase-3,
+.cascade-phase-4,
+.cascade-phase-5,
+.cascade-phase-6 {
+  will-change: transform, opacity;
+}
+
+/* Remove will-change after animation completes (via JS helper class) */
+.animation-complete {
+  will-change: auto;
+}
+
+/* GPU acceleration hints */
+.thought-card,
+.agent-avatar,
+.neural-node,
+.speech-bubble {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* ────────────────────────────────────────────────────────────
+   26. Spin Utility & Miscellaneous
+   ──────────────────────────────────────────────────────────── */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Appear animation for dynamic content */
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.8); }
+  70%  { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.pop-in {
+  animation: pop-in 0.3s var(--ease-out-expo) both;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 16px 0;
+}
+
+/* Code block styling */
+.code-block {
+  background: rgba(10, 14, 26, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: var(--text-primary);
+}
+
+/* Timestamp text */
+.timestamp {
+  color: var(--text-secondary);
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* ────────────────────────────────────────────────────────────
+   End of animations.css
+   ──────────────────────────────────────────────────────────── */

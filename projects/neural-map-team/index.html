@@ -1,0 +1,3985 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neural Map v10 - 에이전트 신경망 시각화</title>
+<style>
+/* ============================================================
+   Neural Map v10 - Team Edition
+   animations.css — Full Animation Suite & Neural Dark Theme
+   ============================================================ */
+
+/* ────────────────────────────────────────────────────────────
+   0. CSS Custom Properties (Neural Dark Theme)
+   ──────────────────────────────────────────────────────────── */
+
+:root {
+  /* Core palette */
+  --bg-deep:        #0a0e1a;
+  --surface:        rgba(15, 23, 42, 0.8);
+  --surface-light:  rgba(15, 23, 42, 0.6);
+  --border:         rgba(74, 158, 255, 0.15);
+  --border-hover:   rgba(74, 158, 255, 0.35);
+  --primary:        #4a9eff;
+  --primary-dim:    #4a9eff30;
+  --secondary:      #7c3aed;
+  --accent:         #06d6a0;
+  --error:          #ff6b6b;
+  --warning:        #ffa94d;
+  --text-primary:   #e2e8f0;
+  --text-secondary: #94a3b8;
+
+  /* Glassmorphism */
+  --glass-bg:       rgba(15, 23, 42, 0.6);
+  --glass-blur:     blur(20px);
+  --glass-border:   1px solid rgba(74, 158, 255, 0.15);
+  --glass-radius:   16px;
+
+  /* Shadows */
+  --shadow-glow:    0 0 20px rgba(74, 158, 255, 0.15);
+  --shadow-lift:    0 8px 32px rgba(0, 0, 0, 0.4);
+
+  /* Timing */
+  --ease-out-expo:  cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-elastic:   cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --ease-bounce:    cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ────────────────────────────────────────────────────────────
+   1. Global Reset & Base Theme
+   ──────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--bg-deep);
+  color: var(--text-primary);
+  font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Animated aurora / nebula background */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 30%, rgba(74, 158, 255, 0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 80% at 80% 70%, rgba(124, 58, 237, 0.06) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 50% at 50% 50%, rgba(6, 214, 160, 0.04) 0%, transparent 60%);
+  animation: aurora-drift 20s ease-in-out infinite alternate;
+}
+
+@keyframes aurora-drift {
+  0%   { transform: scale(1) translate(0, 0); opacity: 1; }
+  33%  { transform: scale(1.05) translate(-2%, 1%); opacity: 0.9; }
+  66%  { transform: scale(0.98) translate(1%, -1%); opacity: 1; }
+  100% { transform: scale(1.03) translate(-1%, 2%); opacity: 0.95; }
+}
+
+/* ────────────────────────────────────────────────────────────
+   2. Scrollbar Styling
+   ──────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(10, 14, 26, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(74, 158, 255, 0.25);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 158, 255, 0.45);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(74, 158, 255, 0.25) rgba(10, 14, 26, 0.5);
+}
+
+/* ────────────────────────────────────────────────────────────
+   3. Selection & Focus
+   ──────────────────────────────────────────────────────────── */
+
+::selection {
+  background: rgba(74, 158, 255, 0.3);
+  color: #ffffff;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-deep), 0 0 0 4px var(--primary);
+  border-radius: 4px;
+  transition: box-shadow 0.2s ease;
+}
+
+/* Animated focus ring */
+@keyframes focus-ring-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--bg-deep), 0 0 0 4px var(--primary); }
+  50%      { box-shadow: 0 0 0 2px var(--bg-deep), 0 0 0 4px var(--primary), 0 0 12px var(--primary-dim); }
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  animation: focus-ring-pulse 2s ease-in-out infinite;
+}
+
+/* ────────────────────────────────────────────────────────────
+   4. Glassmorphism Panels
+   ──────────────────────────────────────────────────────────── */
+
+.glass-panel {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  border-radius: var(--glass-radius);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-panel:hover {
+  border-color: var(--border-hover);
+  box-shadow: var(--shadow-glow);
+}
+
+/* ────────────────────────────────────────────────────────────
+   5. Thought Card Base
+   ──────────────────────────────────────────────────────────── */
+
+.thought-card {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--glass-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--glass-radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s var(--ease-out-expo),
+              box-shadow 0.3s ease,
+              border-color 0.3s ease;
+}
+
+.thought-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(74, 158, 255, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.thought-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 0 20px rgba(74, 158, 255, 0.08);
+  border-color: var(--border-hover);
+}
+
+/* ────────────────────────────────────────────────────────────
+   6. Thought Cascade Animation — 6 Phases
+   ──────────────────────────────────────────────────────────── */
+
+/* Phase 1: Fade in from left with slight rotation */
+@keyframes cascade-phase-1 {
+  0%   { opacity: 0; transform: translateX(-60px) rotate(-3deg); }
+  60%  { opacity: 0.8; transform: translateX(5px) rotate(0.5deg); }
+  100% { opacity: 1; transform: translateX(0) rotate(0); }
+}
+
+.cascade-phase-1 {
+  animation: cascade-phase-1 0.7s var(--ease-out-expo) both;
+}
+
+/* Phase 2: Scale up from 0.8 with blur clear */
+@keyframes cascade-phase-2 {
+  0%   { opacity: 0; transform: scale(0.8); filter: blur(8px); }
+  60%  { opacity: 0.9; transform: scale(1.02); filter: blur(1px); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+.cascade-phase-2 {
+  animation: cascade-phase-2 0.6s var(--ease-out-expo) both;
+}
+
+/* Phase 3: Slide in from bottom with bounce */
+@keyframes cascade-phase-3 {
+  0%   { opacity: 0; transform: translateY(80px); }
+  50%  { opacity: 1; transform: translateY(-12px); }
+  70%  { transform: translateY(6px); }
+  85%  { transform: translateY(-3px); }
+  100% { transform: translateY(0); }
+}
+
+.cascade-phase-3 {
+  animation: cascade-phase-3 0.8s var(--ease-out-expo) both;
+}
+
+/* Phase 4: Flip in on Y axis */
+@keyframes cascade-phase-4 {
+  0%   { opacity: 0; transform: perspective(800px) rotateY(-90deg); }
+  40%  { opacity: 0.6; transform: perspective(800px) rotateY(15deg); }
+  70%  { transform: perspective(800px) rotateY(-5deg); }
+  100% { opacity: 1; transform: perspective(800px) rotateY(0deg); }
+}
+
+.cascade-phase-4 {
+  animation: cascade-phase-4 0.8s var(--ease-out-expo) both;
+  transform-origin: left center;
+}
+
+/* Phase 5: Elastic zoom in */
+@keyframes cascade-phase-5 {
+  0%   { opacity: 0; transform: scale(0.3); }
+  40%  { opacity: 1; transform: scale(1.12); }
+  60%  { transform: scale(0.95); }
+  75%  { transform: scale(1.05); }
+  90%  { transform: scale(0.98); }
+  100% { transform: scale(1); }
+}
+
+.cascade-phase-5 {
+  animation: cascade-phase-5 0.9s var(--ease-elastic) both;
+}
+
+/* Phase 6: Glitch effect entry */
+@keyframes cascade-phase-6 {
+  0%   { opacity: 0; transform: translate(-5px, 3px); }
+  10%  { opacity: 0.4; transform: translate(4px, -2px); }
+  20%  { opacity: 0; transform: translate(-3px, 5px); }
+  30%  { opacity: 0.7; transform: translate(6px, -1px); }
+  40%  { opacity: 0.3; transform: translate(-2px, -4px); }
+  50%  { opacity: 0.9; transform: translate(3px, 2px); }
+  60%  { opacity: 0.5; transform: translate(-4px, -3px); }
+  70%  { opacity: 1; transform: translate(2px, 1px); }
+  80%  { opacity: 0.8; transform: translate(-1px, -2px); }
+  90%  { opacity: 1; transform: translate(1px, 0); }
+  100% { opacity: 1; transform: translate(0, 0); }
+}
+
+.cascade-phase-6 {
+  animation: cascade-phase-6 0.7s steps(2, jump-none) both;
+}
+
+/* Stagger delays for multiple cards */
+.thought-card:nth-child(1)  { animation-delay: 0s; }
+.thought-card:nth-child(2)  { animation-delay: 0.08s; }
+.thought-card:nth-child(3)  { animation-delay: 0.16s; }
+.thought-card:nth-child(4)  { animation-delay: 0.24s; }
+.thought-card:nth-child(5)  { animation-delay: 0.32s; }
+.thought-card:nth-child(6)  { animation-delay: 0.40s; }
+.thought-card:nth-child(7)  { animation-delay: 0.48s; }
+.thought-card:nth-child(8)  { animation-delay: 0.56s; }
+.thought-card:nth-child(9)  { animation-delay: 0.64s; }
+.thought-card:nth-child(10) { animation-delay: 0.72s; }
+
+/* ────────────────────────────────────────────────────────────
+   7. Synapse Lines with Particle Effects
+   ──────────────────────────────────────────────────────────── */
+
+.synapse-line {
+  position: absolute;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--primary), transparent);
+  border-radius: 1px;
+  box-shadow: 0 0 8px rgba(74, 158, 255, 0.4),
+              0 0 20px rgba(74, 158, 255, 0.15);
+  overflow: visible;
+  animation: synapse-glow 3s ease-in-out infinite alternate;
+}
+
+/* SVG-based synapse for curved paths */
+.synapse-line-svg {
+  stroke: var(--primary);
+  stroke-width: 2;
+  stroke-dasharray: 8 6;
+  stroke-dashoffset: 0;
+  fill: none;
+  filter: drop-shadow(0 0 4px rgba(74, 158, 255, 0.5));
+  animation: synapse-flow 1.5s linear infinite;
+}
+
+@keyframes synapse-flow {
+  to { stroke-dashoffset: -28; }
+}
+
+@keyframes synapse-glow {
+  0%   { box-shadow: 0 0 6px rgba(74, 158, 255, 0.3), 0 0 15px rgba(74, 158, 255, 0.1); }
+  100% { box-shadow: 0 0 12px rgba(74, 158, 255, 0.6), 0 0 30px rgba(74, 158, 255, 0.2); }
+}
+
+/* Particle effect — leading dot */
+.synapse-line::before {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 10px var(--primary), 0 0 20px rgba(74, 158, 255, 0.5);
+  top: 50%;
+  transform: translateY(-50%);
+  animation: particle-travel 2.5s linear infinite;
+}
+
+@keyframes particle-travel {
+  0%   { left: -3px; opacity: 0; }
+  5%   { opacity: 1; }
+  90%  { opacity: 1; }
+  100% { left: calc(100% - 3px); opacity: 0; }
+}
+
+/* Particle effect — sin-wave secondary dot */
+.synapse-line::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  top: 50%;
+  animation: particle-wave 3s linear infinite 0.8s;
+}
+
+@keyframes particle-wave {
+  0%   { left: -2px; transform: translateY(calc(-50% + 0px)); opacity: 0; }
+  5%   { opacity: 0.8; }
+  25%  { transform: translateY(calc(-50% + 8px)); }
+  50%  { transform: translateY(calc(-50% - 8px)); }
+  75%  { transform: translateY(calc(-50% + 8px)); }
+  90%  { opacity: 0.8; }
+  100% { left: calc(100% - 2px); transform: translateY(calc(-50% + 0px)); opacity: 0; }
+}
+
+/* ────────────────────────────────────────────────────────────
+   8. Agent Avatar — 5 States
+   ──────────────────────────────────────────────────────────── */
+
+.agent-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  overflow: visible;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+  flex-shrink: 0;
+}
+
+.agent-avatar img,
+.agent-avatar .avatar-icon {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* --- IDLE: gentle pulse/breathing --- */
+@keyframes avatar-idle-breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 12px var(--primary-dim); }
+  50%      { transform: scale(1.03); box-shadow: 0 0 20px var(--primary-dim); }
+}
+
+.agent-avatar.idle {
+  border-color: var(--primary-dim);
+  animation: avatar-idle-breathe 4s ease-in-out infinite;
+}
+
+/* --- THINKING: rotating ring + bright pulse --- */
+@keyframes avatar-think-ring {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes avatar-think-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(74, 158, 255, 0.4); }
+  50%      { box-shadow: 0 0 30px rgba(74, 158, 255, 0.7); }
+}
+
+.agent-avatar.thinking {
+  border-color: var(--primary);
+  animation: avatar-think-pulse 1.5s ease-in-out infinite;
+}
+
+.agent-avatar.thinking::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--primary);
+  border-right-color: var(--primary);
+  animation: avatar-think-ring 1.2s linear infinite;
+}
+
+/* Orbital dots */
+.agent-avatar.thinking::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--primary);
+  border-radius: 50%;
+  box-shadow: 0 0 8px var(--primary);
+  top: -10px;
+  left: 50%;
+  transform-origin: 50% calc(50% + 38px);
+  animation: avatar-think-ring 2s linear infinite reverse;
+}
+
+/* --- TOOL_CALLING: hexagon morph + scanning line + amber --- */
+@keyframes avatar-tool-morph {
+  0%, 100% { border-radius: 50%; }
+  50%      { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; }
+}
+
+@keyframes avatar-tool-scan {
+  0%   { top: 0; opacity: 1; }
+  100% { top: 100%; opacity: 0.3; }
+}
+
+.agent-avatar.tool_calling {
+  border-color: var(--warning);
+  box-shadow: 0 0 20px rgba(255, 169, 77, 0.3);
+  animation: avatar-tool-morph 2s ease-in-out infinite;
+}
+
+.agent-avatar.tool_calling::before {
+  content: '';
+  position: absolute;
+  width: 80%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--warning), transparent);
+  box-shadow: 0 0 8px var(--warning);
+  left: 10%;
+  animation: avatar-tool-scan 1.5s ease-in-out infinite;
+}
+
+/* --- SPEAKING: wave/ripple emanation + green --- */
+@keyframes avatar-speak-ripple {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.agent-avatar.speaking {
+  border-color: #69db7c;
+  box-shadow: 0 0 15px rgba(105, 219, 124, 0.3);
+}
+
+.agent-avatar.speaking::before,
+.agent-avatar.speaking::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid #69db7c;
+  animation: avatar-speak-ripple 1.5s ease-out infinite;
+}
+
+.agent-avatar.speaking::after {
+  animation-delay: 0.5s;
+}
+
+/* --- ERROR: shake + red flash + glitch --- */
+@keyframes avatar-error-shake {
+  0%, 100% { transform: translateX(0); }
+  10%      { transform: translateX(-4px); }
+  20%      { transform: translateX(4px); }
+  30%      { transform: translateX(-3px); }
+  40%      { transform: translateX(3px); }
+  50%      { transform: translateX(-2px); }
+  60%      { transform: translateX(2px); }
+  70%      { transform: translateX(-1px); }
+  80%      { transform: translateX(1px); }
+}
+
+@keyframes avatar-error-flash {
+  0%, 100% { box-shadow: 0 0 15px rgba(255, 107, 107, 0.3); }
+  50%      { box-shadow: 0 0 30px rgba(255, 107, 107, 0.7); }
+}
+
+.agent-avatar.error {
+  border-color: var(--error);
+  animation: avatar-error-shake 0.6s ease-in-out, avatar-error-flash 1s ease-in-out infinite;
+}
+
+.agent-avatar.error::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(255, 107, 107, 0.15);
+  animation: avatar-error-flash 0.8s ease-in-out infinite;
+}
+
+/* ────────────────────────────────────────────────────────────
+   9. Speech Bubble with Typing Effect
+   ──────────────────────────────────────────────────────────── */
+
+.speech-bubble {
+  position: relative;
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  border-radius: 16px 16px 16px 4px;
+  padding: 14px 18px;
+  max-width: 520px;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  opacity: 0;
+  transform: scale(0.9) translateY(8px);
+  transition: opacity 0.3s ease, transform 0.3s var(--ease-out-expo);
+}
+
+/* Tail / arrow */
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  bottom: 12px;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 10px 10px 0;
+  border-color: transparent var(--glass-bg) transparent transparent;
+  filter: drop-shadow(-1px 0 0 rgba(74, 158, 255, 0.15));
+}
+
+/* Active state — appear */
+.speech-bubble.active {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+
+/* Typing indicator — three bouncing dots */
+.speech-bubble.typing {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  min-width: 72px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.speech-bubble.typing .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-secondary);
+  animation: typing-bounce 1.4s ease-in-out infinite;
+}
+
+.speech-bubble.typing .dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.speech-bubble.typing .dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30%           { transform: translateY(-8px); opacity: 1; }
+}
+
+/* Text cursor blink */
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  background: var(--primary);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: cursor-blink 1s steps(1) infinite;
+}
+
+@keyframes cursor-blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+/* ────────────────────────────────────────────────────────────
+   10. Floating, Glow, Pulse Utility Animations
+   ──────────────────────────────────────────────────────────── */
+
+/* Floating — smooth up/down */
+@keyframes float-updown {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-10px); }
+}
+
+.floating {
+  animation: float-updown 3s ease-in-out infinite;
+}
+
+/* Glow — pulsing box-shadow */
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 10px rgba(74, 158, 255, 0.3), 0 0 20px rgba(74, 158, 255, 0.1); }
+  50%      { box-shadow: 0 0 20px rgba(74, 158, 255, 0.5), 0 0 40px rgba(74, 158, 255, 0.2); }
+}
+
+.glow {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Pulse — scale pulse */
+@keyframes scale-pulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(1.05); }
+}
+
+.pulse {
+  animation: scale-pulse 2s ease-in-out infinite;
+}
+
+/* ────────────────────────────────────────────────────────────
+   11. Neural Nodes
+   ──────────────────────────────────────────────────────────── */
+
+.neural-node {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary);
+  box-shadow: 0 0 10px rgba(74, 158, 255, 0.4);
+  position: relative;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+  cursor: pointer;
+}
+
+.neural-node:hover {
+  transform: scale(1.3);
+  box-shadow: 0 0 18px rgba(74, 158, 255, 0.6);
+}
+
+/* Active node */
+.neural-node.active {
+  background: #70b8ff;
+  transform: scale(1.4);
+  box-shadow: 0 0 24px rgba(74, 158, 255, 0.7), 0 0 48px rgba(74, 158, 255, 0.3);
+}
+
+/* Processing node — spinning ring */
+@keyframes node-spin {
+  to { transform: rotate(360deg); }
+}
+
+.neural-node.processing::before {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--accent);
+  border-right-color: var(--accent);
+  animation: node-spin 1s linear infinite;
+}
+
+.neural-node.processing {
+  animation: scale-pulse 1.5s ease-in-out infinite;
+}
+
+/* Connection line between nodes */
+.node-connection {
+  position: absolute;
+  height: 1px;
+  background: linear-gradient(90deg, var(--primary), rgba(74, 158, 255, 0.2));
+  transform-origin: left center;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.node-connection.active {
+  height: 2px;
+  opacity: 1;
+  box-shadow: 0 0 6px rgba(74, 158, 255, 0.4);
+}
+
+/* ────────────────────────────────────────────────────────────
+   12. Tabs
+   ──────────────────────────────────────────────────────────── */
+
+.tab {
+  padding: 10px 20px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.3s ease;
+}
+
+.tab:hover {
+  color: var(--text-primary);
+}
+
+.tab::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--primary);
+  border-radius: 1px;
+  transition: width 0.3s var(--ease-out-expo), left 0.3s var(--ease-out-expo);
+}
+
+.tab:hover::after {
+  width: 60%;
+  left: 20%;
+}
+
+.tab.active {
+  color: var(--primary);
+}
+
+.tab.active::after {
+  width: 100%;
+  left: 0;
+  box-shadow: 0 0 8px rgba(74, 158, 255, 0.4);
+}
+
+/* ────────────────────────────────────────────────────────────
+   13. Buttons
+   ──────────────────────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 14px;
+  cursor: pointer;
+  transition: transform 0.2s ease,
+              box-shadow 0.3s ease,
+              border-color 0.3s ease,
+              background 0.3s ease;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--border-hover);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 12px rgba(74, 158, 255, 0.1);
+}
+
+.btn:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), #3a7edf);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 20px rgba(74, 158, 255, 0.3);
+}
+
+.btn-danger {
+  border-color: rgba(255, 107, 107, 0.3);
+}
+
+.btn-danger:hover {
+  border-color: var(--error);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3), 0 0 12px rgba(255, 107, 107, 0.2);
+}
+
+/* ────────────────────────────────────────────────────────────
+   14. Progress Bar
+   ──────────────────────────────────────────────────────────── */
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: rgba(74, 158, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar .fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  border-radius: 2px;
+  transition: width 0.4s var(--ease-out-expo);
+  position: relative;
+}
+
+.progress-bar .fill::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 20px;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4));
+  animation: progress-shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes progress-shimmer {
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
+}
+
+/* Indeterminate progress */
+.progress-bar.indeterminate .fill {
+  width: 30% !important;
+  animation: progress-slide 1.5s var(--ease-out-expo) infinite;
+}
+
+@keyframes progress-slide {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+
+/* ────────────────────────────────────────────────────────────
+   15. Card Hover Lift
+   ──────────────────────────────────────────────────────────── */
+
+.card-lift {
+  transition: transform 0.3s var(--ease-out-expo), box-shadow 0.3s ease;
+}
+
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift), var(--shadow-glow);
+}
+
+/* ────────────────────────────────────────────────────────────
+   16. Input Styling
+   ──────────────────────────────────────────────────────────── */
+
+.input,
+input[type="text"],
+input[type="search"],
+textarea {
+  background: rgba(10, 14, 26, 0.6);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  width: 100%;
+}
+
+.input:hover,
+input[type="text"]:hover,
+input[type="search"]:hover,
+textarea:hover {
+  border-color: var(--border-hover);
+}
+
+.input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* ────────────────────────────────────────────────────────────
+   17. Smooth Transitions for Interactive Elements
+   ──────────────────────────────────────────────────────────── */
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+a:hover {
+  color: #70b8ff;
+}
+
+/* Generic transition utility */
+.transition-all {
+  transition: all 0.3s var(--ease-out-expo);
+}
+
+.transition-fast {
+  transition: all 0.15s ease;
+}
+
+/* Fade in utility */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.fade-in {
+  animation: fade-in 0.4s ease both;
+}
+
+/* Slide up utility */
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.slide-up {
+  animation: slide-up 0.5s var(--ease-out-expo) both;
+}
+
+/* ────────────────────────────────────────────────────────────
+   18. Thought Feed & Layout Panels
+   ──────────────────────────────────────────────────────────── */
+
+.thought-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.sidebar {
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  background: var(--glass-bg);
+  border-right: 1px solid var(--border);
+  transition: width 0.3s var(--ease-out-expo), transform 0.3s var(--ease-out-expo);
+}
+
+.panel-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   19. Status Badges
+   ──────────────────────────────────────────────────────────── */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid transparent;
+  transition: transform 0.2s ease;
+}
+
+.badge-primary {
+  background: rgba(74, 158, 255, 0.15);
+  color: var(--primary);
+  border-color: rgba(74, 158, 255, 0.25);
+}
+
+.badge-success {
+  background: rgba(6, 214, 160, 0.15);
+  color: var(--accent);
+  border-color: rgba(6, 214, 160, 0.25);
+}
+
+.badge-warning {
+  background: rgba(255, 169, 77, 0.15);
+  color: var(--warning);
+  border-color: rgba(255, 169, 77, 0.25);
+}
+
+.badge-error {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--error);
+  border-color: rgba(255, 107, 107, 0.25);
+}
+
+/* Status dot inside badge */
+.badge .status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: scale-pulse 2s ease-in-out infinite;
+}
+
+/* ────────────────────────────────────────────────────────────
+   20. Tooltip
+   ──────────────────────────────────────────────────────────── */
+
+.tooltip {
+  position: relative;
+}
+
+.tooltip::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  padding: 6px 12px;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 1000;
+}
+
+.tooltip:hover::before {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ────────────────────────────────────────────────────────────
+   21. Skeleton Loading
+   ──────────────────────────────────────────────────────────── */
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(74, 158, 255, 0.05) 25%,
+    rgba(74, 158, 255, 0.1) 50%,
+    rgba(74, 158, 255, 0.05) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s linear infinite;
+  border-radius: 8px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   22. Notification / Toast
+   ──────────────────────────────────────────────────────────── */
+
+@keyframes toast-in {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes toast-out {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(120%); opacity: 0; }
+}
+
+.toast {
+  animation: toast-in 0.4s var(--ease-out-expo) both;
+}
+
+.toast.dismissing {
+  animation: toast-out 0.3s ease-in both;
+}
+
+/* ────────────────────────────────────────────────────────────
+   23. Modal / Overlay
+   ──────────────────────────────────────────────────────────── */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+}
+
+.modal-content {
+  backdrop-filter: var(--glass-blur);
+  background: var(--glass-bg);
+  border: var(--glass-border);
+  border-radius: var(--glass-radius);
+  padding: 24px;
+  max-width: 520px;
+  width: 90%;
+  transform: scale(0.9) translateY(20px);
+  transition: transform 0.3s var(--ease-out-expo);
+}
+
+.modal-overlay.active .modal-content {
+  transform: scale(1) translateY(0);
+}
+
+/* ────────────────────────────────────────────────────────────
+   24. Mobile Responsive (768px breakpoint)
+   ──────────────────────────────────────────────────────────── */
+
+@media (max-width: 768px) {
+  :root {
+    --glass-radius: 12px;
+  }
+
+  .thought-card {
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+
+  /* Reduce animation complexity */
+  .cascade-phase-1 { animation-duration: 0.4s; }
+  .cascade-phase-2 { animation-duration: 0.35s; }
+  .cascade-phase-3 { animation-duration: 0.45s; }
+  .cascade-phase-4 { animation-duration: 0.45s; }
+  .cascade-phase-5 { animation-duration: 0.5s; }
+  .cascade-phase-6 { animation-duration: 0.4s; }
+
+  /* Simplify particle effects */
+  .synapse-line::after {
+    display: none;
+  }
+
+  .agent-avatar {
+    width: 44px;
+    height: 44px;
+  }
+
+  .speech-bubble {
+    max-width: 85vw;
+  }
+
+  /* Stack layouts */
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 100;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .thought-feed {
+    padding: 10px;
+  }
+
+  .btn {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  .tab {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+
+  /* Reduce floating amplitude */
+  @keyframes float-updown {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-5px); }
+  }
+}
+
+/* ────────────────────────────────────────────────────────────
+   25. Performance & Accessibility
+   ──────────────────────────────────────────────────────────── */
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  body::before {
+    animation: none;
+  }
+
+  .floating,
+  .glow,
+  .pulse {
+    animation: none;
+  }
+
+  .synapse-line::before,
+  .synapse-line::after {
+    animation: none;
+    display: none;
+  }
+}
+
+/* Will-change hints — applied sparingly */
+.agent-avatar.thinking,
+.agent-avatar.speaking {
+  will-change: transform, box-shadow;
+}
+
+.synapse-line::before {
+  will-change: left, opacity;
+}
+
+.cascade-phase-1,
+.cascade-phase-2,
+.cascade-phase-3,
+.cascade-phase-4,
+.cascade-phase-5,
+.cascade-phase-6 {
+  will-change: transform, opacity;
+}
+
+/* Remove will-change after animation completes (via JS helper class) */
+.animation-complete {
+  will-change: auto;
+}
+
+/* GPU acceleration hints */
+.thought-card,
+.agent-avatar,
+.neural-node,
+.speech-bubble {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* ────────────────────────────────────────────────────────────
+   26. Spin Utility & Miscellaneous
+   ──────────────────────────────────────────────────────────── */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Appear animation for dynamic content */
+@keyframes pop-in {
+  0%   { opacity: 0; transform: scale(0.8); }
+  70%  { transform: scale(1.05); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.pop-in {
+  animation: pop-in 0.3s var(--ease-out-expo) both;
+}
+
+/* Divider */
+.divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  margin: 16px 0;
+}
+
+/* Code block styling */
+.code-block {
+  background: rgba(10, 14, 26, 0.8);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px 18px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: var(--text-primary);
+}
+
+/* Timestamp text */
+.timestamp {
+  color: var(--text-secondary);
+  font-size: 12px;
+  opacity: 0.7;
+}
+
+/* ────────────────────────────────────────────────────────────
+   End of animations.css
+   ──────────────────────────────────────────────────────────── */
+</style>
+<style>
+/* ===== 기본 리셋 & 테마 ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #111827;
+  --bg-panel: rgba(17, 24, 39, 0.7);
+  --border-glow: rgba(99, 102, 241, 0.3);
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
+  --text-accent: #818cf8;
+  --accent-indigo: #6366f1;
+  --accent-cyan: #22d3ee;
+  --accent-emerald: #34d399;
+  --accent-rose: #fb7185;
+  --accent-amber: #fbbf24;
+  --glass-bg: rgba(15, 23, 42, 0.6);
+  --glass-border: rgba(148, 163, 184, 0.12);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+/* ===== 전체 레이아웃 ===== */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* ===== 탭 네비게이션 ===== */
+.tab-bar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+  z-index: 100;
+}
+
+.tab-bar .logo {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent-indigo);
+  margin-right: 12px;
+  white-space: nowrap;
+  letter-spacing: -0.5px;
+}
+
+.tab-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background 0.2s, color 0.2s;
+  white-space: nowrap;
+}
+
+.tab-btn:hover { background: rgba(99, 102, 241, 0.1); color: var(--text-primary); }
+.tab-btn.active { background: rgba(99, 102, 241, 0.15); color: var(--accent-indigo); }
+
+.scenario-select {
+  margin-left: auto;
+  padding: 6px 10px;
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.scenario-select option { background: var(--bg-primary); }
+
+.btn-start {
+  padding: 6px 14px;
+  margin-left: 6px;
+  background: var(--accent-indigo);
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-start:hover { opacity: 0.85; }
+
+/* ===== 메인 콘텐츠 그리드 ===== */
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
+  padding: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ===== 글래스모피즘 패널 ===== */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--glass-border);
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.panel-header .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  min-height: 0;
+}
+
+.panel-body::-webkit-scrollbar { width: 4px; }
+.panel-body::-webkit-scrollbar-track { background: transparent; }
+.panel-body::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 2px; }
+
+/* ===== 존 1: 브레인맵 ===== */
+.zone-brainmap {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.zone-brainmap .panel-header .dot { background: var(--accent-cyan); }
+
+#brainmap-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.neural-node {
+  cursor: pointer;
+  transition: filter 0.3s;
+}
+.neural-node:hover { filter: brightness(1.3); }
+
+.synapse-line {
+  stroke-linecap: round;
+}
+
+/* ===== 존 2: 코텍스 시어터 ===== */
+.zone-cortex {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.zone-cortex .panel-header .dot { background: var(--accent-indigo); }
+
+/* 에이전트 아바타 표시 */
+.agent-status-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.agent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-indigo), #312e81);
+  border: 2px solid var(--accent-indigo);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.agent-avatar.idle { border-color: var(--text-secondary); opacity: 0.6; }
+.agent-avatar.thinking { border-color: var(--accent-cyan); }
+.agent-avatar.tool_calling { border-color: var(--accent-amber); }
+.agent-avatar.speaking { border-color: var(--accent-emerald); }
+.agent-avatar.error { border-color: var(--accent-rose); }
+
+.agent-status-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.agent-status-text .name { font-size: 13px; font-weight: 600; }
+.agent-status-text .status { font-size: 11px; color: var(--text-secondary); }
+
+/* 사고 카드 */
+.thought-card {
+  background: rgba(30, 41, 59, 0.6);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  position: relative;
+}
+
+.thought-card .phase-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.cascade-phase-1 .phase-label { background: rgba(99,102,241,0.2); color: var(--accent-indigo); }
+.cascade-phase-2 .phase-label { background: rgba(34,211,238,0.2); color: var(--accent-cyan); }
+.cascade-phase-3 .phase-label { background: rgba(52,211,153,0.2); color: var(--accent-emerald); }
+.cascade-phase-4 .phase-label { background: rgba(251,191,36,0.2); color: var(--accent-amber); }
+.cascade-phase-5 .phase-label { background: rgba(251,113,133,0.2); color: var(--accent-rose); }
+.cascade-phase-6 .phase-label { background: rgba(167,139,250,0.2); color: #a78bfa; }
+
+.thought-card .thought-text { color: var(--text-primary); }
+.thought-card .thought-meta { font-size: 10px; color: var(--text-secondary); margin-top: 6px; }
+
+/* 말풍선 */
+.speech-bubble {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+  position: relative;
+}
+
+.speech-bubble::before {
+  content: '';
+  position: absolute;
+  top: -6px;
+  left: 16px;
+  width: 12px;
+  height: 12px;
+  background: inherit;
+  border: inherit;
+  border-bottom: none;
+  border-right: none;
+  transform: rotate(45deg);
+}
+
+/* ===== 존 3: 딥 스탯 ===== */
+.zone-deepstats {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.zone-deepstats .panel-header .dot { background: var(--accent-emerald); }
+
+.stat-card {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+
+.stat-card .stat-label {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.stat-card .stat-value {
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.sub-panel-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 12px 0 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.sub-panel-title:first-child { margin-top: 0; }
+
+/* 시각화 컨테이너 */
+.viz-container {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  min-height: 120px;
+  margin-bottom: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.viz-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 도구 로그 테이블 */
+.tool-log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.tool-log-table th {
+  text-align: left;
+  padding: 6px 8px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--glass-border);
+  font-weight: 600;
+}
+
+.tool-log-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.06);
+  color: var(--text-primary);
+}
+
+.tool-log-table tr:hover td { background: rgba(99, 102, 241, 0.05); }
+
+/* 내보내기 버튼 */
+.export-btn {
+  padding: 5px 12px;
+  background: rgba(99, 102, 241, 0.15);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: var(--accent-indigo);
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.export-btn:hover { background: rgba(99, 102, 241, 0.25); }
+
+/* ===== 채팅 존 (하단) ===== */
+.zone-chat {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  max-height: 200px;
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  min-height: 60px;
+}
+
+.chat-messages::-webkit-scrollbar { width: 4px; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--glass-border); border-radius: 2px; }
+
+.chat-msg {
+  margin-bottom: 8px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.chat-msg.user { color: var(--accent-cyan); }
+.chat-msg.agent { color: var(--text-primary); }
+.chat-msg .msg-sender {
+  font-size: 11px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.chat-input-bar {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+.chat-input {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.chat-input:focus { border-color: var(--accent-indigo); }
+.chat-input::placeholder { color: var(--text-secondary); }
+
+.chat-send-btn {
+  padding: 8px 18px;
+  background: var(--accent-indigo);
+  border: none;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity 0.2s;
+  white-space: nowrap;
+}
+.chat-send-btn:hover { opacity: 0.85; }
+
+/* ===== floating / glow / pulse 기본 상태 ===== */
+.floating { position: relative; }
+.glow { filter: drop-shadow(0 0 6px var(--accent-indigo)); }
+.pulse { }
+
+/* ===== 반응형 (모바일 768px) ===== */
+@media (max-width: 768px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    overflow-y: auto;
+  }
+
+  .zone-brainmap,
+  .zone-cortex,
+  .zone-deepstats,
+  .zone-chat {
+    grid-column: 1;
+    grid-row: auto;
+    min-height: 400px;
+  }
+
+  .zone-brainmap,
+  .zone-cortex,
+  .zone-deepstats {
+    display: none;
+  }
+
+  .zone-chat {
+    display: flex;
+    max-height: none;
+    min-height: 300px;
+  }
+
+  .zone-brainmap.mobile-active,
+  .zone-cortex.mobile-active,
+  .zone-deepstats.mobile-active,
+  .zone-chat.mobile-active {
+    display: flex;
+  }
+
+  .tab-bar { flex-wrap: wrap; }
+  .tab-bar .logo { width: 100%; margin-bottom: 4px; }
+}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ===== 탭 네비게이션 ===== -->
+  <nav class="tab-bar">
+    <span class="logo">Neural Map v10</span>
+    <button class="tab-btn active" data-zone="brainmap">브레인맵</button>
+    <button class="tab-btn" data-zone="cortex">코텍스 시어터</button>
+    <button class="tab-btn" data-zone="deepstats">딥 스탯</button>
+    <button class="tab-btn" data-zone="chat">채팅</button>
+
+    <select class="scenario-select" id="scenario-select">
+      <option value="code_review">코드 리뷰</option>
+      <option value="data_analysis">데이터 분석</option>
+      <option value="creative_writing">창의적 글쓰기</option>
+      <option value="debugging">디버깅</option>
+    </select>
+    <button class="btn-start" id="btn-start">시뮬레이션 시작</button>
+  </nav>
+
+  <!-- ===== 메인 콘텐츠 ===== -->
+  <div class="main-grid">
+
+    <!-- 존 1: 브레인맵 -->
+    <section class="glass-panel zone-brainmap mobile-active" id="zone-brainmap">
+      <div class="panel-header">
+        <span class="dot"></span>
+        브레인맵 - 신경망 시각화
+      </div>
+      <div class="panel-body" style="padding:0;">
+        <svg id="brainmap-svg" viewBox="0 0 500 400" preserveAspectRatio="xMidYMid meet">
+          <!-- 시냅스 연결선 -->
+          <g id="synapse-group">
+            <line class="synapse-line" x1="250" y1="80" x2="140" y2="180" stroke="rgba(99,102,241,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="250" y1="80" x2="360" y2="180" stroke="rgba(99,102,241,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="140" y1="180" x2="100" y2="300" stroke="rgba(34,211,238,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="140" y1="180" x2="220" y2="300" stroke="rgba(34,211,238,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="360" y1="180" x2="300" y2="300" stroke="rgba(52,211,153,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="360" y1="180" x2="420" y2="300" stroke="rgba(52,211,153,0.25)" stroke-width="1.5"/>
+            <line class="synapse-line" x1="140" y1="180" x2="360" y2="180" stroke="rgba(251,191,36,0.15)" stroke-width="1"/>
+            <line class="synapse-line" x1="220" y1="300" x2="300" y2="300" stroke="rgba(251,191,36,0.15)" stroke-width="1"/>
+          </g>
+          <!-- 신경 노드 -->
+          <g id="node-group">
+            <g class="neural-node floating" data-node="input" transform="translate(250,80)">
+              <circle r="22" fill="rgba(99,102,241,0.3)" stroke="#6366f1" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="10" font-weight="600">입력</text>
+            </g>
+            <g class="neural-node floating" data-node="reasoning" transform="translate(140,180)">
+              <circle r="20" fill="rgba(34,211,238,0.3)" stroke="#22d3ee" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="10" font-weight="600">추론</text>
+            </g>
+            <g class="neural-node floating" data-node="tools" transform="translate(360,180)">
+              <circle r="20" fill="rgba(251,191,36,0.3)" stroke="#fbbf24" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="10" font-weight="600">도구</text>
+            </g>
+            <g class="neural-node floating" data-node="memory" transform="translate(100,300)">
+              <circle r="18" fill="rgba(52,211,153,0.3)" stroke="#34d399" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="9" font-weight="600">메모리</text>
+            </g>
+            <g class="neural-node floating" data-node="context" transform="translate(220,300)">
+              <circle r="18" fill="rgba(167,139,250,0.3)" stroke="#a78bfa" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="9" font-weight="600">컨텍스트</text>
+            </g>
+            <g class="neural-node floating" data-node="output" transform="translate(300,300)">
+              <circle r="18" fill="rgba(251,113,133,0.3)" stroke="#fb7185" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="9" font-weight="600">출력</text>
+            </g>
+            <g class="neural-node floating" data-node="decision" transform="translate(420,300)">
+              <circle r="18" fill="rgba(99,102,241,0.3)" stroke="#6366f1" stroke-width="2"/>
+              <text text-anchor="middle" dy="4" fill="#e2e8f0" font-size="9" font-weight="600">결정</text>
+            </g>
+          </g>
+          <!-- 활성화 표시 오버레이 -->
+          <g id="activation-overlay"></g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- 존 2: 코텍스 시어터 -->
+    <section class="glass-panel zone-cortex" id="zone-cortex">
+      <div class="panel-header">
+        <span class="dot"></span>
+        코텍스 시어터 - 사고 캐스케이드
+      </div>
+      <div class="agent-status-bar">
+        <div class="agent-avatar idle" id="agent-avatar">
+          <span>&#x1F9E0;</span>
+        </div>
+        <div class="agent-status-text">
+          <span class="name">클로드 에이전트</span>
+          <span class="status" id="agent-status-label">대기 중</span>
+        </div>
+      </div>
+      <div class="panel-body" id="thought-feed">
+        <div class="thought-card cascade-phase-1">
+          <span class="phase-label">대기</span>
+          <div class="thought-text">시뮬레이션을 시작하려면 위의 "시뮬레이션 시작" 버튼을 누르거나 채팅에 메시지를 입력하세요.</div>
+          <div class="thought-meta">시스템 안내</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 존 3: 딥 스탯 -->
+    <section class="glass-panel zone-deepstats" id="zone-deepstats">
+      <div class="panel-header">
+        <span class="dot"></span>
+        딥 스탯 - 통계 대시보드
+      </div>
+      <div class="panel-body">
+        <!-- 토큰 사용량 -->
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-label">총 토큰</div>
+            <div class="stat-value" id="stat-total-tokens" style="color:var(--accent-indigo);">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">입력 토큰</div>
+            <div class="stat-value" id="stat-input-tokens" style="color:var(--accent-cyan);">0</div>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-label">출력 토큰</div>
+            <div class="stat-value" id="stat-output-tokens" style="color:var(--accent-emerald);">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">컨텍스트 점수</div>
+            <div class="stat-value" id="stat-context-score" style="color:var(--accent-amber);">0%</div>
+          </div>
+        </div>
+
+        <!-- 의사결정 트리 -->
+        <div class="sub-panel-title">의사결정 트리</div>
+        <div class="viz-container" id="decision-tree-container" style="min-height:100px;"></div>
+
+        <!-- 메모리 그래프 -->
+        <div class="sub-panel-title">메모리 그래프</div>
+        <div class="viz-container" id="memory-graph-container" style="min-height:100px;"></div>
+
+        <!-- 토큰 워터폴 -->
+        <div class="sub-panel-title">토큰 라이프사이클</div>
+        <div class="viz-container" style="min-height:100px;">
+          <canvas id="token-waterfall-canvas"></canvas>
+        </div>
+
+        <!-- 컨텍스트 히트맵 -->
+        <div class="sub-panel-title">컨텍스트 영향도</div>
+        <div class="viz-container" id="context-heatmap-container" style="min-height:80px;"></div>
+
+        <!-- 도구 로그 -->
+        <div class="sub-panel-title">도구 호출 로그</div>
+        <div id="tool-log-container">
+          <table class="tool-log-table">
+            <thead>
+              <tr>
+                <th>시간</th>
+                <th>도구</th>
+                <th>상태</th>
+                <th>소요(ms)</th>
+              </tr>
+            </thead>
+            <tbody id="tool-log-body">
+              <tr>
+                <td colspan="4" style="color:var(--text-secondary); text-align:center; padding:16px;">로그 없음</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 내보내기 -->
+        <div id="export-controls" style="display:flex; gap:8px; margin-top:12px;">
+          <button class="export-btn" data-format="csv">CSV 내보내기</button>
+          <button class="export-btn" data-format="json">JSON 내보내기</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 존 4: 채팅 -->
+    <section class="glass-panel zone-chat mobile-active" id="zone-chat">
+      <div class="chat-messages" id="chat-messages">
+        <div class="chat-msg agent">
+          <div class="msg-sender">클로드 에이전트</div>
+          <div>안녕하세요! Neural Map v10에 오신 것을 환영합니다. 질문이나 작업을 입력하면 시뮬레이션이 시작됩니다.</div>
+        </div>
+      </div>
+      <div class="chat-input-bar">
+        <input type="text" class="chat-input" id="chat-input" placeholder="메시지를 입력하세요..." autocomplete="off">
+        <button class="chat-send-btn" id="chat-send-btn">전송</button>
+      </div>
+    </section>
+
+  </div><!-- /main-grid -->
+</div><!-- /app -->
+
+<!-- ===== 시뮬레이션 엔진 ===== -->
+<script>
+(function() {
+  'use strict';
+
+  // ===== 시나리오 데이터 =====
+  var SCENARIOS = {
+    code_review: {
+      name: '코드 리뷰',
+      events: [
+        { delay: 0,    type: 'status_change', data: { status: 'thinking', label: '코드 분석 중...' }},
+        { delay: 600,  type: 'thought', data: { phase: 1, text: '제출된 코드를 수신했습니다. 구조를 파악하겠습니다.', node: 'input' }},
+        { delay: 1400, type: 'thought', data: { phase: 2, text: '함수 구조를 분석합니다. 복잡도가 높은 부분을 탐색 중...', node: 'reasoning' }},
+        { delay: 2000, type: 'token_update', data: { input: 1250, output: 180, context: 42 }},
+        { delay: 2400, type: 'tool_call', data: { tool: 'grep', status: '완료', duration: 45, desc: '패턴 검색: 미사용 변수' }},
+        { delay: 3200, type: 'memory_access', data: { action: '읽기', key: '코드 스타일 가이드', node: 'memory' }},
+        { delay: 3800, type: 'thought', data: { phase: 3, text: '버그 발견: 라인 42에서 null 체크가 누락되었습니다. NullPointerException 위험이 있습니다.', node: 'reasoning' }},
+        { delay: 4500, type: 'decision', data: { decision: '버그 리포트 생성', confidence: 0.92, alternatives: ['무시', '경고만 표시'], node: 'decision' }},
+        { delay: 5200, type: 'tool_call', data: { tool: 'read_file', status: '완료', duration: 32, desc: '관련 테스트 파일 확인' }},
+        { delay: 5800, type: 'thought', data: { phase: 4, text: '테스트 커버리지가 부족합니다. 엣지 케이스 테스트를 제안하겠습니다.', node: 'context' }},
+        { delay: 6500, type: 'token_update', data: { input: 1250, output: 620, context: 67 }},
+        { delay: 7000, type: 'thought', data: { phase: 5, text: '수정 제안을 작성합니다: Optional 패턴 적용, 테스트 3건 추가.', node: 'output' }},
+        { delay: 7800, type: 'status_change', data: { status: 'speaking', label: '결과 보고 중...' }},
+        { delay: 8200, type: 'thought', data: { phase: 6, text: '리뷰 완료. 버그 1건, 개선 사항 3건, 테스트 제안 2건을 보고합니다.', node: 'output' }},
+        { delay: 9000, type: 'token_update', data: { input: 1250, output: 890, context: 78 }},
+        { delay: 9500, type: 'status_change', data: { status: 'idle', label: '대기 중' }},
+      ]
+    },
+    data_analysis: {
+      name: '데이터 분석',
+      events: [
+        { delay: 0,    type: 'status_change', data: { status: 'thinking', label: '데이터셋 수신 중...' }},
+        { delay: 500,  type: 'thought', data: { phase: 1, text: 'CSV 데이터셋을 수신했습니다. 10,000행 x 15열 구조입니다.', node: 'input' }},
+        { delay: 1200, type: 'tool_call', data: { tool: 'python', status: '실행 중', duration: 230, desc: 'pandas로 데이터 로드' }},
+        { delay: 1800, type: 'thought', data: { phase: 2, text: '결측치 분석: 3개 열에서 총 847개의 결측값을 발견했습니다.', node: 'reasoning' }},
+        { delay: 2500, type: 'token_update', data: { input: 2100, output: 320, context: 38 }},
+        { delay: 3000, type: 'tool_call', data: { tool: 'python', status: '완료', duration: 450, desc: '통계 요약 및 상관관계 계산' }},
+        { delay: 3700, type: 'memory_access', data: { action: '쓰기', key: '분석 중간 결과', node: 'memory' }},
+        { delay: 4200, type: 'thought', data: { phase: 3, text: '강한 양의 상관관계 발견: 매출과 마케팅 비용 (r=0.87). 계절성 패턴도 감지됩니다.', node: 'reasoning' }},
+        { delay: 5000, type: 'decision', data: { decision: '회귀 분석 수행', confidence: 0.88, alternatives: ['클러스터링', '시계열 분석'], node: 'decision' }},
+        { delay: 5800, type: 'tool_call', data: { tool: 'python', status: '완료', duration: 680, desc: '선형 회귀 모델 학습' }},
+        { delay: 6500, type: 'thought', data: { phase: 4, text: 'R² = 0.76. 모델이 분산의 76%를 설명합니다. 잔차 분석을 진행합니다.', node: 'context' }},
+        { delay: 7200, type: 'token_update', data: { input: 2100, output: 780, context: 72 }},
+        { delay: 7800, type: 'thought', data: { phase: 5, text: '시각화 차트 3개를 생성합니다: 산점도, 히스토그램, 시계열 그래프.', node: 'output' }},
+        { delay: 8500, type: 'status_change', data: { status: 'speaking', label: '인사이트 보고 중...' }},
+        { delay: 9000, type: 'thought', data: { phase: 6, text: '분석 완료. 핵심 인사이트 5개와 실행 가능한 제안 3개를 도출했습니다.', node: 'output' }},
+        { delay: 9800, type: 'token_update', data: { input: 2100, output: 1150, context: 85 }},
+        { delay: 10200, type: 'status_change', data: { status: 'idle', label: '대기 중' }},
+      ]
+    },
+    creative_writing: {
+      name: '창의적 글쓰기',
+      events: [
+        { delay: 0,    type: 'status_change', data: { status: 'thinking', label: '창작 구상 중...' }},
+        { delay: 700,  type: 'thought', data: { phase: 1, text: '주제를 수신했습니다. 장르와 톤을 결정하겠습니다.', node: 'input' }},
+        { delay: 1500, type: 'memory_access', data: { action: '읽기', key: '문학 스타일 레퍼런스', node: 'memory' }},
+        { delay: 2000, type: 'thought', data: { phase: 2, text: '브레인스토밍: 3가지 플롯 방향을 탐색합니다. 감정적 몰입도가 높은 구조를 우선합니다.', node: 'reasoning' }},
+        { delay: 2800, type: 'token_update', data: { input: 850, output: 210, context: 35 }},
+        { delay: 3300, type: 'decision', data: { decision: '비선형 서사 구조 선택', confidence: 0.79, alternatives: ['3막 구조', '편지체'], node: 'decision' }},
+        { delay: 4000, type: 'thought', data: { phase: 3, text: '캐릭터 설정: 주인공의 내면 갈등을 중심으로 서사를 구축합니다.', node: 'reasoning' }},
+        { delay: 4800, type: 'status_change', data: { status: 'speaking', label: '초안 작성 중...' }},
+        { delay: 5200, type: 'thought', data: { phase: 4, text: '첫 문단 초안 완성. 감각적 묘사를 강화하고 리듬감을 조절합니다.', node: 'context' }},
+        { delay: 6000, type: 'token_update', data: { input: 850, output: 560, context: 58 }},
+        { delay: 6800, type: 'thought', data: { phase: 5, text: '수정 단계: 불필요한 부사를 제거하고, 대화의 자연스러움을 개선합니다.', node: 'output' }},
+        { delay: 7500, type: 'memory_access', data: { action: '쓰기', key: '작성된 초안', node: 'memory' }},
+        { delay: 8000, type: 'thought', data: { phase: 6, text: '글쓰기 완료. 총 3개 문단, 감정 곡선이 자연스럽게 상승합니다.', node: 'output' }},
+        { delay: 8600, type: 'token_update', data: { input: 850, output: 920, context: 71 }},
+        { delay: 9000, type: 'status_change', data: { status: 'idle', label: '대기 중' }},
+      ]
+    },
+    debugging: {
+      name: '디버깅',
+      events: [
+        { delay: 0,    type: 'status_change', data: { status: 'thinking', label: '오류 분석 중...' }},
+        { delay: 500,  type: 'thought', data: { phase: 1, text: '오류 보고서를 수신했습니다. TypeError: Cannot read property "length" of undefined', node: 'input' }},
+        { delay: 1200, type: 'tool_call', data: { tool: 'read_file', status: '완료', duration: 28, desc: '오류 발생 파일 읽기' }},
+        { delay: 1800, type: 'thought', data: { phase: 2, text: '스택 트레이스 분석: 오류는 utils.js:156에서 발생. 호출 체인을 추적합니다.', node: 'reasoning' }},
+        { delay: 2400, type: 'token_update', data: { input: 1800, output: 240, context: 45 }},
+        { delay: 2900, type: 'tool_call', data: { tool: 'grep', status: '완료', duration: 52, desc: '함수 호출 추적: processData()' }},
+        { delay: 3500, type: 'memory_access', data: { action: '읽기', key: '이전 버그 패턴', node: 'memory' }},
+        { delay: 4000, type: 'thought', data: { phase: 3, text: '가설 1: API 응답이 빈 배열 대신 undefined를 반환하는 경우가 있습니다.', node: 'reasoning' }},
+        { delay: 4700, type: 'decision', data: { decision: '가설 1 검증', confidence: 0.85, alternatives: ['가설 2: 초기화 순서 문제', '가설 3: 캐시 불일치'], node: 'decision' }},
+        { delay: 5300, type: 'status_change', data: { status: 'tool_calling', label: '도구 사용 중...' }},
+        { delay: 5600, type: 'tool_call', data: { tool: 'bash', status: '완료', duration: 120, desc: 'API 응답 시뮬레이션 테스트' }},
+        { delay: 6200, type: 'thought', data: { phase: 4, text: '가설 확인! API 타임아웃 시 undefined를 반환합니다. 방어 코드가 필요합니다.', node: 'context' }},
+        { delay: 6800, type: 'token_update', data: { input: 1800, output: 650, context: 73 }},
+        { delay: 7300, type: 'thought', data: { phase: 5, text: '수정 패치 작성: 옵셔널 체이닝(?.length) 적용 및 fallback 빈 배열 처리.', node: 'output' }},
+        { delay: 7900, type: 'tool_call', data: { tool: 'bash', status: '완료', duration: 340, desc: '수정 후 테스트 실행 (12/12 통과)' }},
+        { delay: 8500, type: 'thought', data: { phase: 6, text: '디버깅 완료. 원인: API 타임아웃. 수정: 방어 코드 추가. 모든 테스트 통과.', node: 'output' }},
+        { delay: 9000, type: 'token_update', data: { input: 1800, output: 980, context: 82 }},
+        { delay: 9200, type: 'status_change', data: { status: 'speaking', label: '결과 보고 중...' }},
+        { delay: 9800, type: 'status_change', data: { status: 'idle', label: '대기 중' }},
+      ]
+    }
+  };
+
+  // ===== 시뮬레이션 엔진 =====
+  var SimulationEngine = {
+    _listeners: [],
+    _timers: [],
+    _running: false,
+    _currentScenario: null,
+
+    // 토큰 통계
+    _stats: { inputTokens: 0, outputTokens: 0, totalTokens: 0, contextScore: 0 },
+
+    start: function(scenarioId) {
+      var self = this;
+      this.stop();
+
+      var scenario = SCENARIOS[scenarioId];
+      if (!scenario) { console.warn('알 수 없는 시나리오:', scenarioId); return; }
+
+      this._running = true;
+      this._currentScenario = scenarioId;
+      this._stats = { inputTokens: 0, outputTokens: 0, totalTokens: 0, contextScore: 0 };
+
+      scenario.events.forEach(function(evt) {
+        var timer = setTimeout(function() {
+          if (!self._running) return;
+          self._emit(evt.type, evt.data);
+        }, evt.delay);
+        self._timers.push(timer);
+      });
+    },
+
+    stop: function() {
+      this._running = false;
+      this._currentScenario = null;
+      this._timers.forEach(function(t) { clearTimeout(t); });
+      this._timers = [];
+    },
+
+    onEvent: function(callback) {
+      this._listeners.push(callback);
+    },
+
+    _emit: function(type, data) {
+      var event = { type: type, data: data, timestamp: Date.now() };
+      this._listeners.forEach(function(cb) {
+        try { cb(event); } catch(e) { console.error('이벤트 핸들러 오류:', e); }
+      });
+    }
+  };
+
+  // 전역 노출
+  window.SimulationEngine = SimulationEngine;
+
+  // ===== UI 컨트롤러 =====
+  var UI = {
+    init: function() {
+      this.bindTabs();
+      this.bindStart();
+      this.bindChat();
+      this.bindEvents();
+      this.bindExport();
+    },
+
+    // 탭 전환
+    bindTabs: function() {
+      var tabs = document.querySelectorAll('.tab-btn');
+      var zones = {
+        brainmap: document.getElementById('zone-brainmap'),
+        cortex: document.getElementById('zone-cortex'),
+        deepstats: document.getElementById('zone-deepstats'),
+        chat: document.getElementById('zone-chat')
+      };
+      var isMobile = function() { return window.innerWidth <= 768; };
+
+      tabs.forEach(function(tab) {
+        tab.addEventListener('click', function() {
+          tabs.forEach(function(t) { t.classList.remove('active'); });
+          tab.classList.add('active');
+
+          if (isMobile()) {
+            Object.values(zones).forEach(function(z) { z.classList.remove('mobile-active'); });
+            var target = zones[tab.getAttribute('data-zone')];
+            if (target) target.classList.add('mobile-active');
+          }
+        });
+      });
+    },
+
+    // 시뮬레이션 시작 버튼
+    bindStart: function() {
+      var btn = document.getElementById('btn-start');
+      var select = document.getElementById('scenario-select');
+
+      btn.addEventListener('click', function() {
+        var scenarioId = select.value;
+        if (SimulationEngine._running) {
+          SimulationEngine.stop();
+          btn.textContent = '시뮬레이션 시작';
+          return;
+        }
+        btn.textContent = '중지';
+        UI.clearThoughtFeed();
+        SimulationEngine.start(scenarioId);
+      });
+    },
+
+    // 채팅
+    bindChat: function() {
+      var input = document.getElementById('chat-input');
+      var btn = document.getElementById('chat-send-btn');
+      var messages = document.getElementById('chat-messages');
+      var scenarioKeys = Object.keys(SCENARIOS);
+
+      function send() {
+        var text = input.value.trim();
+        if (!text) return;
+
+        // 사용자 메시지 추가
+        var msgDiv = document.createElement('div');
+        msgDiv.className = 'chat-msg user';
+        msgDiv.innerHTML = '<div class="msg-sender">사용자</div><div>' + escapeHtml(text) + '</div>';
+        messages.appendChild(msgDiv);
+        input.value = '';
+        messages.scrollTop = messages.scrollHeight;
+
+        // 랜덤 시나리오 시작
+        var randomId = scenarioKeys[Math.floor(Math.random() * scenarioKeys.length)];
+        var scenario = SCENARIOS[randomId];
+
+        var agentMsg = document.createElement('div');
+        agentMsg.className = 'chat-msg agent';
+        agentMsg.innerHTML = '<div class="msg-sender">클로드 에이전트</div><div>"' + scenario.name + '" 시나리오를 시작합니다...</div>';
+        messages.appendChild(agentMsg);
+        messages.scrollTop = messages.scrollHeight;
+
+        document.getElementById('scenario-select').value = randomId;
+        document.getElementById('btn-start').textContent = '중지';
+        UI.clearThoughtFeed();
+        SimulationEngine.start(randomId);
+      }
+
+      btn.addEventListener('click', send);
+      input.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') send();
+      });
+    },
+
+    // 이벤트 핸들러 등록
+    bindEvents: function() {
+      var self = this;
+      var toolLogCount = 0;
+
+      SimulationEngine.onEvent(function(event) {
+        switch (event.type) {
+          case 'thought':
+            self.addThoughtCard(event.data);
+            self.activateNode(event.data.node);
+            break;
+
+          case 'status_change':
+            self.updateAgentStatus(event.data.status, event.data.label);
+            if (event.data.status === 'idle') {
+              document.getElementById('btn-start').textContent = '시뮬레이션 시작';
+            }
+            break;
+
+          case 'tool_call':
+            self.addToolLog(event.data);
+            self.activateNode('tools');
+            break;
+
+          case 'memory_access':
+            self.activateNode(event.data.node || 'memory');
+            self.addThoughtCard({
+              phase: 2,
+              text: '[메모리 ' + event.data.action + '] ' + event.data.key,
+              node: event.data.node
+            });
+            break;
+
+          case 'token_update':
+            self.updateTokenStats(event.data);
+            break;
+
+          case 'decision':
+            self.addDecisionCard(event.data);
+            self.activateNode(event.data.node || 'decision');
+            break;
+        }
+      });
+    },
+
+    // 사고 피드 초기화
+    clearThoughtFeed: function() {
+      document.getElementById('thought-feed').innerHTML = '';
+    },
+
+    // 사고 카드 추가
+    addThoughtCard: function(data) {
+      var feed = document.getElementById('thought-feed');
+      var phaseLabels = {
+        1: '입력 분석', 2: '추론', 3: '심층 분석',
+        4: '컨텍스트', 5: '출력 생성', 6: '완료'
+      };
+
+      var card = document.createElement('div');
+      card.className = 'thought-card cascade-phase-' + data.phase;
+      card.innerHTML =
+        '<span class="phase-label">' + (phaseLabels[data.phase] || '처리') + '</span>' +
+        '<div class="thought-text">' + escapeHtml(data.text) + '</div>' +
+        '<div class="thought-meta">' + new Date().toLocaleTimeString('ko-KR') + '</div>';
+
+      feed.appendChild(card);
+      feed.scrollTop = feed.scrollHeight;
+    },
+
+    // 의사결정 카드
+    addDecisionCard: function(data) {
+      var feed = document.getElementById('thought-feed');
+      var card = document.createElement('div');
+      card.className = 'thought-card cascade-phase-4';
+
+      var altHtml = data.alternatives.map(function(a) {
+        return '<span style="background:rgba(148,163,184,0.1);padding:2px 6px;border-radius:4px;font-size:11px;">' + escapeHtml(a) + '</span>';
+      }).join(' ');
+
+      card.innerHTML =
+        '<span class="phase-label">결정</span>' +
+        '<div class="thought-text" style="font-weight:600;">' + escapeHtml(data.decision) + '</div>' +
+        '<div style="margin-top:6px;font-size:12px;color:var(--text-secondary);">' +
+          '신뢰도: <span style="color:var(--accent-emerald);">' + Math.round(data.confidence * 100) + '%</span>' +
+          ' &middot; 대안: ' + altHtml +
+        '</div>' +
+        '<div class="thought-meta">' + new Date().toLocaleTimeString('ko-KR') + '</div>';
+
+      feed.appendChild(card);
+      feed.scrollTop = feed.scrollHeight;
+    },
+
+    // 에이전트 상태 업데이트
+    updateAgentStatus: function(status, label) {
+      var avatar = document.getElementById('agent-avatar');
+      var labelEl = document.getElementById('agent-status-label');
+
+      avatar.className = 'agent-avatar ' + status;
+      labelEl.textContent = label;
+    },
+
+    // 토큰 통계 업데이트
+    updateTokenStats: function(data) {
+      document.getElementById('stat-input-tokens').textContent = data.input.toLocaleString('ko-KR');
+      document.getElementById('stat-output-tokens').textContent = data.output.toLocaleString('ko-KR');
+      document.getElementById('stat-total-tokens').textContent = (data.input + data.output).toLocaleString('ko-KR');
+      document.getElementById('stat-context-score').textContent = data.context + '%';
+    },
+
+    // 도구 로그 추가
+    addToolLog: function(data) {
+      var tbody = document.getElementById('tool-log-body');
+      // 첫 번째 로그일 때 "로그 없음" 제거
+      if (tbody.querySelector('td[colspan]')) {
+        tbody.innerHTML = '';
+      }
+
+      var row = document.createElement('tr');
+      var statusColor = data.status === '완료' ? 'var(--accent-emerald)' : 'var(--accent-amber)';
+      row.innerHTML =
+        '<td>' + new Date().toLocaleTimeString('ko-KR') + '</td>' +
+        '<td><span style="color:var(--accent-cyan);">' + escapeHtml(data.tool) + '</span> ' +
+            '<span style="font-size:10px;color:var(--text-secondary);">' + escapeHtml(data.desc) + '</span></td>' +
+        '<td style="color:' + statusColor + ';">' + escapeHtml(data.status) + '</td>' +
+        '<td>' + data.duration + '</td>';
+      tbody.appendChild(row);
+    },
+
+    // 브레인맵 노드 활성화
+    activateNode: function(nodeName) {
+      var node = document.querySelector('.neural-node[data-node="' + nodeName + '"]');
+      if (!node) return;
+
+      var circle = node.querySelector('circle');
+      var origStroke = circle.getAttribute('stroke');
+      var origWidth = circle.getAttribute('stroke-width');
+
+      circle.setAttribute('stroke-width', '4');
+      node.classList.add('glow');
+
+      // 연결선 활성화
+      var svg = document.getElementById('brainmap-svg');
+      var nodePos = node.getAttribute('transform');
+      var match = nodePos && nodePos.match(/translate\((\d+),(\d+)\)/);
+
+      if (match) {
+        var nx = match[1], ny = match[2];
+        var lines = svg.querySelectorAll('.synapse-line');
+        lines.forEach(function(line) {
+          if (line.getAttribute('x1') === nx && line.getAttribute('y1') === ny ||
+              line.getAttribute('x2') === nx && line.getAttribute('y2') === ny) {
+            line.setAttribute('stroke-width', '3');
+            line.classList.add('pulse');
+            setTimeout(function() {
+              line.setAttribute('stroke-width', '1.5');
+              line.classList.remove('pulse');
+            }, 1200);
+          }
+        });
+      }
+
+      setTimeout(function() {
+        circle.setAttribute('stroke-width', origWidth || '2');
+        node.classList.remove('glow');
+      }, 1500);
+    },
+
+    // 내보내기 버튼
+    bindExport: function() {
+      var controls = document.getElementById('export-controls');
+      controls.addEventListener('click', function(e) {
+        var btn = e.target.closest('.export-btn');
+        if (!btn) return;
+
+        var format = btn.getAttribute('data-format');
+        var rows = document.querySelectorAll('#tool-log-body tr');
+        var data = [];
+
+        rows.forEach(function(row) {
+          var cells = row.querySelectorAll('td');
+          if (cells.length >= 4 && !cells[0].hasAttribute('colspan')) {
+            data.push({
+              time: cells[0].textContent,
+              tool: cells[1].textContent.trim(),
+              status: cells[2].textContent,
+              duration: cells[3].textContent
+            });
+          }
+        });
+
+        var output, mime, ext;
+        if (format === 'json') {
+          output = JSON.stringify(data, null, 2);
+          mime = 'application/json';
+          ext = 'json';
+        } else {
+          var csvLines = ['시간,도구,상태,소요(ms)'];
+          data.forEach(function(d) {
+            csvLines.push([d.time, '"' + d.tool.replace(/"/g, '""') + '"', d.status, d.duration].join(','));
+          });
+          output = csvLines.join('\n');
+          mime = 'text/csv';
+          ext = 'csv';
+        }
+
+        var blob = new Blob([output], { type: mime + ';charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = 'neural-map-log.' + ext;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      });
+    }
+  };
+
+  // ===== 유틸리티 =====
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  // ===== 초기화 =====
+  document.addEventListener('DOMContentLoaded', function() {
+    UI.init();
+  });
+
+})();
+</script>
+
+<!-- 데이터 시각화 스크립트 (인라인) -->
+<script>
+/**
+ * Neural Map v10 - Team Edition
+ * data-viz.js — Canvas-based Charts, Data Visualization & Export
+ * Teammate C: Data Expert
+ *
+ * Provides: DataViz global object with decision tree, memory graph,
+ * token waterfall, context heatmap, tool log table, and CSV/JSON export.
+ */
+
+(function () {
+    'use strict';
+
+    // ──────────────────────────────────────────────
+    // Theme constants
+    // ──────────────────────────────────────────────
+    const THEME = {
+        bg: '#0a0e1a',
+        bgLight: '#111827',
+        bgCard: '#1a1f35',
+        primary: '#4a9eff',
+        secondary: '#7c3aed',
+        accent: '#06d6a0',
+        amber: '#ffa94d',
+        red: '#ff6b6b',
+        text: '#e2e8f0',
+        textDim: '#94a3b8',
+        border: '#2a3050',
+        gridLine: 'rgba(74,158,255,0.08)',
+        // Decision types
+        reasoning: '#4a9eff',
+        tool_call: '#ffa94d',
+        output: '#06d6a0',
+        // Memory types
+        episodic: '#7c3aed',
+        semantic: '#4a9eff',
+        procedural: '#06d6a0',
+    };
+
+    const DPR = window.devicePixelRatio || 1;
+
+    // ──────────────────────────────────────────────
+    // Utility helpers
+    // ──────────────────────────────────────────────
+    function debounce(fn, ms) {
+        let t;
+        return function () {
+            clearTimeout(t);
+            t = setTimeout(() => fn.apply(this, arguments), ms);
+        };
+    }
+
+    function lerp(a, b, t) { return a + (b - a) * t; }
+    function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    function setupCanvas(canvas, w, h) {
+        canvas.width = w * DPR;
+        canvas.height = h * DPR;
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+        const ctx = canvas.getContext('2d');
+        ctx.scale(DPR, DPR);
+        return ctx;
+    }
+
+    function getCanvasCoords(canvas, e) {
+        const r = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        return { x: clientX - r.left, y: clientY - r.top };
+    }
+
+    function truncate(s, len) {
+        if (!s) return '';
+        s = String(s);
+        return s.length > len ? s.slice(0, len) + '\u2026' : s;
+    }
+
+    function escapeCSV(val) {
+        val = String(val == null ? '' : val);
+        if (val.includes(',') || val.includes('"') || val.includes('\n')) {
+            return '"' + val.replace(/"/g, '""') + '"';
+        }
+        return val;
+    }
+
+    function downloadBlob(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+    }
+
+    // ──────────────────────────────────────────────
+    // Sample / demo data (Korean)
+    // ──────────────────────────────────────────────
+    const SAMPLE = {
+        decisionTree: {
+            id: 'root',
+            label: '사용자 질문 분석',
+            type: 'reasoning',
+            detail: '사용자의 의도를 파악하고 최적의 응답 전략을 결정합니다.',
+            expanded: true,
+            children: [
+                {
+                    id: 'n1', label: '도구 사용 필요?', type: 'reasoning',
+                    detail: '질문에 외부 도구 호출이 필요한지 판단합니다.',
+                    expanded: true,
+                    children: [
+                        {
+                            id: 'n1a', label: '웹 검색 호출', type: 'tool_call',
+                            detail: 'WebSearch: "최신 AI 기술 동향 2026"',
+                            expanded: false, children: [
+                                { id: 'n1a1', label: '검색 결과 분석', type: 'reasoning', detail: '3개의 관련 결과를 찾았습니다.', expanded: false, children: [] },
+                            ]
+                        },
+                        {
+                            id: 'n1b', label: '파일 읽기', type: 'tool_call',
+                            detail: 'Read: config.json',
+                            expanded: false, children: []
+                        },
+                    ]
+                },
+                {
+                    id: 'n2', label: '메모리 참조', type: 'reasoning',
+                    detail: '관련 이전 대화와 컨텍스트를 검색합니다.',
+                    expanded: true,
+                    children: [
+                        { id: 'n2a', label: '유사 대화 3건 발견', type: 'reasoning', detail: '코사인 유사도 0.87 이상의 메모리 항목 참조', expanded: false, children: [] },
+                    ]
+                },
+                {
+                    id: 'n3', label: '최종 응답 생성', type: 'output',
+                    detail: '수집된 정보를 종합하여 한국어로 자연스러운 응답을 생성합니다.',
+                    expanded: false, children: []
+                },
+            ]
+        },
+
+        memoryGraph: [
+            { id: 'm1', label: '프로젝트 구조', type: 'procedural', freq: 8 },
+            { id: 'm2', label: '사용자 선호도', type: 'episodic', freq: 12 },
+            { id: 'm3', label: 'API 패턴', type: 'semantic', freq: 6 },
+            { id: 'm4', label: '오류 해결법', type: 'procedural', freq: 10 },
+            { id: 'm5', label: '이전 대화 요약', type: 'episodic', freq: 15 },
+            { id: 'm6', label: 'JS 문법 규칙', type: 'semantic', freq: 4 },
+            { id: 'm7', label: '배포 절차', type: 'procedural', freq: 7 },
+            { id: 'm8', label: '팀 컨벤션', type: 'semantic', freq: 9 },
+            { id: 'm9', label: '버그 리포트', type: 'episodic', freq: 5 },
+            { id: 'm10', label: '코드 리뷰 기록', type: 'episodic', freq: 11 },
+        ],
+        memoryEdges: [
+            { from: 'm1', to: 'm3', strength: 0.85 },
+            { from: 'm1', to: 'm7', strength: 0.72 },
+            { from: 'm2', to: 'm5', strength: 0.91 },
+            { from: 'm2', to: 'm10', strength: 0.65 },
+            { from: 'm3', to: 'm6', strength: 0.78 },
+            { from: 'm4', to: 'm9', strength: 0.88 },
+            { from: 'm4', to: 'm6', strength: 0.60 },
+            { from: 'm5', to: 'm10', strength: 0.73 },
+            { from: 'm7', to: 'm8', strength: 0.69 },
+            { from: 'm8', to: 'm1', strength: 0.55 },
+            { from: 'm9', to: 'm10', strength: 0.82 },
+            { from: 'm6', to: 'm8', strength: 0.48 },
+        ],
+
+        tokenWaterfall: [
+            { stage: '입력 토큰화', duration: 12, tokens: 256 },
+            { stage: '임베딩', duration: 8, tokens: 256 },
+            { stage: '어텐션', duration: 45, tokens: 256 },
+            { stage: '추론', duration: 120, tokens: 256 },
+            { stage: '출력 생성', duration: 65, tokens: 184 },
+            { stage: '디코딩', duration: 18, tokens: 184 },
+        ],
+
+        heatmap: {
+            rows: ['시스템 프롬프트', '사용자 메시지', '도구 결과', '메모리', '이전 대화'],
+            cols: 20,
+            data: null, // generated below
+        },
+
+        toolLogs: [
+            { time: '14:23:01', tool: 'WebSearch', status: 'success', duration: 342, input: '최신 AI 기술 동향 2026년 3월', output: '{"results": [{"title": "GPT-5 출시 임박", "url": "..."}]}' },
+            { time: '14:23:02', tool: 'Read', status: 'success', duration: 15, input: '/home/user/project/config.json', output: '{"version": "10.0", "theme": "neural-dark"}' },
+            { time: '14:23:03', tool: 'Bash', status: 'error', duration: 1024, input: 'npm run build --production', output: 'Error: Module not found: @neural/core' },
+            { time: '14:23:05', tool: 'Edit', status: 'success', duration: 8, input: 'package.json: "@neural/core" 의존성 추가', output: '파일 수정 완료' },
+            { time: '14:23:06', tool: 'Bash', status: 'pending', duration: 0, input: 'npm run build --production', output: '빌드 진행 중...' },
+            { time: '14:23:08', tool: 'WebFetch', status: 'success', duration: 580, input: 'https://api.neural.dev/v2/status', output: '{"status": "operational", "latency": 42}' },
+        ],
+    };
+
+    // Generate heatmap data
+    (function () {
+        const rows = SAMPLE.heatmap.rows.length;
+        const cols = SAMPLE.heatmap.cols;
+        const data = [];
+        for (let r = 0; r < rows; r++) {
+            const row = [];
+            for (let c = 0; c < cols; c++) {
+                // Create a realistic-looking influence pattern
+                let base = 0;
+                if (r === 0) base = 0.3; // system prompt: moderate
+                if (r === 1) base = 0.6; // user message: high
+                if (r === 2) base = c > 8 ? 0.5 : 0.1; // tool results: late influence
+                if (r === 3) base = 0.25; // memory
+                if (r === 4) base = c < 5 ? 0.4 : 0.15; // previous conversation: early influence
+                row.push(clamp(base + (Math.random() * 0.3 - 0.15), 0, 1));
+            }
+            data.push(row);
+        }
+        SAMPLE.heatmap.data = data;
+    })();
+
+    // ──────────────────────────────────────────────
+    // 1. Decision Tree Visualization
+    // ──────────────────────────────────────────────
+    const DecisionTree = {
+        canvas: null, ctx: null, container: null,
+        data: null,
+        nodes: [], // flat list of positioned nodes
+        hoveredNode: null,
+        tooltip: null,
+        animProgress: 0,
+        animating: false,
+        offsetX: 0, offsetY: 0,
+        dragging: false, dragStartX: 0, dragStartY: 0,
+        panX: 0, panY: 0,
+
+        init(containerId) {
+            this.container = document.getElementById(containerId.replace('#', ''));
+            if (!this.container) return;
+            this.canvas = document.createElement('canvas');
+            this.canvas.style.display = 'block';
+            this.canvas.style.cursor = 'grab';
+            this.container.appendChild(this.canvas);
+
+            // Tooltip element
+            this.tooltip = document.createElement('div');
+            Object.assign(this.tooltip.style, {
+                position: 'absolute', pointerEvents: 'none', opacity: '0',
+                background: THEME.bgCard, color: THEME.text, border: '1px solid ' + THEME.border,
+                borderRadius: '8px', padding: '10px 14px', fontSize: '13px', maxWidth: '260px',
+                lineHeight: '1.5', zIndex: '100', transition: 'opacity 0.15s',
+                fontFamily: "'Noto Sans KR', sans-serif", boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            });
+            this.container.style.position = 'relative';
+            this.container.appendChild(this.tooltip);
+
+            this._bindEvents();
+            this.resize();
+        },
+
+        _bindEvents() {
+            const c = this.canvas;
+            const handler = (e) => {
+                const p = getCanvasCoords(c, e);
+                const px = p.x - this.panX, py = p.y - this.panY;
+                this.hoveredNode = null;
+                for (const n of this.nodes) {
+                    const dx = px - n.x, dy = py - n.y;
+                    if (dx * dx + dy * dy < n.radius * n.radius) {
+                        this.hoveredNode = n;
+                        break;
+                    }
+                }
+                if (this.hoveredNode) {
+                    c.style.cursor = 'pointer';
+                    this.tooltip.style.opacity = '1';
+                    this.tooltip.style.left = (p.x + 16) + 'px';
+                    this.tooltip.style.top = (p.y - 10) + 'px';
+                    this.tooltip.innerHTML = '<strong>' + this.hoveredNode.label + '</strong><br><span style="color:' + THEME.textDim + '">' + (this.hoveredNode.detail || '') + '</span>';
+                } else {
+                    c.style.cursor = this.dragging ? 'grabbing' : 'grab';
+                    this.tooltip.style.opacity = '0';
+                }
+                this.draw();
+            };
+            c.addEventListener('mousemove', handler);
+            c.addEventListener('touchmove', (e) => { e.preventDefault(); handler(e); }, { passive: false });
+
+            const clickHandler = (e) => {
+                const p = getCanvasCoords(c, e);
+                const px = p.x - this.panX, py = p.y - this.panY;
+                for (const n of this.nodes) {
+                    const dx = px - n.x, dy = py - n.y;
+                    if (dx * dx + dy * dy < n.radius * n.radius && n.src.children && n.src.children.length) {
+                        n.src.expanded = !n.src.expanded;
+                        this._layoutAndAnimate();
+                        return;
+                    }
+                }
+            };
+            c.addEventListener('click', clickHandler);
+            c.addEventListener('touchend', clickHandler);
+
+            // Pan
+            c.addEventListener('mousedown', (e) => { this.dragging = true; this.dragStartX = e.clientX - this.panX; this.dragStartY = e.clientY - this.panY; c.style.cursor = 'grabbing'; });
+            window.addEventListener('mousemove', (e) => { if (this.dragging) { this.panX = e.clientX - this.dragStartX; this.panY = e.clientY - this.dragStartY; this.draw(); } });
+            window.addEventListener('mouseup', () => { this.dragging = false; c.style.cursor = 'grab'; });
+        },
+
+        update(data) {
+            this.data = data;
+            this.panX = 0; this.panY = 0;
+            this._layoutAndAnimate();
+        },
+
+        _layoutAndAnimate() {
+            this.nodes = [];
+            if (!this.data) return;
+            const w = this.canvas.style.width ? parseInt(this.canvas.style.width) : 600;
+            this._layoutNode(this.data, w / 2, 50, 0, w);
+            this.animProgress = 0;
+            this.animating = true;
+            this._animate();
+        },
+
+        _layoutNode(node, x, y, depth, availW) {
+            const radius = 22;
+            const vGap = 90;
+            const n = { x, y, radius, label: node.label, type: node.type, detail: node.detail, src: node, depth, alpha: 0 };
+            this.nodes.push(n);
+            if (node.expanded && node.children && node.children.length) {
+                const count = node.children.length;
+                const childW = availW / count;
+                const startX = x - (availW / 2) + childW / 2;
+                for (let i = 0; i < count; i++) {
+                    const cx = startX + i * childW;
+                    const cy = y + vGap;
+                    this._layoutNode(node.children[i], cx, cy, depth + 1, childW);
+                }
+            }
+        },
+
+        _animate() {
+            if (!this.animating) return;
+            this.animProgress += 0.03;
+            if (this.animProgress >= 1) { this.animProgress = 1; this.animating = false; }
+            for (const n of this.nodes) {
+                n.alpha = clamp(this.animProgress * 3 - n.depth * 0.5, 0, 1);
+            }
+            this.draw();
+            if (this.animating) requestAnimationFrame(() => this._animate());
+        },
+
+        resize() {
+            if (!this.container || !this.canvas) return;
+            const w = this.container.clientWidth || 600;
+            const h = this.container.clientHeight || 400;
+            this.ctx = setupCanvas(this.canvas, w, h);
+            if (this.data) this._layoutAndAnimate();
+        },
+
+        draw() {
+            if (!this.ctx) return;
+            const ctx = this.ctx;
+            const w = parseInt(this.canvas.style.width);
+            const h = parseInt(this.canvas.style.height);
+            ctx.clearRect(0, 0, w, h);
+            ctx.save();
+            ctx.translate(this.panX, this.panY);
+
+            // Draw edges first
+            for (const n of this.nodes) {
+                if (n.src.expanded && n.src.children) {
+                    for (const child of n.src.children) {
+                        const cn = this.nodes.find(nd => nd.src === child);
+                        if (cn && cn.alpha > 0) {
+                            ctx.globalAlpha = cn.alpha * 0.5;
+                            ctx.strokeStyle = THEME.border;
+                            ctx.lineWidth = 2;
+                            ctx.beginPath();
+                            ctx.moveTo(n.x, n.y + n.radius);
+                            const midY = (n.y + n.radius + cn.y - cn.radius) / 2;
+                            ctx.bezierCurveTo(n.x, midY, cn.x, midY, cn.x, cn.y - cn.radius);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            // Draw nodes
+            for (const n of this.nodes) {
+                if (n.alpha <= 0) continue;
+                ctx.globalAlpha = n.alpha;
+                const color = THEME[n.type] || THEME.primary;
+                const isHovered = n === this.hoveredNode;
+                const r = isHovered ? n.radius + 4 : n.radius;
+
+                // Glow
+                ctx.shadowColor = color;
+                ctx.shadowBlur = isHovered ? 20 : 10;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Inner circle
+                ctx.fillStyle = THEME.bgCard;
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, r - 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Icon dot
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Label
+                ctx.fillStyle = THEME.text;
+                ctx.font = '12px "Noto Sans KR", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(truncate(n.label, 12), n.x, n.y + r + 6);
+
+                // Expand indicator
+                if (n.src.children && n.src.children.length) {
+                    ctx.fillStyle = THEME.textDim;
+                    ctx.font = '10px sans-serif';
+                    ctx.fillText(n.src.expanded ? '\u2212' : '+', n.x, n.y - 4);
+                }
+            }
+            ctx.restore();
+        },
+    };
+
+    // ──────────────────────────────────────────────
+    // 2. Memory Graph (Force-Directed)
+    // ──────────────────────────────────────────────
+    const MemoryGraph = {
+        canvas: null, ctx: null, container: null,
+        nodes: [], edges: [],
+        hoveredNode: null, selectedNode: null,
+        tooltip: null,
+        running: false,
+        dragNode: null,
+
+        init(containerId) {
+            this.container = document.getElementById(containerId.replace('#', ''));
+            if (!this.container) return;
+            this.canvas = document.createElement('canvas');
+            this.canvas.style.display = 'block';
+            this.canvas.style.cursor = 'default';
+            this.container.appendChild(this.canvas);
+
+            this.tooltip = document.createElement('div');
+            Object.assign(this.tooltip.style, {
+                position: 'absolute', pointerEvents: 'none', opacity: '0',
+                background: THEME.bgCard, color: THEME.text, border: '1px solid ' + THEME.border,
+                borderRadius: '8px', padding: '8px 12px', fontSize: '12px', maxWidth: '200px',
+                zIndex: '100', transition: 'opacity 0.15s',
+                fontFamily: "'Noto Sans KR', sans-serif", boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            });
+            this.container.style.position = 'relative';
+            this.container.appendChild(this.tooltip);
+
+            this._bindEvents();
+            this.resize();
+        },
+
+        _bindEvents() {
+            const c = this.canvas;
+            const getNode = (e) => {
+                const p = getCanvasCoords(c, e);
+                for (const n of this.nodes) {
+                    const dx = p.x - n.x, dy = p.y - n.y;
+                    if (dx * dx + dy * dy < n.radius * n.radius) return { node: n, pos: p };
+                }
+                return { node: null, pos: p };
+            };
+
+            c.addEventListener('mousemove', (e) => {
+                const { node, pos } = getNode(e);
+                this.hoveredNode = node;
+                if (this.dragNode) {
+                    this.dragNode.x = pos.x;
+                    this.dragNode.y = pos.y;
+                    this.dragNode.vx = 0; this.dragNode.vy = 0;
+                }
+                if (node) {
+                    c.style.cursor = 'pointer';
+                    this.tooltip.style.opacity = '1';
+                    this.tooltip.style.left = (pos.x + 14) + 'px';
+                    this.tooltip.style.top = (pos.y - 8) + 'px';
+                    const typeLabel = { episodic: '일화적', semantic: '의미적', procedural: '절차적' }[node.type] || node.type;
+                    this.tooltip.innerHTML = '<strong>' + node.label + '</strong><br>유형: ' + typeLabel + '<br>접근 빈도: ' + node.freq;
+                } else {
+                    c.style.cursor = 'default';
+                    this.tooltip.style.opacity = '0';
+                }
+            });
+            c.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const p = getCanvasCoords(c, e);
+                if (this.dragNode) {
+                    this.dragNode.x = p.x; this.dragNode.y = p.y;
+                    this.dragNode.vx = 0; this.dragNode.vy = 0;
+                }
+            }, { passive: false });
+
+            c.addEventListener('mousedown', (e) => { const { node } = getNode(e); if (node) { this.dragNode = node; this.selectedNode = node; } });
+            c.addEventListener('touchstart', (e) => { const { node } = getNode(e); if (node) { this.dragNode = node; this.selectedNode = node; } });
+            const release = () => { this.dragNode = null; };
+            window.addEventListener('mouseup', release);
+            window.addEventListener('touchend', release);
+        },
+
+        update(nodesData, edgesData) {
+            const w = parseInt(this.canvas.style.width) || 600;
+            const h = parseInt(this.canvas.style.height) || 400;
+            const existingMap = {};
+            this.nodes.forEach(n => { existingMap[n.id] = n; });
+
+            this.nodes = nodesData.map(nd => {
+                const existing = existingMap[nd.id];
+                return {
+                    id: nd.id, label: nd.label, type: nd.type, freq: nd.freq,
+                    radius: 12 + nd.freq * 1.5,
+                    x: existing ? existing.x : w / 2 + (Math.random() - 0.5) * w * 0.6,
+                    y: existing ? existing.y : h / 2 + (Math.random() - 0.5) * h * 0.6,
+                    vx: 0, vy: 0,
+                    alpha: existing ? 1 : 0,
+                    targetAlpha: 1,
+                };
+            });
+
+            this.edges = edgesData.map(e => ({
+                from: this.nodes.find(n => n.id === e.from),
+                to: this.nodes.find(n => n.id === e.to),
+                strength: e.strength,
+            })).filter(e => e.from && e.to);
+
+            if (!this.running) {
+                this.running = true;
+                this._tick();
+            }
+        },
+
+        _tick() {
+            if (!this.running) return;
+            const w = parseInt(this.canvas.style.width) || 600;
+            const h = parseInt(this.canvas.style.height) || 400;
+            const nodes = this.nodes;
+            const edges = this.edges;
+
+            // Repulsion
+            for (let i = 0; i < nodes.length; i++) {
+                for (let j = i + 1; j < nodes.length; j++) {
+                    let dx = nodes[j].x - nodes[i].x;
+                    let dy = nodes[j].y - nodes[i].y;
+                    let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                    let force = 800 / (dist * dist);
+                    const fx = (dx / dist) * force;
+                    const fy = (dy / dist) * force;
+                    if (nodes[i] !== this.dragNode) { nodes[i].vx -= fx; nodes[i].vy -= fy; }
+                    if (nodes[j] !== this.dragNode) { nodes[j].vx += fx; nodes[j].vy += fy; }
+                }
+            }
+
+            // Attraction (edges)
+            for (const e of edges) {
+                let dx = e.to.x - e.from.x;
+                let dy = e.to.y - e.from.y;
+                let dist = Math.sqrt(dx * dx + dy * dy) || 1;
+                const ideal = 120;
+                const force = (dist - ideal) * 0.005 * e.strength;
+                const fx = (dx / dist) * force;
+                const fy = (dy / dist) * force;
+                if (e.from !== this.dragNode) { e.from.vx += fx; e.from.vy += fy; }
+                if (e.to !== this.dragNode) { e.to.vx -= fx; e.to.vy -= fy; }
+            }
+
+            // Center gravity
+            for (const n of nodes) {
+                if (n === this.dragNode) continue;
+                n.vx += (w / 2 - n.x) * 0.001;
+                n.vy += (h / 2 - n.y) * 0.001;
+                n.vx *= 0.9; n.vy *= 0.9;
+                n.x += n.vx; n.y += n.vy;
+                n.x = clamp(n.x, n.radius, w - n.radius);
+                n.y = clamp(n.y, n.radius, h - n.radius);
+                n.alpha = lerp(n.alpha, n.targetAlpha, 0.05);
+            }
+
+            this.draw();
+            requestAnimationFrame(() => this._tick());
+        },
+
+        resize() {
+            if (!this.container || !this.canvas) return;
+            const w = this.container.clientWidth || 600;
+            const h = this.container.clientHeight || 400;
+            this.ctx = setupCanvas(this.canvas, w, h);
+        },
+
+        draw() {
+            if (!this.ctx) return;
+            const ctx = this.ctx;
+            const w = parseInt(this.canvas.style.width);
+            const h = parseInt(this.canvas.style.height);
+            ctx.clearRect(0, 0, w, h);
+
+            const sel = this.selectedNode;
+
+            // Edges
+            for (const e of this.edges) {
+                const highlight = sel && (e.from === sel || e.to === sel);
+                ctx.globalAlpha = Math.min(e.from.alpha, e.to.alpha) * (highlight ? 0.8 : 0.25);
+                ctx.strokeStyle = highlight ? THEME.primary : THEME.textDim;
+                ctx.lineWidth = 1 + e.strength * 3;
+                ctx.beginPath();
+                ctx.moveTo(e.from.x, e.from.y);
+                ctx.lineTo(e.to.x, e.to.y);
+                ctx.stroke();
+            }
+
+            // Nodes
+            for (const n of this.nodes) {
+                ctx.globalAlpha = n.alpha;
+                const color = THEME[n.type] || THEME.primary;
+                const isHovered = n === this.hoveredNode;
+                const isSel = n === sel;
+                const isConnected = sel && this.edges.some(e => (e.from === sel && e.to === n) || (e.to === sel && e.from === n));
+                const dim = sel && !isSel && !isConnected;
+
+                ctx.globalAlpha = n.alpha * (dim ? 0.3 : 1);
+
+                // Glow
+                ctx.shadowColor = color;
+                ctx.shadowBlur = isHovered || isSel ? 20 : 8;
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.radius + (isHovered ? 3 : 0), 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Inner
+                ctx.fillStyle = THEME.bgCard;
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.radius - 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Freq indicator
+                ctx.fillStyle = color;
+                ctx.globalAlpha = n.alpha * (dim ? 0.15 : 0.5);
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.radius * 0.45, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = n.alpha * (dim ? 0.3 : 1);
+
+                // Label
+                ctx.fillStyle = THEME.text;
+                ctx.font = '11px "Noto Sans KR", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'top';
+                ctx.fillText(n.label, n.x, n.y + n.radius + 5);
+            }
+            ctx.globalAlpha = 1;
+        },
+    };
+
+    // ──────────────────────────────────────────────
+    // 3. Token Lifecycle Waterfall Chart
+    // ──────────────────────────────────────────────
+    const TokenWaterfall = {
+        canvas: null, ctx: null,
+        data: [],
+        animProgress: 0,
+        animating: false,
+        hoveredBar: -1,
+        tooltip: null,
+        container: null,
+
+        init(canvasId) {
+            // canvasId may be a container or canvas id
+            let el = document.getElementById(canvasId.replace('#', ''));
+            if (!el) return;
+            if (el.tagName === 'CANVAS') {
+                this.canvas = el;
+                this.container = el.parentElement;
+            } else {
+                this.container = el;
+                this.canvas = document.createElement('canvas');
+                this.canvas.style.display = 'block';
+                el.appendChild(this.canvas);
+            }
+
+            this.tooltip = document.createElement('div');
+            Object.assign(this.tooltip.style, {
+                position: 'absolute', pointerEvents: 'none', opacity: '0',
+                background: THEME.bgCard, color: THEME.text, border: '1px solid ' + THEME.border,
+                borderRadius: '8px', padding: '8px 12px', fontSize: '12px', maxWidth: '220px',
+                zIndex: '100', transition: 'opacity 0.15s',
+                fontFamily: "'Noto Sans KR', sans-serif", boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            });
+            (this.container || this.canvas.parentElement).style.position = 'relative';
+            (this.container || this.canvas.parentElement).appendChild(this.tooltip);
+
+            this._bindEvents();
+            this.resize();
+        },
+
+        _bindEvents() {
+            this.canvas.addEventListener('mousemove', (e) => {
+                const p = getCanvasCoords(this.canvas, e);
+                this._hitTest(p);
+            });
+            this.canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const p = getCanvasCoords(this.canvas, e);
+                this._hitTest(p);
+            }, { passive: false });
+            this.canvas.addEventListener('mouseleave', () => {
+                this.hoveredBar = -1; this.tooltip.style.opacity = '0'; this.draw();
+            });
+        },
+
+        _hitTest(p) {
+            const w = parseInt(this.canvas.style.width);
+            const h = parseInt(this.canvas.style.height);
+            const margin = { top: 30, right: 30, bottom: 40, left: 120 };
+            const chartW = w - margin.left - margin.right;
+            const chartH = h - margin.top - margin.bottom;
+            const barH = chartH / Math.max(this.data.length, 1) * 0.65;
+            const gap = chartH / Math.max(this.data.length, 1);
+            const maxDur = Math.max(...this.data.map(d => d.duration), 1);
+
+            this.hoveredBar = -1;
+            for (let i = 0; i < this.data.length; i++) {
+                const y = margin.top + i * gap + (gap - barH) / 2;
+                const bw = (this.data[i].duration / maxDur) * chartW;
+                if (p.x >= margin.left && p.x <= margin.left + bw && p.y >= y && p.y <= y + barH) {
+                    this.hoveredBar = i;
+                    break;
+                }
+            }
+            if (this.hoveredBar >= 0) {
+                const d = this.data[this.hoveredBar];
+                this.tooltip.style.opacity = '1';
+                this.tooltip.style.left = (p.x + 14) + 'px';
+                this.tooltip.style.top = (p.y - 8) + 'px';
+                this.tooltip.innerHTML = '<strong>' + d.stage + '</strong><br>소요시간: ' + d.duration + 'ms<br>토큰 수: ' + d.tokens;
+            } else {
+                this.tooltip.style.opacity = '0';
+            }
+            this.draw();
+        },
+
+        update(data) {
+            this.data = data || [];
+            this.animProgress = 0;
+            this.animating = true;
+            this._animate();
+        },
+
+        _animate() {
+            if (!this.animating) return;
+            this.animProgress += 0.02;
+            if (this.animProgress >= 1) { this.animProgress = 1; this.animating = false; }
+            this.draw();
+            if (this.animating) requestAnimationFrame(() => this._animate());
+        },
+
+        resize() {
+            if (!this.canvas) return;
+            const parent = this.container || this.canvas.parentElement;
+            const w = parent.clientWidth || 600;
+            const h = parent.clientHeight || 350;
+            this.ctx = setupCanvas(this.canvas, w, h);
+            if (this.data.length) this.draw();
+        },
+
+        draw() {
+            if (!this.ctx || !this.data.length) return;
+            const ctx = this.ctx;
+            const w = parseInt(this.canvas.style.width);
+            const h = parseInt(this.canvas.style.height);
+            ctx.clearRect(0, 0, w, h);
+
+            const margin = { top: 30, right: 30, bottom: 40, left: 120 };
+            const chartW = w - margin.left - margin.right;
+            const chartH = h - margin.top - margin.bottom;
+            const count = this.data.length;
+            const gap = chartH / count;
+            const barH = gap * 0.65;
+            const maxDur = Math.max(...this.data.map(d => d.duration), 1);
+
+            // Grid lines
+            ctx.strokeStyle = THEME.gridLine;
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const x = margin.left + (chartW / 4) * i;
+                ctx.beginPath(); ctx.moveTo(x, margin.top); ctx.lineTo(x, h - margin.bottom); ctx.stroke();
+                ctx.fillStyle = THEME.textDim;
+                ctx.font = '10px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(Math.round(maxDur / 4 * i) + 'ms', x, h - margin.bottom + 16);
+            }
+
+            // Bars
+            let runningTotal = 0;
+            const totalPoints = [];
+            for (let i = 0; i < count; i++) {
+                const d = this.data[i];
+                const y = margin.top + i * gap + (gap - barH) / 2;
+                const t = clamp(this.animProgress * 2 - i * 0.15, 0, 1);
+                const bw = (d.duration / maxDur) * chartW * t;
+
+                // Color gradient: blue->green
+                const ratio = i / (count - 1);
+                const r = Math.round(lerp(74, 6, ratio));
+                const g = Math.round(lerp(158, 214, ratio));
+                const b = Math.round(lerp(255, 160, ratio));
+                const color = 'rgb(' + r + ',' + g + ',' + b + ')';
+
+                const isHov = i === this.hoveredBar;
+                ctx.globalAlpha = isHov ? 1 : 0.85;
+                ctx.shadowColor = color;
+                ctx.shadowBlur = isHov ? 12 : 0;
+
+                // Bar
+                ctx.fillStyle = color;
+                const br = 4;
+                ctx.beginPath();
+                ctx.moveTo(margin.left + br, y);
+                ctx.lineTo(margin.left + bw - br, y);
+                ctx.quadraticCurveTo(margin.left + bw, y, margin.left + bw, y + br);
+                ctx.lineTo(margin.left + bw, y + barH - br);
+                ctx.quadraticCurveTo(margin.left + bw, y + barH, margin.left + bw - br, y + barH);
+                ctx.lineTo(margin.left + br, y + barH);
+                ctx.quadraticCurveTo(margin.left, y + barH, margin.left, y + barH - br);
+                ctx.lineTo(margin.left, y + br);
+                ctx.quadraticCurveTo(margin.left, y, margin.left + br, y);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                ctx.globalAlpha = 1;
+
+                // Duration text on bar
+                if (bw > 40) {
+                    ctx.fillStyle = THEME.bg;
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.textAlign = 'right';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(d.duration + 'ms', margin.left + bw - 8, y + barH / 2);
+                }
+
+                // Stage label
+                ctx.fillStyle = THEME.text;
+                ctx.font = '12px "Noto Sans KR", sans-serif';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(d.stage, margin.left - 10, y + barH / 2);
+
+                runningTotal += d.duration;
+                totalPoints.push({ x: margin.left + bw, y: y + barH / 2, total: runningTotal });
+            }
+
+            // Running total line
+            if (totalPoints.length > 1 && this.animProgress > 0.3) {
+                const lineAlpha = clamp((this.animProgress - 0.3) * 2, 0, 1);
+                ctx.globalAlpha = lineAlpha;
+                ctx.strokeStyle = THEME.accent;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(totalPoints[0].x, totalPoints[0].y);
+                for (let i = 1; i < totalPoints.length; i++) {
+                    ctx.lineTo(totalPoints[i].x, totalPoints[i].y);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Total label
+                const last = totalPoints[totalPoints.length - 1];
+                ctx.fillStyle = THEME.accent;
+                ctx.font = 'bold 11px sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText('\uCD1D ' + runningTotal + 'ms', last.x + 6, last.y);
+                ctx.globalAlpha = 1;
+            }
+        },
+    };
+
+    // ──────────────────────────────────────────────
+    // 4. Context Influence Score Heatmap
+    // ──────────────────────────────────────────────
+    const ContextHeatmap = {
+        canvas: null, ctx: null, container: null,
+        rows: [], data: [], cols: 0,
+        animProgress: 0, animating: false,
+        hoveredCell: null,
+        tooltip: null,
+
+        init(containerId) {
+            this.container = document.getElementById(containerId.replace('#', ''));
+            if (!this.container) return;
+            this.canvas = document.createElement('canvas');
+            this.canvas.style.display = 'block';
+            this.container.appendChild(this.canvas);
+
+            this.tooltip = document.createElement('div');
+            Object.assign(this.tooltip.style, {
+                position: 'absolute', pointerEvents: 'none', opacity: '0',
+                background: THEME.bgCard, color: THEME.text, border: '1px solid ' + THEME.border,
+                borderRadius: '8px', padding: '8px 12px', fontSize: '12px',
+                zIndex: '100', transition: 'opacity 0.15s',
+                fontFamily: "'Noto Sans KR', sans-serif", boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+            });
+            this.container.style.position = 'relative';
+            this.container.appendChild(this.tooltip);
+
+            this._bindEvents();
+            this.resize();
+        },
+
+        _bindEvents() {
+            const handler = (e) => {
+                const p = getCanvasCoords(this.canvas, e);
+                this._hitTest(p);
+            };
+            this.canvas.addEventListener('mousemove', handler);
+            this.canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handler(e); }, { passive: false });
+            this.canvas.addEventListener('mouseleave', () => { this.hoveredCell = null; this.tooltip.style.opacity = '0'; this.draw(); });
+        },
+
+        _hitTest(p) {
+            if (!this.data.length) return;
+            const w = parseInt(this.canvas.style.width);
+            const h = parseInt(this.canvas.style.height);
+            const margin = { top: 40, right: 20, bottom: 30, left: 120 };
+            const chartW = w - margin.left - margin.right;
+            const chartH = h - margin.top - margin.bottom;
+            const cellW = chartW / this.cols;
+            const cellH = chartH / this.rows.length;
+
+            const col = Math.floor((p.x - margin.left) / cellW);
+            const row = Math.floor((p.y - margin.top) / cellH);
+
+            if (row >= 0 && row < this.rows.length && col >= 0 && col < this.cols) {
+                this.hoveredCell = { row, col };
+                const val = this.data[row][col];
+                this.tooltip.style.opacity = '1';
+                this.tooltip.style.left = (p.x + 14) + 'px';
+                this.tooltip.style.top = (p.y - 8) + 'px';
+                this.tooltip.innerHTML = '<strong>' + this.rows[row] + '</strong><br>\uD1A0\uD070 \uC704\uCE58: ' + (col + 1) + '<br>\uC601\uD5A5\uB3C4: ' + val.toFixed(3);
+            } else {
+                this.hoveredCell = null;
+                this.tooltip.style.opacity = '0';
+            }
+            this.draw();
+        },
+
+        update(heatmapData) {
+            this.rows = heatmapData.rows || [];
+            this.cols = heatmapData.cols || 0;
+            this.data = heatmapData.data || [];
+            this.animProgress = 0;
+            this.animating = true;
+            this._animate();
+        },
+
+        _animate() {
+            if (!this.animating) return;
+            this.animProgress += 0.025;
+            if (this.animProgress >= 1) { this.animProgress = 1; this.animating = false; }
+            this.draw();
+            if (this.animating) requestAnimationFrame(() => this._animate());
+        },
+
+        resize() {
+            if (!this.container || !this.canvas) return;
+            const w = this.container.clientWidth || 600;
+            const h = this.container.clientHeight || 300;
+            this.ctx = setupCanvas(this.canvas, w, h);
+            if (this.data.length) this.draw();
+        },
+
+        _scoreToColor(score) {
+            // dark blue -> cyan -> yellow -> red
+            let r, g, b;
+            if (score < 0.33) {
+                const t = score / 0.33;
+                r = Math.round(lerp(15, 0, t));
+                g = Math.round(lerp(25, 200, t));
+                b = Math.round(lerp(80, 220, t));
+            } else if (score < 0.66) {
+                const t = (score - 0.33) / 0.33;
+                r = Math.round(lerp(0, 255, t));
+                g = Math.round(lerp(200, 230, t));
+                b = Math.round(lerp(220, 50, t));
+            } else {
+                const t = (score - 0.66) / 0.34;
+                r = Math.round(lerp(255, 255, t));
+                g = Math.round(lerp(230, 60, t));
+                b = Math.round(lerp(50, 30, t));
+            }
+            return 'rgb(' + r + ',' + g + ',' + b + ')';
+        },
+
+        draw() {
+            if (!this.ctx || !this.data.length) return;
+            const ctx = this.ctx;
+            const w = parseInt(this.canvas.style.width);
+            const h = parseInt(this.canvas.style.height);
+            ctx.clearRect(0, 0, w, h);
+
+            const margin = { top: 40, right: 20, bottom: 30, left: 120 };
+            const chartW = w - margin.left - margin.right;
+            const chartH = h - margin.top - margin.bottom;
+            const cellW = chartW / this.cols;
+            const cellH = chartH / this.rows.length;
+
+            // Column headers
+            ctx.fillStyle = THEME.textDim;
+            ctx.font = '9px sans-serif';
+            ctx.textAlign = 'center';
+            for (let c = 0; c < this.cols; c += 2) {
+                ctx.fillText((c + 1), margin.left + c * cellW + cellW / 2, margin.top - 8);
+            }
+            ctx.fillStyle = THEME.textDim;
+            ctx.font = '10px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('\uCD9C\uB825 \uD1A0\uD070 \uC704\uCE58 \u2192', margin.left + chartW / 2, margin.top - 24);
+
+            // Row labels
+            ctx.fillStyle = THEME.text;
+            ctx.font = '11px "Noto Sans KR", sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'middle';
+            for (let r = 0; r < this.rows.length; r++) {
+                ctx.fillText(this.rows[r], margin.left - 10, margin.top + r * cellH + cellH / 2);
+            }
+
+            // Cells with animated fill
+            const revealCol = Math.floor(this.animProgress * (this.cols + 3));
+            for (let r = 0; r < this.rows.length; r++) {
+                for (let c = 0; c < this.cols; c++) {
+                    const t = clamp((revealCol - c) / 3, 0, 1);
+                    if (t <= 0) continue;
+                    const val = this.data[r][c] * t;
+                    const x = margin.left + c * cellW;
+                    const y = margin.top + r * cellH;
+                    const isHov = this.hoveredCell && this.hoveredCell.row === r && this.hoveredCell.col === c;
+
+                    ctx.fillStyle = this._scoreToColor(val);
+                    ctx.globalAlpha = 0.15 + val * 0.85;
+                    ctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
+
+                    if (isHov) {
+                        ctx.globalAlpha = 1;
+                        ctx.strokeStyle = '#ffffff';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(x + 1, y + 1, cellW - 2, cellH - 2);
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+
+            // Color scale legend
+            const lx = w - 24;
+            const ly = margin.top;
+            const lh = chartH;
+            const lw = 12;
+            for (let i = 0; i < lh; i++) {
+                const score = 1 - i / lh;
+                ctx.fillStyle = this._scoreToColor(score);
+                ctx.fillRect(lx, ly + i, lw, 1);
+            }
+            ctx.fillStyle = THEME.textDim;
+            ctx.font = '9px sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('1.0', lx + lw + 3, ly + 4);
+            ctx.fillText('0.0', lx + lw + 3, ly + lh);
+        },
+    };
+
+    // ──────────────────────────────────────────────
+    // 5. Tool Call Log Table
+    // ──────────────────────────────────────────────
+    const ToolLog = {
+        container: null,
+        entries: [],
+        filter: '\uC804\uCCB4',
+        sortCol: null,
+        sortDir: 1,
+        tableEl: null,
+
+        init(containerId) {
+            this.container = document.getElementById(containerId.replace('#', ''));
+            if (!this.container) return;
+
+            // Inject styles
+            const style = document.createElement('style');
+            style.textContent = `
+                .nviz-tool-log { width: 100%; border-collapse: collapse; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; }
+                .nviz-tool-log th { background: ${THEME.bgCard}; color: ${THEME.textDim}; padding: 10px 12px; text-align: left; cursor: pointer; user-select: none; border-bottom: 2px solid ${THEME.border}; white-space: nowrap; position: sticky; top: 0; }
+                .nviz-tool-log th:hover { color: ${THEME.primary}; }
+                .nviz-tool-log th .sort-arrow { margin-left: 4px; font-size: 10px; }
+                .nviz-tool-log td { padding: 8px 12px; border-bottom: 1px solid ${THEME.border}; color: ${THEME.text}; vertical-align: top; }
+                .nviz-tool-log tr { transition: background 0.15s; }
+                .nviz-tool-log tr:hover { background: rgba(74,158,255,0.06); }
+                .nviz-tool-log tr.new-row { animation: nviz-fadeIn 0.4s ease; }
+                @keyframes nviz-fadeIn { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+                .nviz-badge { display: inline-block; padding: 2px 10px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+                .nviz-badge-success { background: rgba(6,214,160,0.15); color: ${THEME.accent}; }
+                .nviz-badge-error { background: rgba(255,107,107,0.15); color: ${THEME.red}; }
+                .nviz-badge-pending { background: rgba(255,169,77,0.15); color: ${THEME.amber}; }
+                .nviz-filter-bar { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+                .nviz-filter-btn { background: ${THEME.bgCard}; color: ${THEME.textDim}; border: 1px solid ${THEME.border}; padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 12px; font-family: 'Noto Sans KR', sans-serif; transition: all 0.15s; }
+                .nviz-filter-btn:hover { border-color: ${THEME.primary}; color: ${THEME.primary}; }
+                .nviz-filter-btn.active { background: ${THEME.primary}; color: #fff; border-color: ${THEME.primary}; }
+                .nviz-expandable { cursor: pointer; color: ${THEME.textDim}; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+                .nviz-expandable.expanded { white-space: normal; word-break: break-all; color: ${THEME.text}; }
+                .nviz-log-wrapper { max-height: 400px; overflow-y: auto; border: 1px solid ${THEME.border}; border-radius: 8px; }
+                .nviz-log-wrapper::-webkit-scrollbar { width: 6px; }
+                .nviz-log-wrapper::-webkit-scrollbar-track { background: ${THEME.bg}; }
+                .nviz-log-wrapper::-webkit-scrollbar-thumb { background: ${THEME.border}; border-radius: 3px; }
+            `;
+            document.head.appendChild(style);
+
+            this._buildUI();
+        },
+
+        _buildUI() {
+            this.container.innerHTML = '';
+
+            // Filter bar
+            const filterBar = document.createElement('div');
+            filterBar.className = 'nviz-filter-bar';
+            const filters = ['\uC804\uCCB4', '\uC131\uACF5', '\uC2E4\uD328', '\uB300\uAE30\uC911'];
+            const filterMap = { '\uC804\uCCB4': null, '\uC131\uACF5': 'success', '\uC2E4\uD328': 'error', '\uB300\uAE30\uC911': 'pending' };
+            filters.forEach(f => {
+                const btn = document.createElement('button');
+                btn.className = 'nviz-filter-btn' + (f === this.filter ? ' active' : '');
+                btn.textContent = f;
+                btn.addEventListener('click', () => {
+                    this.filter = f;
+                    filterBar.querySelectorAll('.nviz-filter-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    this._renderRows();
+                });
+                filterBar.appendChild(btn);
+            });
+            this.container.appendChild(filterBar);
+
+            // Table wrapper
+            const wrapper = document.createElement('div');
+            wrapper.className = 'nviz-log-wrapper';
+
+            const table = document.createElement('table');
+            table.className = 'nviz-tool-log';
+
+            // Header
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+            const cols = [
+                { key: 'time', label: '\uC2DC\uAC04' },
+                { key: 'tool', label: '\uB3C4\uAD6C\uBA85' },
+                { key: 'status', label: '\uC0C1\uD0DC' },
+                { key: 'duration', label: '\uC18C\uC694\uC2DC\uAC04' },
+                { key: 'input', label: '\uC785\uB825' },
+                { key: 'output', label: '\uCD9C\uB825' },
+            ];
+            cols.forEach(c => {
+                const th = document.createElement('th');
+                th.innerHTML = c.label + '<span class="sort-arrow"></span>';
+                th.addEventListener('click', () => {
+                    if (this.sortCol === c.key) {
+                        this.sortDir *= -1;
+                    } else {
+                        this.sortCol = c.key;
+                        this.sortDir = 1;
+                    }
+                    // Update arrows
+                    headerRow.querySelectorAll('.sort-arrow').forEach(s => s.textContent = '');
+                    th.querySelector('.sort-arrow').textContent = this.sortDir > 0 ? ' \u25B2' : ' \u25BC';
+                    this._renderRows();
+                });
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            this.tbody = document.createElement('tbody');
+            table.appendChild(this.tbody);
+            wrapper.appendChild(table);
+            this.container.appendChild(wrapper);
+            this.tableEl = table;
+
+            this._renderRows();
+        },
+
+        _getFilteredSorted() {
+            const filterMap = { '\uC804\uCCB4': null, '\uC131\uACF5': 'success', '\uC2E4\uD328': 'error', '\uB300\uAE30\uC911': 'pending' };
+            let list = this.entries.slice();
+            const statusFilter = filterMap[this.filter];
+            if (statusFilter) list = list.filter(e => e.status === statusFilter);
+            if (this.sortCol) {
+                list.sort((a, b) => {
+                    let va = a[this.sortCol], vb = b[this.sortCol];
+                    if (typeof va === 'number') return (va - vb) * this.sortDir;
+                    return String(va).localeCompare(String(vb)) * this.sortDir;
+                });
+            }
+            return list;
+        },
+
+        _renderRows() {
+            if (!this.tbody) return;
+            const list = this._getFilteredSorted();
+            this.tbody.innerHTML = '';
+            list.forEach(entry => {
+                const tr = document.createElement('tr');
+                // Time
+                tr.appendChild(this._td(entry.time));
+                // Tool
+                const toolTd = this._td(entry.tool);
+                toolTd.style.color = THEME.primary;
+                toolTd.style.fontWeight = '600';
+                tr.appendChild(toolTd);
+                // Status
+                const statusTd = document.createElement('td');
+                const badge = document.createElement('span');
+                badge.className = 'nviz-badge nviz-badge-' + entry.status;
+                badge.textContent = { success: '\uC131\uACF5', error: '\uC2E4\uD328', pending: '\uB300\uAE30\uC911' }[entry.status] || entry.status;
+                statusTd.appendChild(badge);
+                tr.appendChild(statusTd);
+                // Duration
+                const durTd = this._td(entry.duration ? entry.duration + 'ms' : '-');
+                durTd.style.fontVariantNumeric = 'tabular-nums';
+                tr.appendChild(durTd);
+                // Input (expandable)
+                tr.appendChild(this._expandableTd(entry.input));
+                // Output (expandable)
+                tr.appendChild(this._expandableTd(entry.output));
+
+                this.tbody.appendChild(tr);
+            });
+        },
+
+        _td(text) {
+            const td = document.createElement('td');
+            td.textContent = text;
+            return td;
+        },
+
+        _expandableTd(text) {
+            const td = document.createElement('td');
+            const span = document.createElement('span');
+            span.className = 'nviz-expandable';
+            span.textContent = truncate(text, 30);
+            span.title = '\uD074\uB9AD\uD558\uC5EC \uD3BC\uCE58\uAE30';
+            span.addEventListener('click', () => {
+                const isExpanded = span.classList.toggle('expanded');
+                span.textContent = isExpanded ? text : truncate(text, 30);
+            });
+            td.appendChild(span);
+            return td;
+        },
+
+        addEntry(entry, animate) {
+            this.entries.push(entry);
+            this._renderRows();
+            if (animate !== false && this.tbody && this.tbody.lastChild) {
+                this.tbody.lastChild.classList.add('new-row');
+            }
+        },
+
+        setEntries(entries) {
+            this.entries = entries.slice();
+            this._renderRows();
+        },
+    };
+
+    // ──────────────────────────────────────────────
+    // 6. Export Controls
+    // ──────────────────────────────────────────────
+    const ExportControls = {
+        container: null,
+
+        init(containerId) {
+            this.container = document.getElementById(containerId.replace('#', ''));
+            if (!this.container) return;
+
+            const style = document.createElement('style');
+            style.textContent = `
+                .nviz-export-btn { background: ${THEME.bgCard}; color: ${THEME.text}; border: 1px solid ${THEME.border}; padding: 10px 22px; border-radius: 8px; cursor: pointer; font-size: 13px; font-family: 'Noto Sans KR', sans-serif; transition: all 0.2s; margin-right: 10px; }
+                .nviz-export-btn:hover { border-color: ${THEME.primary}; color: ${THEME.primary}; box-shadow: 0 0 16px rgba(74,158,255,0.15); transform: translateY(-1px); }
+                .nviz-export-btn:active { transform: translateY(0); }
+            `;
+            document.head.appendChild(style);
+
+            const csvBtn = document.createElement('button');
+            csvBtn.className = 'nviz-export-btn';
+            csvBtn.textContent = 'CSV \uB0B4\uBCF4\uB0B4\uAE30';
+            csvBtn.addEventListener('click', () => DataViz.exportCSV());
+
+            const jsonBtn = document.createElement('button');
+            jsonBtn.className = 'nviz-export-btn';
+            jsonBtn.textContent = 'JSON \uB0B4\uBCF4\uB0B4\uAE30';
+            jsonBtn.addEventListener('click', () => DataViz.exportJSON());
+
+            this.container.appendChild(csvBtn);
+            this.container.appendChild(jsonBtn);
+        },
+    };
+
+    // ──────────────────────────────────────────────
+    // 7. Global DataViz Object
+    // ──────────────────────────────────────────────
+    const DataViz = {
+        _initialized: false,
+        _currentData: {
+            decisionTree: null,
+            memoryGraph: { nodes: [], edges: [] },
+            tokenWaterfall: [],
+            heatmap: null,
+            toolLogs: [],
+        },
+
+        init() {
+            if (this._initialized) return;
+            this._initialized = true;
+
+            DecisionTree.init('decision-tree-container');
+            MemoryGraph.init('memory-graph-container');
+            TokenWaterfall.init('token-waterfall-canvas');
+            ContextHeatmap.init('context-heatmap-container');
+            ToolLog.init('tool-log-container');
+            ExportControls.init('export-controls');
+
+            // Load sample data
+            this.updateDecisionTree(SAMPLE.decisionTree);
+            this.updateMemoryGraph({ nodes: SAMPLE.memoryGraph, edges: SAMPLE.memoryEdges });
+            this.updateTokenWaterfall(SAMPLE.tokenWaterfall);
+            this.updateHeatmap(SAMPLE.heatmap);
+            SAMPLE.toolLogs.forEach(e => this.addToolLog(e));
+
+            // Resize handler
+            window.addEventListener('resize', debounce(() => this.resize(), 200));
+        },
+
+        updateDecisionTree(data) {
+            this._currentData.decisionTree = data;
+            DecisionTree.update(data);
+        },
+
+        updateMemoryGraph(data) {
+            if (data.nodes) this._currentData.memoryGraph.nodes = data.nodes;
+            if (data.edges) this._currentData.memoryGraph.edges = data.edges;
+            MemoryGraph.update(
+                this._currentData.memoryGraph.nodes,
+                this._currentData.memoryGraph.edges
+            );
+        },
+
+        updateTokenWaterfall(data) {
+            this._currentData.tokenWaterfall = data;
+            TokenWaterfall.update(data);
+        },
+
+        updateHeatmap(data) {
+            this._currentData.heatmap = data;
+            ContextHeatmap.update(data);
+        },
+
+        addToolLog(entry) {
+            this._currentData.toolLogs.push(entry);
+            ToolLog.addEntry(entry);
+        },
+
+        exportCSV() {
+            const lines = [];
+            // Tool logs as CSV
+            const headers = ['\uC2DC\uAC04', '\uB3C4\uAD6C\uBA85', '\uC0C1\uD0DC', '\uC18C\uC694\uC2DC\uAC04(ms)', '\uC785\uB825', '\uCD9C\uB825'];
+            lines.push(headers.map(escapeCSV).join(','));
+            for (const e of this._currentData.toolLogs) {
+                lines.push([e.time, e.tool, e.status, e.duration, e.input, e.output].map(escapeCSV).join(','));
+            }
+
+            // Add waterfall section
+            lines.push('');
+            lines.push('\uD1A0\uD070 \uCC98\uB9AC \uB2E8\uACC4');
+            lines.push(['\uB2E8\uACC4', '\uC18C\uC694\uC2DC\uAC04(ms)', '\uD1A0\uD070\uC218'].map(escapeCSV).join(','));
+            for (const s of this._currentData.tokenWaterfall) {
+                lines.push([s.stage, s.duration, s.tokens].map(escapeCSV).join(','));
+            }
+
+            // Add heatmap section
+            if (this._currentData.heatmap && this._currentData.heatmap.data) {
+                lines.push('');
+                lines.push('\uCEE8\uD14D\uC2A4\uD2B8 \uC601\uD5A5\uB3C4 \uD788\uD2B8\uB9F5');
+                const hm = this._currentData.heatmap;
+                const colHeaders = ['\uC18C\uC2A4'];
+                for (let i = 0; i < hm.cols; i++) colHeaders.push('\uD1A0\uD070' + (i + 1));
+                lines.push(colHeaders.map(escapeCSV).join(','));
+                for (let r = 0; r < hm.rows.length; r++) {
+                    const row = [hm.rows[r], ...hm.data[r].map(v => v.toFixed(3))];
+                    lines.push(row.map(escapeCSV).join(','));
+                }
+            }
+
+            // UTF-8 BOM for Korean
+            const bom = '\uFEFF';
+            const blob = new Blob([bom + lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+            downloadBlob(blob, 'neural-map-data.csv');
+        },
+
+        exportJSON() {
+            const data = {
+                exportDate: new Date().toISOString(),
+                version: 'Neural Map v10',
+                toolLogs: this._currentData.toolLogs,
+                tokenWaterfall: this._currentData.tokenWaterfall,
+                heatmap: this._currentData.heatmap,
+                memoryGraph: this._currentData.memoryGraph,
+            };
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
+            downloadBlob(blob, 'neural-map-data.json');
+        },
+
+        resize() {
+            DecisionTree.resize();
+            MemoryGraph.resize();
+            TokenWaterfall.resize();
+            ContextHeatmap.resize();
+        },
+    };
+
+    // ──────────────────────────────────────────────
+    // 8. Auto-initialization & SimulationEngine integration
+    // ──────────────────────────────────────────────
+    window.DataViz = DataViz;
+
+    document.addEventListener('DOMContentLoaded', function () {
+        DataViz.init();
+
+        // Listen for simulation events if SimulationEngine exists
+        if (window.SimulationEngine) {
+            SimulationEngine.onEvent(function (event) {
+                if (!event || !event.type) return;
+                switch (event.type) {
+                    case 'decision':
+                        DataViz.updateDecisionTree(event.data);
+                        break;
+                    case 'memory':
+                        DataViz.updateMemoryGraph(event.data);
+                        break;
+                    case 'token':
+                        DataViz.updateTokenWaterfall(event.data);
+                        break;
+                    case 'context':
+                        DataViz.updateHeatmap(event.data);
+                        break;
+                    case 'tool_call':
+                        DataViz.addToolLog(event.data);
+                        break;
+                    default:
+                        break;
+                }
+            });
+        }
+    });
+
+})();
+</script>
+
+</body>
+</html>

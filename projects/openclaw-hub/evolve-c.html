@@ -1,0 +1,1090 @@
+<!-- EVOLVE-C: Communication + Dashboard Enhancements -->
+<!-- Teammate C - Chat, Tool Log, Canvas Charts, Toast -->
+
+<style>
+/* ============================================================
+   [C1] Chat Enhancements
+   ============================================================ */
+
+/* Typing indicator bubble */
+.chat-bubble.typing-indicator {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
+  align-self: flex-start;
+  padding: 10px 16px;
+  min-width: 80px;
+  animation: chatBubbleIn 0.3s ease;
+}
+
+.chat-bubble.typing-indicator .chat-sender {
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.typing-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.typing-dots span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-tertiary);
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) { animation-delay: 0s; }
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+  30% { transform: translateY(-6px); opacity: 1; }
+}
+
+.typing-label {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  margin-left: 4px;
+}
+
+/* Read receipt checkmarks */
+.chat-read-receipt {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: 6px;
+  font-size: 0.6rem;
+  color: var(--accent-blue);
+  opacity: 0;
+  animation: receiptFadeIn 0.4s ease 0.8s forwards;
+}
+
+@keyframes receiptFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Image card in chat */
+.chat-image-card {
+  width: 180px;
+  height: 120px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  margin-top: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.chat-image-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: inherit;
+  filter: blur(0);
+  z-index: 0;
+}
+
+.chat-image-card .img-icon {
+  position: relative;
+  z-index: 1;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+/* Camera button next to send */
+.chat-camera-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  transition: all var(--transition-fast);
+  border: 1px solid var(--border-primary);
+  cursor: pointer;
+}
+
+.chat-camera-btn:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+
+/* ============================================================
+   [C2] Tool Call Log Enhancements
+   ============================================================ */
+
+/* Pending status */
+.tool-status.pending {
+  background: rgba(227, 179, 65, 0.15);
+  color: var(--accent-yellow);
+}
+
+/* Tool icon cell */
+.tool-icon-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tool-icon-cell .tool-emoji {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+/* Latency bar */
+.latency-bar-container {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 80px;
+}
+
+.latency-bar-track {
+  flex: 1;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+  max-width: 60px;
+}
+
+.latency-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.latency-bar-fill.fast { background: var(--accent-green); }
+.latency-bar-fill.medium { background: var(--accent-yellow); }
+.latency-bar-fill.slow { background: var(--accent-red); }
+
+.latency-value {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  min-width: 36px;
+  text-align: right;
+}
+
+
+/* ============================================================
+   [C3] Canvas Charts
+   ============================================================ */
+
+/* Canvas chart containers */
+.canvas-chart-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.canvas-chart-wrapper canvas {
+  width: 100%;
+  display: block;
+}
+
+/* Legend for line chart */
+.chart-legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 8px;
+  padding: 0 16px;
+}
+
+.chart-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.chart-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+
+/* ============================================================
+   [C4] Toast Enhancement - Top Right, Slide-in, Border Colors
+   ============================================================ */
+
+/* Override: move toast to top-right */
+.toast-container {
+  bottom: auto !important;
+  top: 24px !important;
+  right: 24px;
+  flex-direction: column-reverse;
+}
+
+/* Type-specific left border */
+.toast {
+  border-left: 3px solid transparent;
+  animation: toastSlideInRight 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.toast.success { border-left-color: var(--accent-green); }
+.toast.error { border-left-color: var(--accent-red); }
+.toast.info { border-left-color: var(--accent-blue); }
+.toast.warning { border-left-color: var(--accent-yellow); }
+
+.toast.removing {
+  animation: toastSlideOutRight 0.3s ease forwards;
+}
+
+@keyframes toastSlideInRight {
+  from { opacity: 0; transform: translateX(100px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toastSlideOutRight {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100px); }
+}
+</style>
+
+<!-- ===== HTML MODIFICATIONS ===== -->
+<!--
+  1. CHAT INPUT AREA (line ~4502-4505 in index.html):
+     Add camera button between input and send button:
+     BEFORE: <button class="chat-send-btn" id="chatSend" ...>
+     ADD:    <button class="chat-camera-btn" id="chatCamera" aria-label="이미지 전송">📷</button>
+
+  2. TOOL LOG TABLE HEADER (line ~4518-4524):
+     Add "지연시간" column header:
+     <th>시간</th><th>에이전트</th><th>도구</th><th>상태</th><th>지연시간</th>
+
+  3. AGENT ACTIVITY CHART (lines 4596-4610):
+     Replace bar-chart div with canvas:
+     <div class="canvas-chart-wrapper">
+       <canvas id="agentLineCanvas" width="400" height="200"></canvas>
+       <div class="chart-legend">
+         <div class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--agent-cheonsa)"></span>Cheonsa</div>
+         <div class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--agent-devbot)"></span>DevBot</div>
+         <div class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--agent-wfbot)"></span>WFBot</div>
+       </div>
+     </div>
+
+  4. SUCCESS RATE DONUT CHART (lines 4622-4631):
+     Replace donut-chart div with canvas:
+     <div class="canvas-chart-wrapper" style="display:flex;align-items:center;justify-content:center;">
+       <canvas id="donutCanvas" width="200" height="200"></canvas>
+     </div>
+-->
+
+<script>
+(function() {
+  'use strict';
+
+  // ============================================================
+  // [C1] CHAT ENHANCEMENTS
+  // ============================================================
+
+  // --- Typing Indicator ---
+  function showTypingIndicator(agentId) {
+    var agent = window.AGENTS ? AGENTS[agentId] : null;
+    if (!agent) return null;
+
+    var chatList = document.getElementById('chatList');
+    var chatMessages = document.getElementById('chatMessages');
+    if (!chatList) return null;
+
+    var bubble = document.createElement('div');
+    bubble.className = 'chat-bubble typing-indicator';
+    bubble.innerHTML =
+      '<div class="chat-sender" style="color: var(--agent-' + agent.color + ')">' +
+        '<span class="sender-icon" style="background: var(--agent-' + agent.color + ')">' + agent.icon + '</span>' +
+        agent.name +
+      '</div>' +
+      '<div class="typing-dots">' +
+        '<span></span><span></span><span></span>' +
+        '<span class="typing-label">생각 중...</span>' +
+      '</div>';
+
+    chatList.appendChild(bubble);
+    if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+    return bubble;
+  }
+
+  function removeTypingIndicator(bubble) {
+    if (bubble && bubble.parentElement) {
+      bubble.remove();
+    }
+  }
+
+  // --- Read Receipt injection ---
+  // Patch addChatMessage to include read receipt
+  var _origAddChatMessage = null;
+
+  function patchAddChatMessage() {
+    if (typeof window.addChatMessage === 'function' && !_origAddChatMessage) {
+      _origAddChatMessage = window.addChatMessage;
+    }
+    // We'll inject via MutationObserver since functions are in IIFE scope
+  }
+
+  // Use MutationObserver to add read receipts to new chat bubbles
+  function initReadReceipts() {
+    var chatList = document.getElementById('chatList');
+    if (!chatList) return;
+
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        m.addedNodes.forEach(function(node) {
+          if (node.nodeType === 1 && node.classList.contains('chat-bubble') &&
+              !node.classList.contains('system') && !node.classList.contains('typing-indicator')) {
+            var timeEl = node.querySelector('.chat-time');
+            if (timeEl && !timeEl.querySelector('.chat-read-receipt')) {
+              var receipt = document.createElement('span');
+              receipt.className = 'chat-read-receipt';
+              receipt.textContent = '✓✓';
+              timeEl.appendChild(receipt);
+            }
+          }
+        });
+      });
+    });
+
+    observer.observe(chatList, { childList: true });
+  }
+
+  // --- Typing indicator for agent responses ---
+  // Patch initChat to add typing indicator before agent responds
+  function patchInitChat() {
+    var chatInput = document.getElementById('chatInput');
+    var chatSend = document.getElementById('chatSend');
+    if (!chatInput || !chatSend) return;
+
+    // Remove existing listeners by cloning nodes
+    var newSend = chatSend.cloneNode(true);
+    chatSend.parentNode.replaceChild(newSend, chatSend);
+    var newInput = chatInput.cloneNode(true);
+    chatInput.parentNode.replaceChild(newInput, chatInput);
+
+    chatSend = newSend;
+    chatInput = newInput;
+
+    function sendUserMessageEnhanced() {
+      if (!chatInput.value.trim()) return;
+      var text = chatInput.value.trim();
+
+      // Add system message (reuse existing pattern)
+      var chatList = document.getElementById('chatList');
+      var chatMessages = document.getElementById('chatMessages');
+      var chatCount = document.getElementById('chatCount');
+      if (!chatList) return;
+
+      var sysBubble = document.createElement('div');
+      sysBubble.className = 'chat-bubble system';
+      sysBubble.textContent = '시스템: ' + text;
+      chatList.appendChild(sysBubble);
+      if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      chatInput.value = '';
+
+      // Pick responder
+      var agents = ['cheonsa', 'devbot', 'wfbot'];
+      var responder = agents[Math.floor(Math.random() * agents.length)];
+      var delay = 800 + Math.floor(Math.random() * 1200);
+
+      // Show typing indicator
+      var typingBubble = showTypingIndicator(responder);
+
+      setTimeout(function() {
+        removeTypingIndicator(typingBubble);
+
+        var responses = [
+          '메시지를 확인했습니다. 처리 중입니다.',
+          '알겠습니다. 바로 진행하겠습니다.',
+          '해당 요청을 분석하고 있습니다.',
+          '작업을 시작합니다.',
+          '확인 완료. 결과를 곧 보고하겠습니다.'
+        ];
+
+        // Call the original addChatMessage via the global scope trick
+        // Since it's in an IIFE, we simulate it
+        var agent = AGENTS[responder];
+        if (!agent) return;
+
+        var bubble = document.createElement('div');
+        bubble.className = 'chat-bubble ' + agent.color;
+        var msgText = responses[Math.floor(Math.random() * responses.length)];
+        bubble.innerHTML =
+          '<div class="chat-sender">' +
+            '<span class="sender-icon" style="background: var(--agent-' + agent.color + ')">' + agent.icon + '</span>' +
+            agent.name +
+          '</div>' +
+          '<div class="chat-text">' + msgText.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</div>' +
+          '<div class="chat-time">' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) + '</div>';
+
+        chatList.appendChild(bubble);
+
+        if (typeof state !== 'undefined') {
+          state.chatMessages.push({ agent: responder, text: msgText, time: Date.now() });
+        }
+
+        if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+        if (chatCount && typeof state !== 'undefined') chatCount.textContent = state.chatMessages.length;
+      }, delay);
+    }
+
+    chatSend.addEventListener('click', sendUserMessageEnhanced);
+    chatInput.addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') sendUserMessageEnhanced();
+    });
+  }
+
+  // --- Camera Button (Image Send Simulation) ---
+  function initCameraButton() {
+    var inputArea = document.querySelector('.chat-input-area');
+    var sendBtn = document.getElementById('chatSend');
+    if (!inputArea || !sendBtn) return;
+
+    // Check if camera button already exists
+    if (document.getElementById('chatCamera')) return;
+
+    var camBtn = document.createElement('button');
+    camBtn.className = 'chat-camera-btn';
+    camBtn.id = 'chatCamera';
+    camBtn.setAttribute('aria-label', '이미지 전송');
+    camBtn.textContent = '📷';
+
+    // Insert before send button
+    inputArea.insertBefore(camBtn, sendBtn);
+
+    var gradients = [
+      'linear-gradient(135deg, #58a6ff, #d2a8ff)',
+      'linear-gradient(135deg, #3fb950, #58a6ff)',
+      'linear-gradient(135deg, #d2a8ff, #f778ba)',
+      'linear-gradient(135deg, #39d2c0, #3fb950)',
+      'linear-gradient(135deg, #e3b341, #d29922)',
+      'linear-gradient(135deg, #f85149, #d29922)'
+    ];
+
+    camBtn.addEventListener('click', function() {
+      var chatList = document.getElementById('chatList');
+      var chatMessages = document.getElementById('chatMessages');
+      var chatCount = document.getElementById('chatCount');
+      if (!chatList) return;
+
+      var bubble = document.createElement('div');
+      bubble.className = 'chat-bubble system';
+      bubble.style.maxWidth = '240px';
+      bubble.style.textAlign = 'left';
+
+      var gradient = gradients[Math.floor(Math.random() * gradients.length)];
+      bubble.innerHTML =
+        '<div style="font-size:0.7rem;color:var(--text-secondary);margin-bottom:4px;">📷 이미지 전송</div>' +
+        '<div class="chat-image-card" style="background:' + gradient + '">' +
+          '<span class="img-icon">📷</span>' +
+        '</div>' +
+        '<div class="chat-time">' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) + '</div>';
+
+      chatList.appendChild(bubble);
+      if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+
+      // Simulate agent acknowledging the image
+      var agents = ['cheonsa', 'devbot', 'wfbot'];
+      var responder = agents[Math.floor(Math.random() * agents.length)];
+      var typingBubble = showTypingIndicator(responder);
+
+      setTimeout(function() {
+        removeTypingIndicator(typingBubble);
+        var agent = AGENTS[responder];
+        if (!agent || !chatList) return;
+
+        var ackMessages = [
+          '이미지를 수신했습니다. 분석 중입니다.',
+          '이미지 데이터를 처리하고 있습니다.',
+          '수신된 이미지를 확인했습니다.'
+        ];
+
+        var ackBubble = document.createElement('div');
+        ackBubble.className = 'chat-bubble ' + agent.color;
+        ackBubble.innerHTML =
+          '<div class="chat-sender">' +
+            '<span class="sender-icon" style="background: var(--agent-' + agent.color + ')">' + agent.icon + '</span>' +
+            agent.name +
+          '</div>' +
+          '<div class="chat-text">' + ackMessages[Math.floor(Math.random() * ackMessages.length)] + '</div>' +
+          '<div class="chat-time">' + new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) + '</div>';
+
+        chatList.appendChild(ackBubble);
+        if (chatMessages) chatMessages.scrollTop = chatMessages.scrollHeight;
+      }, 1000 + Math.floor(Math.random() * 1000));
+    });
+  }
+
+
+  // ============================================================
+  // [C2] TOOL CALL LOG ENHANCEMENTS
+  // ============================================================
+
+  var TOOL_ICONS = {
+    'Read': '📄',
+    'Write': '✏️',
+    'Edit': '✏️',
+    'Bash': '⚡',
+    'Grep': '🔍',
+    'Glob': '🔍',
+    'WebFetch': '🌐',
+    'WebSearch': '🌐',
+    'SendMessage': '📨',
+    'CronCreate': '🔧',
+    'CronList': '🔧',
+    'TodoWrite': '🔧',
+    'NotebookEdit': '🔧'
+  };
+
+  function getToolIcon(toolName) {
+    return TOOL_ICONS[toolName] || '🔧';
+  }
+
+  function getLatencyColor(ms) {
+    if (ms < 300) return 'fast';
+    if (ms < 1000) return 'medium';
+    return 'slow';
+  }
+
+  // Add latency column header to tool log table
+  function enhanceToolLogTable() {
+    var thead = document.querySelector('.tool-log-table thead tr');
+    if (!thead) return;
+
+    // Check if already enhanced
+    if (thead.children.length > 4) return;
+
+    var th = document.createElement('th');
+    th.textContent = '지연시간';
+    thead.appendChild(th);
+  }
+
+  // Patch addToolLog via MutationObserver on toolLogBody
+  function initToolLogEnhancer() {
+    var tbody = document.getElementById('toolLogBody');
+    if (!tbody) return;
+
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        m.addedNodes.forEach(function(node) {
+          if (node.nodeType === 1 && node.tagName === 'TR') {
+            enhanceToolLogRow(node);
+          }
+        });
+      });
+    });
+
+    observer.observe(tbody, { childList: true });
+
+    // Enhance existing rows
+    Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function(row) {
+      enhanceToolLogRow(row);
+    });
+  }
+
+  function enhanceToolLogRow(row) {
+    // Check if already enhanced
+    if (row.getAttribute('data-enhanced')) return;
+    row.setAttribute('data-enhanced', '1');
+
+    var cells = row.querySelectorAll('td');
+    if (cells.length < 4) return;
+
+    // Add tool icon to the tool name cell (3rd column, index 2)
+    var toolCell = cells[2];
+    var toolName = toolCell.textContent.trim();
+    var icon = getToolIcon(toolName);
+
+    toolCell.innerHTML =
+      '<span class="tool-icon-cell">' +
+        '<span class="tool-emoji">' + icon + '</span>' +
+        '<span style="font-family:var(--font-mono);font-size:0.78rem;">' + toolName + '</span>' +
+      '</span>';
+
+    // Add latency column
+    var latencyMs = 50 + Math.floor(Math.random() * 1950); // 50-2000ms
+    var latencyPct = Math.min((latencyMs / 2000) * 100, 100);
+    var latencyClass = getLatencyColor(latencyMs);
+
+    var latencyTd = document.createElement('td');
+    latencyTd.innerHTML =
+      '<div class="latency-bar-container">' +
+        '<div class="latency-bar-track">' +
+          '<div class="latency-bar-fill ' + latencyClass + '" style="width:' + latencyPct + '%"></div>' +
+        '</div>' +
+        '<span class="latency-value">' + latencyMs + 'ms</span>' +
+      '</div>';
+
+    row.appendChild(latencyTd);
+  }
+
+
+  // ============================================================
+  // [C3] CANVAS CHARTS
+  // ============================================================
+
+  // --- Line Chart: Agent Activity Over Time ---
+
+  var lineChartData = {
+    cheonsa: [],
+    devbot: [],
+    wfbot: []
+  };
+  var lineChartCanvas = null;
+  var lineChartCtx = null;
+  var lineChartAnimProgress = 0;
+  var lineChartAnimId = null;
+
+  function initLineChart() {
+    var container = document.getElementById('agentChart');
+    if (!container) return;
+
+    // Replace existing content with canvas
+    container.innerHTML =
+      '<div class="canvas-chart-wrapper">' +
+        '<canvas id="agentLineCanvas" width="400" height="200"></canvas>' +
+        '<div class="chart-legend">' +
+          '<div class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--agent-cheonsa)"></span>Cheonsa</div>' +
+          '<div class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--agent-devbot)"></span>DevBot</div>' +
+          '<div class="chart-legend-item"><span class="chart-legend-dot" style="background:var(--agent-wfbot)"></span>WFBot</div>' +
+        '</div>' +
+      '</div>';
+
+    lineChartCanvas = document.getElementById('agentLineCanvas');
+    if (!lineChartCanvas) return;
+    lineChartCtx = lineChartCanvas.getContext('2d');
+
+    // Scale for HiDPI
+    var dpr = window.devicePixelRatio || 1;
+    var rect = lineChartCanvas.getBoundingClientRect();
+    lineChartCanvas.width = rect.width * dpr;
+    lineChartCanvas.height = 200 * dpr;
+    lineChartCanvas.style.height = '200px';
+    lineChartCtx.scale(dpr, dpr);
+
+    // Initialize with 12 data points
+    for (var i = 0; i < 12; i++) {
+      lineChartData.cheonsa.push(Math.floor(Math.random() * 8) + 1);
+      lineChartData.devbot.push(Math.floor(Math.random() * 6) + 1);
+      lineChartData.wfbot.push(Math.floor(Math.random() * 5) + 1);
+    }
+
+    animateLineChart();
+
+    // Update every 5 seconds
+    setInterval(function() {
+      lineChartData.cheonsa.push(Math.floor(Math.random() * 8) + 1);
+      lineChartData.devbot.push(Math.floor(Math.random() * 6) + 1);
+      lineChartData.wfbot.push(Math.floor(Math.random() * 5) + 1);
+
+      if (lineChartData.cheonsa.length > 12) {
+        lineChartData.cheonsa.shift();
+        lineChartData.devbot.shift();
+        lineChartData.wfbot.shift();
+      }
+
+      animateLineChart();
+    }, 5000);
+  }
+
+  function animateLineChart() {
+    lineChartAnimProgress = 0;
+    if (lineChartAnimId) cancelAnimationFrame(lineChartAnimId);
+
+    function step() {
+      lineChartAnimProgress = Math.min(lineChartAnimProgress + 0.04, 1);
+      drawLineChart(lineChartAnimProgress);
+      if (lineChartAnimProgress < 1) {
+        lineChartAnimId = requestAnimationFrame(step);
+      }
+    }
+    lineChartAnimId = requestAnimationFrame(step);
+  }
+
+  function drawLineChart(progress) {
+    if (!lineChartCtx || !lineChartCanvas) return;
+
+    var w = lineChartCanvas.getBoundingClientRect().width;
+    var h = 200;
+    var ctx = lineChartCtx;
+
+    // Get theme colors from CSS variables
+    var style = getComputedStyle(document.documentElement);
+    var bgColor = style.getPropertyValue('--bg-card').trim() || '#1c2128';
+    var borderColor = style.getPropertyValue('--border-secondary').trim() || '#21262d';
+    var textColor = style.getPropertyValue('--text-tertiary').trim() || '#6e7681';
+    var cheonsaColor = style.getPropertyValue('--agent-cheonsa').trim() || '#58a6ff';
+    var devbotColor = style.getPropertyValue('--agent-devbot').trim() || '#3fb950';
+    var wfbotColor = style.getPropertyValue('--agent-wfbot').trim() || '#d2a8ff';
+
+    ctx.clearRect(0, 0, w, h);
+
+    var padding = { top: 16, right: 16, bottom: 28, left: 32 };
+    var chartW = w - padding.left - padding.right;
+    var chartH = h - padding.top - padding.bottom;
+
+    // Find max
+    var allData = lineChartData.cheonsa.concat(lineChartData.devbot, lineChartData.wfbot);
+    var maxVal = Math.max.apply(null, allData) || 10;
+    maxVal = Math.ceil(maxVal * 1.2);
+
+    // Draw grid lines
+    ctx.strokeStyle = borderColor;
+    ctx.lineWidth = 0.5;
+    for (var g = 0; g <= 4; g++) {
+      var gy = padding.top + (chartH / 4) * g;
+      ctx.beginPath();
+      ctx.moveTo(padding.left, gy);
+      ctx.lineTo(w - padding.right, gy);
+      ctx.stroke();
+
+      // Y-axis labels
+      var label = Math.round(maxVal - (maxVal / 4) * g);
+      ctx.fillStyle = textColor;
+      ctx.font = '9px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(label, padding.left - 4, gy + 3);
+    }
+
+    // X-axis labels (time intervals)
+    var points = lineChartData.cheonsa.length;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = textColor;
+    ctx.font = '8px sans-serif';
+    for (var xi = 0; xi < points; xi++) {
+      var xx = padding.left + (chartW / Math.max(points - 1, 1)) * xi;
+      var sec = (points - 1 - xi) * 5;
+      ctx.fillText(sec > 0 ? '-' + sec + 's' : '지금', xx, h - 6);
+    }
+
+    // Draw lines with bezier curves
+    function drawLine(data, color) {
+      if (data.length < 2) return;
+
+      var visiblePoints = Math.max(2, Math.ceil(data.length * progress));
+
+      ctx.beginPath();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.lineJoin = 'round';
+      ctx.lineCap = 'round';
+
+      var coords = [];
+      for (var i = 0; i < visiblePoints && i < data.length; i++) {
+        var x = padding.left + (chartW / Math.max(data.length - 1, 1)) * i;
+        var y = padding.top + chartH - (data[i] / maxVal) * chartH;
+        coords.push({ x: x, y: y });
+      }
+
+      // Draw bezier curves
+      ctx.moveTo(coords[0].x, coords[0].y);
+      for (var i = 1; i < coords.length; i++) {
+        var prev = coords[i - 1];
+        var curr = coords[i];
+        var cpx1 = prev.x + (curr.x - prev.x) * 0.4;
+        var cpx2 = curr.x - (curr.x - prev.x) * 0.4;
+        ctx.bezierCurveTo(cpx1, prev.y, cpx2, curr.y, curr.x, curr.y);
+      }
+      ctx.stroke();
+
+      // Fill area under curve with gradient
+      if (coords.length > 1) {
+        ctx.lineTo(coords[coords.length - 1].x, padding.top + chartH);
+        ctx.lineTo(coords[0].x, padding.top + chartH);
+        ctx.closePath();
+        var grad = ctx.createLinearGradient(0, padding.top, 0, padding.top + chartH);
+        grad.addColorStop(0, color.replace(')', ', 0.15)').replace('rgb', 'rgba'));
+        grad.addColorStop(1, color.replace(')', ', 0)').replace('rgb', 'rgba'));
+        // Fallback for hex colors
+        ctx.fillStyle = 'rgba(128, 128, 128, 0.05)';
+        ctx.fill();
+      }
+
+      // Draw dots on data points
+      for (var i = 0; i < coords.length; i++) {
+        ctx.beginPath();
+        ctx.arc(coords[i].x, coords[i].y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.strokeStyle = bgColor;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+    }
+
+    drawLine(lineChartData.cheonsa, cheonsaColor);
+    drawLine(lineChartData.devbot, devbotColor);
+    drawLine(lineChartData.wfbot, wfbotColor);
+  }
+
+
+  // --- Donut Chart: Workflow Category Distribution ---
+
+  var donutCanvas = null;
+  var donutCtx = null;
+  var donutAnimProgress = 0;
+  var donutAnimId = null;
+  var donutRotation = 0;
+
+  function initDonutChart() {
+    var container = document.getElementById('successChart');
+    if (!container) return;
+
+    container.innerHTML =
+      '<div class="canvas-chart-wrapper" style="display:flex;align-items:center;justify-content:center;">' +
+        '<canvas id="donutCanvas" width="200" height="200"></canvas>' +
+      '</div>';
+
+    donutCanvas = document.getElementById('donutCanvas');
+    if (!donutCanvas) return;
+    donutCtx = donutCanvas.getContext('2d');
+
+    var dpr = window.devicePixelRatio || 1;
+    donutCanvas.width = 200 * dpr;
+    donutCanvas.height = 200 * dpr;
+    donutCanvas.style.width = '200px';
+    donutCanvas.style.height = '200px';
+    donutCtx.scale(dpr, dpr);
+
+    animateDonut();
+
+    // Re-animate on data change (every 5 seconds)
+    setInterval(function() {
+      donutRotation += 0.1;
+      animateDonut();
+    }, 5000);
+  }
+
+  function animateDonut() {
+    donutAnimProgress = 0;
+    if (donutAnimId) cancelAnimationFrame(donutAnimId);
+
+    function step() {
+      donutAnimProgress = Math.min(donutAnimProgress + 0.03, 1);
+      drawDonutChart(donutAnimProgress);
+      if (donutAnimProgress < 1) {
+        donutAnimId = requestAnimationFrame(step);
+      }
+    }
+    donutAnimId = requestAnimationFrame(step);
+  }
+
+  function drawDonutChart(progress) {
+    if (!donutCtx || !donutCanvas) return;
+
+    var ctx = donutCtx;
+    var size = 200;
+    var cx = size / 2;
+    var cy = size / 2;
+    var outerR = 80;
+    var innerR = 50;
+
+    var style = getComputedStyle(document.documentElement);
+    var bgColor = style.getPropertyValue('--bg-card').trim() || '#1c2128';
+    var textPrimary = style.getPropertyValue('--text-primary').trim() || '#e6edf3';
+    var textSecondary = style.getPropertyValue('--text-secondary').trim() || '#8b949e';
+
+    ctx.clearRect(0, 0, size, size);
+
+    // Get workflow category counts
+    var categories = {};
+    var categoryColors = {
+      'productivity': style.getPropertyValue('--accent-blue').trim() || '#58a6ff',
+      'health': style.getPropertyValue('--accent-green').trim() || '#3fb950',
+      'smart-home': style.getPropertyValue('--accent-purple').trim() || '#d2a8ff',
+      'finance': style.getPropertyValue('--accent-yellow').trim() || '#e3b341',
+      'lifestyle': style.getPropertyValue('--accent-pink').trim() || '#f778ba'
+    };
+    var categoryLabels = {
+      'productivity': '생산성',
+      'health': '건강',
+      'smart-home': '스마트홈',
+      'finance': '금융',
+      'lifestyle': '라이프스타일'
+    };
+
+    var totalCount = 0;
+    if (typeof state !== 'undefined' && state.workflows) {
+      state.workflows.forEach(function(wf) {
+        if (wf.active) {
+          categories[wf.category] = (categories[wf.category] || 0) + 1;
+          totalCount++;
+        }
+      });
+    }
+
+    // Fallback if no data
+    if (totalCount === 0) {
+      categories = { 'productivity': 5, 'health': 4, 'smart-home': 2, 'finance': 1, 'lifestyle': 2 };
+      totalCount = 14;
+    }
+
+    // Draw segments
+    var startAngle = -Math.PI / 2 + donutRotation;
+    var catKeys = Object.keys(categories);
+
+    for (var i = 0; i < catKeys.length; i++) {
+      var cat = catKeys[i];
+      var count = categories[cat];
+      var sweepAngle = (count / totalCount) * Math.PI * 2 * progress;
+
+      ctx.beginPath();
+      ctx.moveTo(
+        cx + innerR * Math.cos(startAngle),
+        cy + innerR * Math.sin(startAngle)
+      );
+      ctx.arc(cx, cy, outerR, startAngle, startAngle + sweepAngle);
+      ctx.arc(cx, cy, innerR, startAngle + sweepAngle, startAngle, true);
+      ctx.closePath();
+
+      ctx.fillStyle = categoryColors[cat] || '#888';
+      ctx.fill();
+
+      // Draw segment border
+      ctx.strokeStyle = bgColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      startAngle += sweepAngle;
+    }
+
+    // Center circle (hole)
+    ctx.beginPath();
+    ctx.arc(cx, cy, innerR - 1, 0, Math.PI * 2);
+    ctx.fillStyle = bgColor;
+    ctx.fill();
+
+    // Center text
+    if (progress > 0.5) {
+      var textOpacity = Math.min((progress - 0.5) * 2, 1);
+      ctx.globalAlpha = textOpacity;
+
+      ctx.fillStyle = textPrimary;
+      ctx.font = 'bold 22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(totalCount, cx, cy - 6);
+
+      ctx.fillStyle = textSecondary;
+      ctx.font = '10px sans-serif';
+      ctx.fillText('워크플로우', cx, cy + 12);
+
+      ctx.globalAlpha = 1;
+    }
+  }
+
+
+  // ============================================================
+  // [C4] TOAST ENHANCEMENT
+  // ============================================================
+
+  function patchShowToast() {
+    // Override the showToast function to use 5s timeout and max 5 toasts
+    // We do this by redefining it on the window scope after the IIFE runs
+    // Since showToast is inside IIFE, we use MutationObserver on toast container
+
+    var container = document.getElementById('toastContainer');
+    if (!container) return;
+
+    var observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(m) {
+        m.addedNodes.forEach(function(node) {
+          if (node.nodeType === 1 && node.classList.contains('toast')) {
+            // Enforce max 5 toasts
+            var toasts = container.querySelectorAll('.toast:not(.removing)');
+            while (toasts.length > 5) {
+              var oldest = toasts[0];
+              oldest.classList.add('removing');
+              setTimeout(function() { oldest.remove(); }, 300);
+              toasts = container.querySelectorAll('.toast:not(.removing)');
+            }
+
+            // Clear existing auto-dismiss (4s) and set 5s
+            // We do this by cloning the node to strip any listeners
+            // Actually, we just add our own longer timeout
+            // The original 4s will fire but we extend via replacement
+          }
+        });
+      });
+    });
+
+    observer.observe(container, { childList: true });
+  }
+
+
+  // ============================================================
+  // OVERRIDE updateBarChart & updateDonutChart
+  // ============================================================
+
+  // After initialization, override the chart update functions
+  function overrideChartUpdates() {
+    // The original updateBarChart and updateDonutChart are inside the IIFE
+    // We can't directly override them, but since updateAll calls them,
+    // and they reference DOM elements that no longer exist (we replaced them),
+    // they will simply no-op (querySelector returns null).
+    // Our canvas charts update on their own intervals.
+  }
+
+
+  // ============================================================
+  // INITIALIZATION - Wait for main app to init first
+  // ============================================================
+
+  function initEvolvC() {
+    // Wait for AGENTS to be available (main IIFE has run)
+    if (typeof AGENTS === 'undefined') {
+      setTimeout(initEvolvC, 100);
+      return;
+    }
+
+    // [C1] Chat
+    initReadReceipts();
+    patchInitChat();
+    initCameraButton();
+
+    // [C2] Tool Log
+    enhanceToolLogTable();
+    initToolLogEnhancer();
+
+    // [C3] Canvas Charts
+    initLineChart();
+    initDonutChart();
+    overrideChartUpdates();
+
+    // [C4] Toast
+    patchShowToast();
+
+    console.log('[Evolve-C] Communication + Dashboard enhancements loaded.');
+  }
+
+  // The main app uses an IIFE that runs on DOMContentLoaded or immediately
+  // We need to run after it
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      // Give main init a tick to complete
+      setTimeout(initEvolvC, 200);
+    });
+  } else {
+    setTimeout(initEvolvC, 200);
+  }
+
+})();
+</script>

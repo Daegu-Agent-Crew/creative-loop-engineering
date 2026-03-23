@@ -1,0 +1,1989 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Context Visualizer</title>
+<style>
+:root {
+  --bg: #0d1117;
+  --bg2: #161b22;
+  --bg3: #21262d;
+  --border: #30363d;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --accent: #58a6ff;
+  --accent2: #1f6feb;
+  --green: #3fb950;
+  --yellow: #d29922;
+  --red: #f85149;
+  --orange: #db6d28;
+  --purple: #bc8cff;
+  --pink: #f778ba;
+  --cyan: #39d2c0;
+  --layer-system: #58a6ff;
+  --layer-bootstrap: #3fb950;
+  --layer-tools: #bc8cff;
+  --layer-skills: #d29922;
+  --layer-session: #f778ba;
+  --layer-results: #39d2c0;
+}
+.light {
+  --bg: #ffffff;
+  --bg2: #f6f8fa;
+  --bg3: #e1e4e8;
+  --border: #d0d7de;
+  --text: #1f2328;
+  --text2: #656d76;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+  background: var(--bg);
+  color: var(--text);
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+/* Header */
+.header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.logo {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--accent);
+}
+.logo-sub {
+  font-size: 12px;
+  color: var(--text2);
+}
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 12px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:hover { border-color: var(--accent); color: var(--accent); }
+.btn.active { background: var(--accent2); border-color: var(--accent); color: #fff; }
+.btn-primary { background: var(--accent2); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent); }
+select.btn { appearance: none; padding-right: 24px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b949e' d='M2 4l4 4 4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; }
+
+/* Main layout */
+.main {
+  display: flex;
+  height: calc(100vh - 53px - 100px);
+  overflow: hidden;
+}
+/* Left panel - Stack */
+.panel-left {
+  width: 320px;
+  min-width: 280px;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.panel-left-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+/* Layer cards */
+.layer-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  overflow: hidden;
+  animation: slideDown 0.4s ease;
+}
+.layer-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  border-radius: 8px 0 0 8px;
+}
+.layer-card[data-type="system"]::before { background: var(--layer-system); }
+.layer-card[data-type="bootstrap"]::before { background: var(--layer-bootstrap); }
+.layer-card[data-type="tools"]::before { background: var(--layer-tools); }
+.layer-card[data-type="skills"]::before { background: var(--layer-skills); }
+.layer-card[data-type="session"]::before { background: var(--layer-session); }
+.layer-card[data-type="results"]::before { background: var(--layer-results); }
+.layer-card:hover { border-color: var(--accent); transform: translateX(4px); }
+.layer-card.selected { border-color: var(--accent); background: rgba(88,166,255,0.08); }
+.layer-card.compacting {
+  animation: compactShrink 0.8s ease forwards;
+}
+.layer-card.expanding {
+  animation: expandIn 0.5s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes slideRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes compactShrink {
+  0% { opacity: 1; max-height: 100px; padding: 12px; margin-bottom: 8px; }
+  100% { opacity: 0; max-height: 0; padding: 0; margin-bottom: 0; border-width: 0; overflow: hidden; }
+}
+@keyframes expandIn {
+  from { opacity: 0; transform: scaleY(0.5); }
+  to { opacity: 1; transform: scaleY(1); }
+}
+@keyframes pulseYellow {
+  0%,100% { box-shadow: 0 0 0 0 rgba(210,153,34,0); }
+  50% { box-shadow: 0 0 12px 4px rgba(210,153,34,0.4); }
+}
+@keyframes pulseRed {
+  0%,100% { box-shadow: 0 0 0 0 rgba(248,81,73,0); }
+  50% { box-shadow: 0 0 16px 6px rgba(248,81,73,0.5); }
+}
+.layer-name {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.layer-meta {
+  font-size: 11px;
+  color: var(--text2);
+  display: flex;
+  justify-content: space-between;
+}
+.layer-tokens {
+  font-weight: 600;
+  color: var(--accent);
+}
+.layer-bar {
+  height: 3px;
+  background: var(--bg3);
+  border-radius: 2px;
+  margin-top: 6px;
+  overflow: hidden;
+}
+.layer-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.6s ease;
+}
+/* Sub-items */
+.layer-subitems {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.layer-subitem {
+  font-size: 11px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+  cursor: pointer;
+}
+.layer-subitem:hover { color: var(--accent); }
+.status-ok { color: var(--green); }
+.status-warn { color: var(--orange); }
+.status-err { color: var(--red); }
+
+/* Agent Loop Diagram */
+.agent-loop {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  margin-top: 8px;
+}
+.agent-loop-title {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.loop-diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.loop-node {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg3);
+  transition: all 0.3s;
+}
+.loop-node.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(88,166,255,0.4);
+  color: var(--accent);
+}
+.loop-arrow {
+  color: var(--text2);
+  font-size: 16px;
+}
+
+/* Right panel - Detail */
+.panel-right {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.detail-header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+.detail-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+.detail-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--bg3);
+  color: var(--text2);
+}
+.detail-content {
+  flex: 1;
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+/* Code block styling */
+.code-block {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-x: auto;
+}
+.code-block .comment { color: #6a737d; }
+.code-block .keyword { color: #ff7b72; }
+.code-block .string { color: #a5d6ff; }
+.code-block .variable { color: #58a6ff; }
+.code-block .directive { color: #e6edf3; font-weight: 600; }
+.code-block .heading { color: #d2a8ff; font-weight: 700; }
+.code-block .value { color: #7ee787; }
+.code-block .key { color: #79c0ff; }
+.code-block .bracket { color: #8b949e; }
+.code-block .tool-call { color: #f0883e; font-weight: 600; }
+.code-block .thinking { color: #8b949e; font-style: italic; }
+.code-block .user-msg { color: #58a6ff; }
+.code-block .asst-msg { color: #7ee787; }
+.code-block .result-msg { color: #d2a8ff; }
+
+/* Bootstrap tree */
+.file-tree {
+  font-size: 12px;
+  line-height: 2;
+}
+.file-tree-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.file-tree-item:hover { background: var(--bg3); }
+.file-size { color: var(--text2); margin-left: auto; font-size: 11px; }
+
+/* Memory panel */
+.memory-panel {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 12px;
+}
+.memory-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--yellow);
+  margin-bottom: 8px;
+}
+.memory-item {
+  font-size: 11px;
+  padding: 4px 0;
+  color: var(--text2);
+  border-bottom: 1px solid var(--border);
+}
+.memory-item:last-child { border-bottom: none; }
+
+/* Search results */
+.search-result {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+.search-score {
+  font-size: 11px;
+  color: var(--accent);
+  float: right;
+}
+.search-path {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 4px;
+}
+.search-text {
+  font-size: 12px;
+}
+
+/* Bottom bar */
+.bottom-bar {
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: 10px 20px;
+  height: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.context-gauge {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.context-label {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.gauge-track {
+  flex: 1;
+  height: 16px;
+  background: var(--bg3);
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+}
+.gauge-fill {
+  height: 100%;
+  border-radius: 8px;
+  transition: width 0.6s ease, background 0.3s;
+  background: var(--accent);
+}
+.gauge-fill.warn { background: var(--yellow); }
+.gauge-fill.danger { background: var(--red); animation: pulseRed 1s infinite; }
+.context-pct {
+  font-size: 14px;
+  font-weight: 700;
+  min-width: 50px;
+  text-align: right;
+}
+/* Composition bars */
+.comp-bars {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.comp-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--text2);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+.comp-item:hover { background: var(--bg3); }
+.comp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.comp-bar-track {
+  flex: 1;
+  height: 6px;
+  background: var(--bg3);
+  border-radius: 3px;
+  overflow: hidden;
+  display: flex;
+}
+.comp-bar-seg {
+  height: 100%;
+  transition: width 0.6s ease;
+}
+/* Timeline */
+.timeline {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 20px;
+  margin-top: 2px;
+}
+.timeline-bar {
+  height: 100%;
+  min-width: 3px;
+  border-radius: 2px;
+  transition: all 0.3s;
+  position: relative;
+}
+.timeline-bar:hover::after {
+  content: attr(data-label);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  white-space: nowrap;
+  z-index: 10;
+}
+/* Warning */
+.context-warning {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  text-align: center;
+  display: none;
+}
+.context-warning.show { display: block; }
+.context-warning.warn { background: rgba(210,153,34,0.15); color: var(--yellow); }
+.context-warning.danger { background: rgba(248,81,73,0.15); color: var(--red); }
+
+/* Simulation controls */
+.sim-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 0;
+}
+.sim-step-label {
+  font-size: 11px;
+  color: var(--text2);
+  flex: 1;
+  text-align: center;
+}
+.step-dots {
+  display: flex;
+  gap: 4px;
+}
+.step-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  transition: all 0.3s;
+}
+.step-dot.done { background: var(--green); border-color: var(--green); }
+.step-dot.current { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+/* Compaction overlay */
+.compaction-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 100;
+  justify-content: center;
+  align-items: center;
+}
+.compaction-overlay.show { display: flex; }
+.compaction-box {
+  background: var(--bg2);
+  border: 2px solid var(--red);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.compaction-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--red);
+  margin-bottom: 12px;
+  text-align: center;
+}
+.compaction-before, .compaction-after {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px;
+  margin: 8px 0;
+  font-size: 12px;
+  line-height: 1.8;
+}
+.compaction-arrow {
+  text-align: center;
+  font-size: 24px;
+  color: var(--yellow);
+  margin: 8px 0;
+}
+.compaction-before .line {
+  transition: all 0.5s;
+}
+.compaction-before .line.shrinking {
+  opacity: 0;
+  max-height: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.summary-line {
+  color: var(--yellow);
+  font-weight: 600;
+  padding: 4px 8px;
+  background: rgba(210,153,34,0.1);
+  border-radius: 4px;
+}
+/* Settings modal */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  justify-content: center;
+  align-items: center;
+}
+.modal.show { display: flex; }
+.modal-content {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  min-width: 320px;
+  max-width: 90%;
+}
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-label { font-size: 13px; }
+.setting-control { display: flex; gap: 4px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 53px - 100px);
+  }
+  .panel-left {
+    width: 100%;
+    min-width: 0;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    max-height: 40vh;
+    overflow-y: auto;
+  }
+  .panel-right {
+    min-height: 50vh;
+  }
+  .header { padding: 8px 12px; }
+  .logo { font-size: 14px; }
+  .bottom-bar { height: auto; padding: 8px 12px; }
+}
+@media (max-width: 480px) {
+  .panel-left { max-height: 35vh; padding: 8px; }
+  .layer-card { padding: 8px; }
+  .detail-content { padding: 8px; }
+  .comp-bars { font-size: 9px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-left">
+    <div>
+      <div class="logo">OpenClaw Context Visualizer</div>
+      <div class="logo-sub">AI의 프롬프트를 들여다보세요</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="sim-controls">
+      <button class="btn" id="btnPrev" onclick="simPrev()" disabled>&lt;</button>
+      <button class="btn btn-primary" id="btnPlay" onclick="simToggle()">&#9654; 시뮬레이션</button>
+      <button class="btn" id="btnNext" onclick="simNext()" disabled>&gt;</button>
+      <div class="step-dots" id="stepDots"></div>
+    </div>
+    <select class="btn" id="scenarioSelect" onchange="changeScenario(this.value)">
+      <option value="0">시나리오 1: 날씨 (간단)</option>
+      <option value="1">시나리오 2: 이미지 분석</option>
+      <option value="2">시나리오 3: 게임 (Compaction)</option>
+    </select>
+    <button class="btn" onclick="exportCSV()">CSV</button>
+    <button class="btn" id="btnSettings" onclick="toggleSettings()">설정</button>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <!-- Left: Context Stack -->
+  <div class="panel-left" id="panelLeft">
+    <div class="panel-left-title">Context Stack</div>
+    <div id="stackContainer"></div>
+    <!-- Agent Loop Diagram -->
+    <div class="agent-loop" id="agentLoop">
+      <div class="agent-loop-title">Agent Loop</div>
+      <div class="loop-diagram">
+        <div class="loop-node" id="loopLLM">LLM</div>
+        <div class="loop-arrow" id="loopArrow1">&#8594;</div>
+        <div class="loop-node" id="loopTool">Tool</div>
+        <div class="loop-arrow" id="loopArrow2">&#8594;</div>
+        <div class="loop-node" id="loopReply">Reply</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Detail Panel -->
+  <div class="panel-right">
+    <div class="detail-header">
+      <div class="detail-title" id="detailTitle">레이어를 선택하세요</div>
+      <div class="detail-badge" id="detailBadge"></div>
+    </div>
+    <div class="detail-content" id="detailContent">
+      <div style="color:var(--text2);text-align:center;margin-top:60px;">
+        <div style="font-size:48px;margin-bottom:12px;">&#128269;</div>
+        <div>좌측 스택에서 레이어를 클릭하면<br>실제 내용이 여기에 표시됩니다</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Bar -->
+<div class="bottom-bar">
+  <div class="context-gauge">
+    <span class="context-label" id="ctxLabel">Context Window: 0 / 32,000</span>
+    <div class="gauge-track">
+      <div class="gauge-fill" id="gaugeFill" style="width:0%"></div>
+    </div>
+    <span class="context-pct" id="ctxPct">0%</span>
+  </div>
+  <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+    <div class="comp-bar-track" id="compBarTrack"></div>
+    <div class="comp-bars" id="compBars"></div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:10px;color:var(--text2);white-space:nowrap;">타임라인:</span>
+    <div class="timeline" id="timeline"></div>
+    <div class="context-warning" id="ctxWarning"></div>
+    <span class="sim-step-label" id="simStepLabel"></span>
+  </div>
+</div>
+
+<!-- Compaction Overlay -->
+<div class="compaction-overlay" id="compactionOverlay">
+  <div class="compaction-box">
+    <div class="compaction-title">&#128308; Context Window 한계 도달! Auto-Compaction</div>
+    <div style="font-size:12px;color:var(--text2);text-align:center;margin-bottom:12px;">오래된 대화가 요약으로 압축됩니다</div>
+    <div class="compaction-before" id="compBefore"></div>
+    <div class="compaction-arrow" id="compArrowAnim">&#11015;&#65039; 압축!</div>
+    <div class="compaction-after" id="compAfter" style="display:none"></div>
+    <div class="memory-panel" id="memoryFlush" style="display:none">
+      <div class="memory-title">Memory Flush (Compaction 전)</div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">"Session nearing compaction. Store durable memories now."</div>
+      <div class="memory-item">memory/2026-03-18.md: 고스톱 v7 완료 (2,958줄)</div>
+      <div class="memory-item">memory/2026-03-18.md: Visualizer v4 완료 (3,196줄)</div>
+      <div class="memory-item">memory/2026-03-18.md: 랄프톤 Phase Split 전략 성공</div>
+      <div class="memory-item" style="margin-top:8px;color:var(--yellow);">MEMORY.md: 랄프톤 핵심 교훈 5가지 업데이트</div>
+    </div>
+    <div style="text-align:center;margin-top:16px;">
+      <button class="btn btn-primary" onclick="closeCompaction()">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- Vector Search Overlay -->
+<div class="modal" id="searchOverlay">
+  <div class="modal-content" style="max-width:500px;">
+    <div class="modal-title">&#128270; memory_search("고스톱")</div>
+    <div style="font-size:11px;color:var(--text2);margin-bottom:12px;">BM25 + Vector Hybrid 검색 결과</div>
+    <div class="search-result">
+      <span class="search-score">score: 0.89</span>
+      <div class="search-path">memory/2026-03-17.md#45</div>
+      <div class="search-text">"맞고 고스톱 v7 최종 완성판: v4 기반..."</div>
+    </div>
+    <div class="search-result">
+      <span class="search-score">score: 0.72</span>
+      <div class="search-path">memory/2026-03-18.md#12</div>
+      <div class="search-text">"고스톱 v7: 91KB, 2,958줄, Claude 실행..."</div>
+    </div>
+    <div class="search-result">
+      <span class="search-score">score: 0.65</span>
+      <div class="search-path">MEMORY.md#34</div>
+      <div class="search-text">"랄프톤 성공: v4(2,637줄) 기반으로 v7(2,958줄)"</div>
+    </div>
+    <div style="text-align:center;margin-top:12px;">
+      <button class="btn" onclick="document.getElementById('searchOverlay').classList.remove('show')">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal" id="settingsModal">
+  <div class="modal-content">
+    <div class="modal-title">설정</div>
+    <div class="setting-row">
+      <span class="setting-label">시뮬레이션 속도</span>
+      <div class="setting-control">
+        <button class="btn" onclick="setSpeed(0.5)" id="sp05">0.5x</button>
+        <button class="btn active" onclick="setSpeed(1)" id="sp1">1x</button>
+        <button class="btn" onclick="setSpeed(2)" id="sp2">2x</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">모델</span>
+      <div class="setting-control">
+        <button class="btn active" onclick="setModel('glm5')" id="mdGlm">GLM-5</button>
+        <button class="btn" onclick="setModel('claude')" id="mdCla">Claude</button>
+        <button class="btn" onclick="setModel('gpt4o')" id="mdGpt">GPT-4o</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">언어</span>
+      <div class="setting-control">
+        <button class="btn active" id="lnKo" onclick="setLang('ko')">한국어</button>
+        <button class="btn" id="lnEn" onclick="setLang('en')">English</button>
+      </div>
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">테마</span>
+      <div class="setting-control">
+        <button class="btn active" id="thDark" onclick="setTheme('dark')">다크</button>
+        <button class="btn" id="thLight" onclick="setTheme('light')">라이트</button>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:16px;">
+      <button class="btn btn-primary" onclick="toggleSettings()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const MODELS = {
+  glm5: { name: 'GLM-5-Turbo', maxTokens: 32000 },
+  claude: { name: 'Claude Opus', maxTokens: 200000 },
+  gpt4o: { name: 'GPT-4o', maxTokens: 128000 }
+};
+
+let config = {
+  speed: 1,
+  model: 'glm5',
+  lang: 'ko',
+  theme: 'dark'
+};
+
+// Layer content data
+const LAYER_CONTENT = {
+  system: {
+    title: 'System Prompt',
+    content: `<span class="heading">## Tooling</span>
+<span class="directive">Available tools:</span> <span class="value">read, edit, write, exec, process, web_search,
+web_fetch, cron, sessions_list, sessions_history, sessions_send,
+subagents, session_status, image, memory_search, memory_get,
+sessions_spawn, sessions_yield</span>
+
+<span class="heading">## Available Skills (6)</span>
+<span class="comment">- clawhub: ClawHub CLI...</span>
+<span class="comment">- coding-agent: Delegate coding tasks...</span>
+<span class="comment">- healthcheck: Host security...</span>
+<span class="comment">- node-connect: Diagnose OpenClaw...</span>
+<span class="comment">- skill-creator: Create/edit skills...</span>
+<span class="comment">- weather: Get weather via wttr.in...</span>
+
+<span class="heading">## Runtime</span>
+<span class="key">agent</span>=<span class="value">main</span> | <span class="key">host</span>=<span class="value">localhost</span> | <span class="key">os</span>=<span class="value">Linux</span> | <span class="key">node</span>=<span class="value">v25.8.1</span>
+<span class="key">model</span>=<span class="value">zai/glm-5-turbo</span> | <span class="key">channel</span>=<span class="value">telegram</span> | <span class="key">thinking</span>=<span class="value">low</span>`
+  },
+  soul: {
+    title: 'SOUL.md',
+    content: `<span class="heading"># SOUL.md - Who You Are</span>
+<span class="comment">_You're not a chatbot. You're becoming someone._</span>
+
+<span class="heading">## Core Truths</span>
+<span class="directive">**Be genuinely helpful, not performatively helpful.**</span>
+<span class="comment">Don't pad responses with fluff. Don't over-explain.
+If you can solve it in 3 lines, don't write 30.</span>
+
+<span class="directive">**Have opinions.**</span>
+<span class="comment">When someone asks "which approach?", have a recommendation.
+Back it with reasoning, but don't be wishy-washy.</span>
+
+<span class="directive">**Be resourceful before asking.**</span>
+<span class="comment">If you CAN figure it out yourself — do it.
+Search files, check history, look at context.</span>
+
+<span class="directive">**Admit when you don't know.**</span>
+<span class="comment">No hallucination. No guessing. Say "I don't know" when true.</span>
+
+<span class="directive">**Code > Words**</span>
+<span class="comment">Show, don't tell. If you're suggesting a fix, just fix it.
+Don't describe what you would do — do it.</span>`
+  },
+  agents: {
+    title: 'AGENTS.md',
+    content: `<span class="heading"># AGENTS.md - Operational Rules</span>
+
+<span class="heading">## Session Startup</span>
+<span class="value">1.</span> Read SOUL.md
+<span class="value">2.</span> Read USER.md
+<span class="value">3.</span> Read memory/YYYY-MM-DD.md
+<span class="value">4.</span> If MAIN SESSION: Read MEMORY.md
+
+<span class="heading">## Memory System</span>
+<span class="comment">- Daily: memory/YYYY-MM-DD.md  (모든 세션 기록)</span>
+<span class="comment">- Long-term: MEMORY.md  (DM 세션만 업데이트!)</span>
+<span class="comment">- Vector Search: memory_search() 사용</span>
+
+<span class="heading">## Agent Loop Rules</span>
+<span class="directive">1. 사용자 메시지 수신</span>
+<span class="directive">2. LLM 추론 (thinking)</span>
+<span class="directive">3. 필요시 Tool 호출 → 결과 수신 → 2로 복귀</span>
+<span class="directive">4. 최종 응답 생성</span>
+<span class="directive">5. Session History에 저장 (JSONL)</span>
+
+<span class="heading">## Compaction</span>
+<span class="keyword">WARNING:</span> Context 80% 초과시 Memory Flush 발생
+<span class="keyword">CRITICAL:</span> Context 90% 초과시 Auto-Compaction 실행
+<span class="comment">오래된 턴을 요약으로 압축하여 공간 확보</span>`
+  },
+  identity: {
+    title: 'IDENTITY.md',
+    content: `<span class="heading"># IDENTITY.md</span>
+
+<span class="key">name</span>: <span class="value">랄프톤 (Ralphton)</span>
+<span class="key">version</span>: <span class="value">v4.2</span>
+<span class="key">personality</span>: <span class="value">helpful, direct, opinionated</span>
+<span class="key">language</span>: <span class="value">Korean (primary), English (secondary)</span>
+<span class="key">creator</span>: <span class="value">OpenClaw Project</span>
+
+<span class="comment">// 이 파일은 에이전트의 정체성을 정의합니다.
+// 세션 시작 시 자동으로 주입됩니다.</span>`
+  },
+  user: {
+    title: 'USER.md',
+    content: `<span class="heading"># USER.md - About the Human</span>
+
+<span class="key">name</span>: <span class="value">사용자</span>
+<span class="key">role</span>: <span class="value">Developer / Power User</span>
+<span class="key">preferences</span>:
+  <span class="comment">- 한국어로 대화</span>
+  <span class="comment">- 간결한 응답 선호</span>
+  <span class="comment">- 코드 먼저, 설명은 나중에</span>
+  <span class="comment">- 이모지 사용 OK</span>
+
+<span class="key">context</span>:
+  <span class="comment">- OpenClaw 프로젝트 관리자</span>
+  <span class="comment">- 랄프톤 에이전트 운영</span>
+  <span class="comment">- Termux 환경 사용</span>`
+  },
+  tools_md: {
+    title: 'TOOLS.md',
+    content: `<span class="heading"># TOOLS.md - Available Tools Documentation</span>
+
+<span class="heading">## read</span>
+<span class="comment">파일을 읽습니다. path 파라미터 필수.</span>
+<span class="key">usage</span>: <span class="string">read({ path: "file.txt" })</span>
+
+<span class="heading">## exec</span>
+<span class="comment">셸 명령어를 실행합니다. timeout 설정 가능.</span>
+<span class="key">usage</span>: <span class="string">exec({ command: "ls -la", timeout: 30000 })</span>
+
+<span class="heading">## web_search</span>
+<span class="comment">웹 검색을 수행합니다. query, count, freshness 파라미터.</span>
+<span class="key">usage</span>: <span class="string">web_search({ query: "날씨", count: 5 })</span>
+
+<span class="heading">## write</span>
+<span class="comment">파일을 작성합니다. path, content 필수.</span>
+<span class="key">usage</span>: <span class="string">write({ path: "out.txt", content: "..." })</span>
+
+<span class="comment">// ... 총 18개 도구 (54,210 chars)</span>
+<span class="keyword">// ⚠️ TRUNCATED: 20,962 chars만 주입됨</span>`
+  },
+  heartbeat: {
+    title: 'HEARTBEAT.md',
+    content: `<span class="heading"># HEARTBEAT.md - System Status</span>
+
+<span class="key">last_check</span>: <span class="value">2026-03-19T14:30:00+09:00</span>
+<span class="key">uptime</span>: <span class="value">47h 23m</span>
+<span class="key">sessions_active</span>: <span class="value">3</span>
+<span class="key">memory_usage</span>: <span class="value">342MB / 1024MB</span>
+<span class="key">disk_usage</span>: <span class="value">2.1GB / 8GB</span>
+
+<span class="heading">## Recent Events</span>
+<span class="comment">- [14:28] Cron: healthcheck passed</span>
+<span class="comment">- [14:15] Session telegram:main active</span>
+<span class="comment">- [13:42] Memory flush completed</span>
+<span class="comment">- [12:00] Daily memory created</span>`
+  },
+  tool_schema: {
+    title: 'Tool Schemas (JSON)',
+    content: `<span class="bracket">[</span>
+  <span class="bracket">{</span>
+    <span class="key">"name"</span>: <span class="string">"web_search"</span>,
+    <span class="key">"description"</span>: <span class="string">"Search the web for information"</span>,
+    <span class="key">"parameters"</span>: <span class="bracket">{</span>
+      <span class="key">"type"</span>: <span class="string">"object"</span>,
+      <span class="key">"properties"</span>: <span class="bracket">{</span>
+        <span class="key">"query"</span>: <span class="bracket">{</span><span class="key">"type"</span>: <span class="string">"string"</span><span class="bracket">}</span>,
+        <span class="key">"count"</span>: <span class="bracket">{</span><span class="key">"type"</span>: <span class="string">"number"</span>, <span class="key">"maximum"</span>: <span class="value">10</span><span class="bracket">}</span>,
+        <span class="key">"freshness"</span>: <span class="bracket">{</span><span class="key">"type"</span>: <span class="string">"string"</span><span class="bracket">}</span>
+      <span class="bracket">}</span>
+    <span class="bracket">}</span>
+  <span class="bracket">}</span>,
+  <span class="bracket">{</span>
+    <span class="key">"name"</span>: <span class="string">"read"</span>,
+    <span class="key">"description"</span>: <span class="string">"Read file contents"</span>,
+    <span class="key">"parameters"</span>: <span class="bracket">{</span>
+      <span class="key">"type"</span>: <span class="string">"object"</span>,
+      <span class="key">"properties"</span>: <span class="bracket">{</span>
+        <span class="key">"path"</span>: <span class="bracket">{</span><span class="key">"type"</span>: <span class="string">"string"</span><span class="bracket">}</span>
+      <span class="bracket">}</span>,
+      <span class="key">"required"</span>: [<span class="string">"path"</span>]
+    <span class="bracket">}</span>
+  <span class="bracket">}</span>,
+  <span class="bracket">{</span>
+    <span class="key">"name"</span>: <span class="string">"write"</span>,
+    <span class="key">"description"</span>: <span class="string">"Write content to file"</span>,
+    <span class="key">"parameters"</span>: <span class="bracket">{</span>
+      <span class="key">"type"</span>: <span class="string">"object"</span>,
+      <span class="key">"properties"</span>: <span class="bracket">{</span>
+        <span class="key">"path"</span>: <span class="bracket">{</span><span class="key">"type"</span>: <span class="string">"string"</span><span class="bracket">}</span>,
+        <span class="key">"content"</span>: <span class="bracket">{</span><span class="key">"type"</span>: <span class="string">"string"</span><span class="bracket">}</span>
+      <span class="bracket">}</span>,
+      <span class="key">"required"</span>: [<span class="string">"path"</span>, <span class="string">"content"</span>]
+    <span class="bracket">}</span>
+  <span class="bracket">}</span>,
+  <span class="bracket">{</span>
+    <span class="key">"name"</span>: <span class="string">"exec"</span>,
+    <span class="key">"description"</span>: <span class="string">"Execute shell command"</span>,
+    <span class="key">"parameters"</span>: <span class="bracket">{</span>
+      <span class="key">"type"</span>: <span class="string">"object"</span>,
+      <span class="key">"properties"</span>: <span class="bracket">{</span>
+        <span class="key">"command"</span>: <span class="bracket">{</span><span class="key">"type"</span>: <span class="string">"string"</span><span class="bracket">}</span>,
+        <span class="key">"timeout"</span>: <span class="bracket">{</span><span class="key">"type"</span>: <span class="string">"number"</span><span class="bracket">}</span>
+      <span class="bracket">}</span>
+    <span class="bracket">}</span>
+  <span class="bracket">}</span>,
+  <span class="comment">  // ... 14 more tool schemas</span>
+<span class="bracket">]</span>`
+  },
+  skills: {
+    title: 'Skills List',
+    content: `<span class="heading">## Available Skills</span>
+
+<span class="value">1. clawhub</span>
+   <span class="comment">ClawHub CLI 도구. 저장소 관리, 이슈 트래킹.</span>
+   <span class="key">trigger</span>: <span class="string">"clawhub", "저장소", "이슈"</span>
+
+<span class="value">2. coding-agent</span>
+   <span class="comment">코딩 작업 위임. 서브에이전트로 복잡한 코드 생성.</span>
+   <span class="key">trigger</span>: <span class="string">"코딩", "구현", "만들어"</span>
+
+<span class="value">3. healthcheck</span>
+   <span class="comment">호스트 보안 상태 점검. 시스템 리소스 확인.</span>
+   <span class="key">trigger</span>: <span class="string">"healthcheck", "상태", "점검"</span>
+
+<span class="value">4. node-connect</span>
+   <span class="comment">OpenClaw 노드 진단. 연결 문제 해결.</span>
+   <span class="key">trigger</span>: <span class="string">"node", "연결", "진단"</span>
+
+<span class="value">5. skill-creator</span>
+   <span class="comment">스킬 생성/편집 도구.</span>
+   <span class="key">trigger</span>: <span class="string">"스킬 만들기", "skill create"</span>
+
+<span class="value">6. weather</span>
+   <span class="comment">wttr.in API로 날씨 조회.</span>
+   <span class="key">trigger</span>: <span class="string">"날씨", "weather", "기온"</span>`
+  }
+};
+
+// Bootstrap files tree
+const BOOTSTRAP_FILES = [
+  { name: 'SOUL.md', chars: 912, status: 'ok', key: 'soul' },
+  { name: 'AGENTS.md', chars: 1742, status: 'ok', key: 'agents' },
+  { name: 'TOOLS.md', chars: 54210, status: 'warn', truncated: 20962, key: 'tools_md' },
+  { name: 'IDENTITY.md', chars: 211, status: 'ok', key: 'identity' },
+  { name: 'USER.md', chars: 388, status: 'ok', key: 'user' },
+  { name: 'HEARTBEAT.md', chars: 1158, status: 'ok', key: 'heartbeat' },
+  { name: 'BOOTSTRAP.md', chars: 0, status: 'err', key: null }
+];
+
+// ===== SCENARIOS =====
+function makeScenario1() {
+  return {
+    name: '날씨 알려줘 (간단)',
+    steps: [
+      {
+        label: 'Step 1: Bootstrap Files 주입',
+        desc: 'System Prompt + SOUL.md + AGENTS.md 등 로드',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' }
+        ],
+        totalTokens: 18361,
+        loopState: null
+      },
+      {
+        label: 'Step 2: 사용자 메시지 추가',
+        desc: '"날씨 알려줘"를 Session History에 추가',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:20, color:'var(--layer-session)', isNew:true }
+        ],
+        totalTokens: 18381,
+        sessionContent: `<span class="user-msg">User:</span> 날씨 알려줘`,
+        loopState: null
+      },
+      {
+        label: 'Step 3: LLM 추론',
+        desc: 'Agent Loop: 추론 → web_search 툴호출',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:85, color:'var(--layer-session)' }
+        ],
+        totalTokens: 18446,
+        sessionContent: `<span class="user-msg">User:</span> 날씨 알려줘
+<span class="thinking">[thinking] 날씨 질문 → weather 스킬 또는 검색 필요</span>
+<span class="tool-call">[tool_call] web_search({ query: "서울 날씨 오늘" })</span>`,
+        loopState: 'llm-tool'
+      },
+      {
+        label: 'Step 4: 툴 결과 추가',
+        desc: 'Tool Result를 컨텍스트에 추가',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:85, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:150, color:'var(--layer-results)', isNew:true }
+        ],
+        totalTokens: 18596,
+        sessionContent: `<span class="user-msg">User:</span> 날씨 알려줘
+<span class="thinking">[thinking] 날씨 질문 → weather 스킬 또는 검색 필요</span>
+<span class="tool-call">[tool_call] web_search({ query: "서울 날씨 오늘" })</span>
+<span class="result-msg">[tool_result] { "temp": 15, "condition": "맑음", "humidity": 45, "wind": "북서 3m/s" }</span>`,
+        loopState: 'tool-llm'
+      },
+      {
+        label: 'Step 5: 최종 응답',
+        desc: 'LLM이 답변 생성, Session History에 추가',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:235, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:150, color:'var(--layer-results)' }
+        ],
+        totalTokens: 18746,
+        sessionContent: `<span class="user-msg">User:</span> 날씨 알려줘
+<span class="thinking">[thinking] 날씨 질문 → weather 스킬 또는 검색 필요</span>
+<span class="tool-call">[tool_call] web_search({ query: "서울 날씨 오늘" })</span>
+<span class="result-msg">[tool_result] { "temp": 15, "condition": "맑음", "humidity": 45, "wind": "북서 3m/s" }</span>
+<span class="asst-msg">Assistant:</span> 오늘 서울 날씨는 맑음, 기온 15°C입니다.
+습도 45%, 바람 북서 3m/s로 산책하기 좋은 날이네요! ☀️`,
+        loopState: 'reply'
+      },
+      {
+        label: 'Step 6: 영속화',
+        desc: '전체 턴을 JSONL에 저장',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:235, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:150, color:'var(--layer-results)' }
+        ],
+        totalTokens: 18746,
+        sessionContent: `<span class="user-msg">User:</span> 날씨 알려줘
+<span class="thinking">[thinking] 날씨 질문 → weather 스킬 또는 검색 필요</span>
+<span class="tool-call">[tool_call] web_search({ query: "서울 날씨 오늘" })</span>
+<span class="result-msg">[tool_result] { "temp": 15, "condition": "맑음", "humidity": 45, "wind": "북서 3m/s" }</span>
+<span class="asst-msg">Assistant:</span> 오늘 서울 날씨는 맑음, 기온 15°C입니다.
+습도 45%, 바람 북서 3m/s로 산책하기 좋은 날이네요! ☀️
+
+<span class="comment">// ✅ Persisted to sessions/telegram_main.jsonl</span>`,
+        loopState: 'reply'
+      }
+    ]
+  };
+}
+
+function makeScenario2() {
+  return {
+    name: '이미지 분석 (중간)',
+    steps: [
+      {
+        label: 'Step 1: Bootstrap Files 주입',
+        desc: 'System Prompt + Bootstrap 로드',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' }
+        ],
+        totalTokens: 18361,
+        loopState: null
+      },
+      {
+        label: 'Step 2: 사용자 메시지 + 이미지',
+        desc: '"이 사진 분석해줘" + 이미지 첨부 (2,500토큰)',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:2520, color:'var(--layer-session)', isNew:true }
+        ],
+        totalTokens: 20881,
+        sessionContent: `<span class="user-msg">User:</span> 이 사진 분석해줘
+<span class="comment">[image attachment: photo.jpg, 1280x720, ~2,500 tokens]</span>
+<span class="comment">┌─────────────────────┐</span>
+<span class="comment">│  📷 이미지 데이터    │</span>
+<span class="comment">│  base64 encoded     │</span>
+<span class="comment">│  ~2,500 토큰 차지   │</span>
+<span class="comment">└─────────────────────┘</span>`,
+        loopState: null
+      },
+      {
+        label: 'Step 3: LLM 추론 → image 도구',
+        desc: 'Agent가 이미지 분석 도구 호출',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:2620, color:'var(--layer-session)' }
+        ],
+        totalTokens: 20981,
+        sessionContent: `<span class="user-msg">User:</span> 이 사진 분석해줘
+<span class="comment">[image: photo.jpg, ~2,500 tokens]</span>
+<span class="thinking">[thinking] 이미지 분석 요청 → image 도구로 상세 분석</span>
+<span class="tool-call">[tool_call] image({ action: "analyze", url: "photo.jpg" })</span>`,
+        loopState: 'llm-tool'
+      },
+      {
+        label: 'Step 4: 이미지 분석 결과',
+        desc: '이미지 분석 결과 추가 (+800 토큰)',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:2620, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:800, color:'var(--layer-results)', isNew:true }
+        ],
+        totalTokens: 21781,
+        sessionContent: `<span class="user-msg">User:</span> 이 사진 분석해줘
+<span class="comment">[image: photo.jpg, ~2,500 tokens]</span>
+<span class="thinking">[thinking] 이미지 분석 요청 → image 도구로 상세 분석</span>
+<span class="tool-call">[tool_call] image({ action: "analyze", url: "photo.jpg" })</span>
+<span class="result-msg">[tool_result] {
+  "objects": ["고양이", "소파", "쿠션"],
+  "scene": "실내, 거실",
+  "dominant_colors": ["갈색", "베이지", "흰색"],
+  "text_detected": null,
+  "confidence": 0.94
+}</span>`,
+        loopState: 'tool-llm'
+      },
+      {
+        label: 'Step 5: 최종 응답 생성',
+        desc: 'LLM이 분석 결과를 자연어로 설명',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:3020, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:800, color:'var(--layer-results)' }
+        ],
+        totalTokens: 22181,
+        sessionContent: `<span class="user-msg">User:</span> 이 사진 분석해줘
+<span class="comment">[image: photo.jpg, ~2,500 tokens]</span>
+<span class="tool-call">[tool_call] image({ action: "analyze", url: "photo.jpg" })</span>
+<span class="result-msg">[tool_result] { objects: ["고양이","소파","쿠션"], scene: "실내, 거실", ... }</span>
+
+<span class="asst-msg">Assistant:</span> 거실 소파 위에 고양이가 편하게 누워있는 사진이에요! 🐱
+
+📋 분석 결과:
+- 장소: 실내 거실
+- 주요 물체: 고양이, 소파, 쿠션
+- 색상: 갈색/베이지 톤
+- 신뢰도: 94%
+
+소파 쿠션 옆에서 낮잠 중인 것 같네요.`,
+        loopState: 'reply'
+      },
+      {
+        label: 'Step 6: 영속화',
+        desc: '이미지 포함 턴 저장 (이미지 토큰 큼!)',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:3020, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:800, color:'var(--layer-results)' }
+        ],
+        totalTokens: 22181,
+        sessionContent: `<span class="user-msg">User:</span> 이 사진 분석해줘
+<span class="comment">[image: photo.jpg, ~2,500 tokens — 컨텍스트의 11% 차지!]</span>
+<span class="asst-msg">Assistant:</span> 거실 소파 위에 고양이가...
+
+<span class="comment">// ✅ Persisted to sessions/telegram_main.jsonl</span>
+<span class="comment">// ⚠️ 이미지 토큰이 전체 컨텍스트의 11%를 차지</span>
+<span class="comment">// 이미지가 포함된 대화는 compaction이 빨리 발생!</span>`,
+        loopState: 'reply'
+      }
+    ]
+  };
+}
+
+function makeScenario3() {
+  return {
+    name: '게임 만들어줘 (Compaction)',
+    steps: [
+      {
+        label: 'Step 1: Bootstrap Files 주입',
+        desc: 'System Prompt + Bootstrap 로드',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' }
+        ],
+        totalTokens: 18361,
+        loopState: null
+      },
+      {
+        label: 'Step 2: 이전 대화 + 새 요청',
+        desc: '이전 대화 5턴 + "고스톱 게임 만들어줘"',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:1200, color:'var(--layer-session)', isNew:true }
+        ],
+        totalTokens: 19561,
+        sessionContent: `<span class="comment">// --- 이전 대화 (5턴) ---</span>
+<span class="user-msg">User:</span> 안녕
+<span class="asst-msg">Assistant:</span> 안녕하세요! 오늘 뭐 도와드릴까요?
+<span class="user-msg">User:</span> 날씨?
+<span class="asst-msg">Assistant:</span> 서울 맑음 15°C입니다.
+<span class="user-msg">User:</span> 뭐해?
+<span class="asst-msg">Assistant:</span> 코딩 도우미로 대기 중입니다.
+<span class="user-msg">User:</span> 게임 만들어줘
+<span class="asst-msg">Assistant:</span> 어떤 게임을 만들까요?
+<span class="user-msg">User:</span> 고스톱
+<span class="comment">// --- 현재 턴 ---</span>
+<span class="asst-msg">Assistant:</span> 고스톱 게임을 만들어보겠습니다! PRD부터 작성할게요.`,
+        loopState: null
+      },
+      {
+        label: 'Step 3: LLM 추론 → 다중 Tool 호출',
+        desc: '파일 읽기, 쓰기, 실행 반복',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:3500, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:2400, color:'var(--layer-results)', isNew:true }
+        ],
+        totalTokens: 24261,
+        sessionContent: `<span class="tool-call">[tool_call] write({ path: "gostop-prd.md", content: "..." })</span>
+<span class="result-msg">[result] ✅ Written 2,450 chars</span>
+<span class="tool-call">[tool_call] write({ path: "gostop.html", content: "..." })</span>
+<span class="result-msg">[result] ✅ Written 15,680 chars</span>
+<span class="tool-call">[tool_call] read({ path: "gostop.html" })</span>
+<span class="result-msg">[result] (file content: 15,680 chars)</span>
+<span class="tool-call">[tool_call] exec({ command: "wc -l gostop.html" })</span>
+<span class="result-msg">[result] 458 gostop.html</span>`,
+        loopState: 'llm-tool'
+      },
+      {
+        label: 'Step 4: 계속 구현 (Tool 결과 누적)',
+        desc: '반복적 write/read/exec로 컨텍스트 급증',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:6800, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:5200, color:'var(--layer-results)' }
+        ],
+        totalTokens: 30361,
+        sessionContent: `<span class="comment">// ... 이전 tool 호출들 ...</span>
+<span class="tool-call">[tool_call] write({ path: "gostop.html", content: "v2..." })</span>
+<span class="result-msg">[result] ✅ Written 45,230 chars</span>
+<span class="tool-call">[tool_call] exec({ command: "wc -l gostop.html" })</span>
+<span class="result-msg">[result] 1,247 gostop.html</span>
+<span class="tool-call">[tool_call] write({ path: "gostop.html", content: "v3..." })</span>
+<span class="result-msg">[result] ✅ Written 68,500 chars</span>
+<span class="tool-call">[tool_call] read({ path: "gostop.html", range: "1-50" })</span>
+<span class="result-msg">[result] (first 50 lines...)</span>
+
+<span class="keyword">⚠️ Context 94.9% 사용 중!</span>`,
+        loopState: 'llm-tool'
+      },
+      {
+        label: 'Step 5: Context Window 한계 도달!',
+        desc: '빨간 경고 + Auto-Compaction 트리거',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:6800, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:5200, color:'var(--layer-results)' }
+        ],
+        totalTokens: 30361,
+        danger: true,
+        loopState: null
+      },
+      {
+        label: 'Step 6: Memory Flush',
+        desc: '"기억해!" 시스템 턴 주입 → 메모리 기록',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:7200, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:5200, color:'var(--layer-results)' }
+        ],
+        totalTokens: 30761,
+        memoryFlush: true,
+        loopState: null
+      },
+      {
+        label: 'Step 7: Compaction 실행',
+        desc: '오래된 대화 → 요약 압축',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:7200, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:5200, color:'var(--layer-results)' }
+        ],
+        totalTokens: 30761,
+        compaction: true,
+        loopState: null
+      },
+      {
+        label: 'Step 8: Compaction 완료',
+        desc: '28,000 → 15,000 토큰으로 압축',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History (압축됨)', tokens:1800, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:800, color:'var(--layer-results)' }
+        ],
+        totalTokens: 20961,
+        sessionContent: `<span class="comment">// ━━━ Compacted Summary ━━━</span>
+<span class="value">📋 요약:</span> 사용자가 인사를 나누고 날씨를 물었으며,
+코딩 중이고 고스톱 게임 제작을 요청함.
+Agent는 고스톱 PRD 작성 후 v1~v3까지 구현 완료.
+현재 gostop.html (1,247줄 → 2,958줄) 작업 중.
+
+<span class="comment">// ━━━ Recent (유지) ━━━</span>
+<span class="user-msg">User:</span> 고스톱
+<span class="asst-msg">Assistant:</span> v3 작성 완료, 계속 개선하겠습니다.`,
+        loopState: null
+      },
+      {
+        label: 'Step 9: 압축된 컨텍스트로 계속',
+        desc: '새로운 tool 호출로 개발 재개',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History (압축됨)', tokens:2400, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:1600, color:'var(--layer-results)' }
+        ],
+        totalTokens: 22361,
+        sessionContent: `<span class="comment">// ━━━ Compacted Summary ━━━</span>
+<span class="value">📋 요약:</span> 사용자가 고스톱 게임 제작 요청. v3까지 구현 완료.
+
+<span class="comment">// ━━━ 계속 ━━━</span>
+<span class="tool-call">[tool_call] write({ path: "gostop.html", content: "v4..." })</span>
+<span class="result-msg">[result] ✅ Written 91,240 chars (v4 완성!)</span>
+<span class="tool-call">[tool_call] exec({ command: "wc -l gostop.html" })</span>
+<span class="result-msg">[result] 2,637 gostop.html</span>`,
+        loopState: 'llm-tool'
+      },
+      {
+        label: 'Step 10: 최종 완료',
+        desc: '고스톱 v7 완성 (2,958줄)',
+        layers: [
+          { id:'system', type:'system', name:'System Prompt', tokens:3842, color:'var(--layer-system)' },
+          { id:'bootstrap', type:'bootstrap', name:'Bootstrap Files', tokens:5976, color:'var(--layer-bootstrap)', subs: BOOTSTRAP_FILES },
+          { id:'tools', type:'tools', name:'Tool Schemas', tokens:7997, color:'var(--layer-tools)' },
+          { id:'skills', type:'skills', name:'Skills List', tokens:546, color:'var(--layer-skills)' },
+          { id:'session', type:'session', name:'Session History', tokens:3200, color:'var(--layer-session)' },
+          { id:'results', type:'results', name:'Tool Results', tokens:2000, color:'var(--layer-results)' }
+        ],
+        totalTokens: 23561,
+        sessionContent: `<span class="comment">// ━━━ Compacted Summary ━━━</span>
+<span class="value">📋 요약:</span> 고스톱 게임 v1~v6 구현 완료.
+
+<span class="asst-msg">Assistant:</span> 고스톱 v7 최종 완성! 🎴
+
+📊 최종 결과:
+- 파일: gostop.html
+- 크기: 91KB, 2,958줄
+- 버전: v4 기반 → v7 최적화
+- 기능: 맞고/고스톱, AI 대전, 점수 계산
+
+<span class="comment">// ✅ Persisted to sessions/telegram_main.jsonl</span>
+<span class="comment">// 💾 Memory: memory/2026-03-18.md 업데이트</span>`,
+        loopState: 'reply'
+      }
+    ]
+  };
+}
+
+const SCENARIOS = [makeScenario1(), makeScenario2(), makeScenario3()];
+
+// ===== STATE =====
+let currentScenario = 0;
+let currentStep = -1; // -1 = not started
+let simInterval = null;
+let selectedLayer = null;
+let timelineData = [];
+
+// ===== FUNCTIONS =====
+function getMaxTokens() { return MODELS[config.model].maxTokens; }
+
+function renderStack(layers, animate) {
+  const container = document.getElementById('stackContainer');
+  container.innerHTML = '';
+  layers.forEach((layer, i) => {
+    const card = document.createElement('div');
+    card.className = 'layer-card' + (selectedLayer === layer.id ? ' selected' : '');
+    if (animate && layer.isNew) card.style.animation = 'slideRight 0.5s ease';
+    card.dataset.type = layer.type;
+    card.onclick = () => selectLayer(layer);
+
+    const pct = ((layer.tokens / getMaxTokens()) * 100).toFixed(1);
+    card.innerHTML = `
+      <div class="layer-name">
+        <span style="color:${layer.color}">${getLayerIcon(layer.type)}</span>
+        ${layer.name}
+      </div>
+      <div class="layer-meta">
+        <span>${pct}%</span>
+        <span class="layer-tokens">${layer.tokens.toLocaleString()} 토큰</span>
+      </div>
+      <div class="layer-bar">
+        <div class="layer-bar-fill" style="width:${pct}%;background:${layer.color}"></div>
+      </div>
+    `;
+
+    if (layer.subs) {
+      const subsDiv = document.createElement('div');
+      subsDiv.className = 'layer-subitems';
+      layer.subs.forEach(s => {
+        const item = document.createElement('div');
+        item.className = 'layer-subitem';
+        const statusCls = s.status === 'ok' ? 'status-ok' : s.status === 'warn' ? 'status-warn' : 'status-err';
+        const statusIcon = s.status === 'ok' ? '&#10003;' : s.status === 'warn' ? '&#9888; TRUNCATED' : '&#10007; missing';
+        const sizeStr = s.status === 'err' ? 'N/A' : (s.truncated ? `${s.truncated.toLocaleString()}/${s.chars.toLocaleString()}` : s.chars.toLocaleString()) + ' chars';
+        item.innerHTML = `<span>${s.name}</span><span class="${statusCls}" style="font-size:10px;">${statusIcon}</span>`;
+        item.onclick = (e) => { e.stopPropagation(); if(s.key) showContent(s.key); };
+        subsDiv.appendChild(item);
+      });
+      card.appendChild(subsDiv);
+    }
+
+    container.appendChild(card);
+  });
+}
+
+function getLayerIcon(type) {
+  const icons = { system:'&#9881;', bootstrap:'&#128196;', tools:'&#128295;', skills:'&#9889;', session:'&#128172;', results:'&#128229;' };
+  return icons[type] || '&#9632;';
+}
+
+function selectLayer(layer) {
+  selectedLayer = layer.id;
+  // Re-render stack to update selection
+  if (currentStep >= 0) {
+    const step = SCENARIOS[currentScenario].steps[currentStep];
+    renderStack(step.layers, false);
+  }
+  showContent(layer.id);
+}
+
+function showContent(key) {
+  const dt = document.getElementById('detailTitle');
+  const db = document.getElementById('detailBadge');
+  const dc = document.getElementById('detailContent');
+
+  // Session content from scenario step
+  if ((key === 'session' || key === 'results') && currentStep >= 0) {
+    const step = SCENARIOS[currentScenario].steps[currentStep];
+    dt.textContent = key === 'session' ? 'Session History' : 'Tool Results';
+    db.textContent = key === 'session' ? 'JSONL' : 'JSON';
+    if (step.sessionContent) {
+      dc.innerHTML = `<div class="code-block">${step.sessionContent}</div>`;
+    } else {
+      dc.innerHTML = '<div style="color:var(--text2);text-align:center;margin-top:40px;">이 단계에서는 세션 내용이 없습니다</div>';
+    }
+    return;
+  }
+
+  // Memory search visualization
+  if (key === 'memory_search') {
+    document.getElementById('searchOverlay').classList.add('show');
+    return;
+  }
+
+  const data = LAYER_CONTENT[key];
+  if (!data) {
+    dc.innerHTML = '<div style="color:var(--text2);text-align:center;margin-top:40px;">내용을 불러올 수 없습니다</div>';
+    return;
+  }
+
+  dt.textContent = data.title;
+  db.textContent = key === 'tool_schema' ? 'JSON' : 'Markdown';
+
+  // For bootstrap, show file tree first
+  if (key === 'bootstrap') {
+    let html = '<div class="file-tree" style="margin-bottom:16px;">';
+    html += '<div style="font-size:13px;font-weight:600;margin-bottom:8px;">Project Context</div>';
+    BOOTSTRAP_FILES.forEach(f => {
+      const icon = f.status === 'ok' ? '&#128196;' : f.status === 'warn' ? '&#128196;' : '&#128196;';
+      const statusCls = f.status === 'ok' ? 'status-ok' : f.status === 'warn' ? 'status-warn' : 'status-err';
+      const statusTxt = f.status === 'ok' ? '&#10003; injected' : f.status === 'warn' ? '&#9888; TRUNCATED &#8594; ' + f.truncated.toLocaleString() : '&#10007; missing';
+      html += `<div class="file-tree-item" onclick="event.stopPropagation();${f.key ? "showContent('"+f.key+"')" : ''}">
+        <span>${icon}</span>
+        <span>${f.name}</span>
+        <span class="${statusCls}" style="font-size:10px;margin-left:auto;">${statusTxt}</span>
+        <span class="file-size">${f.chars > 0 ? f.chars.toLocaleString() + ' chars' : 'N/A'}</span>
+      </div>`;
+    });
+    html += '</div>';
+    dc.innerHTML = html;
+    return;
+  }
+
+  dc.innerHTML = `<div class="code-block">${data.content}</div>`;
+}
+
+function updateGauge(total, danger) {
+  const max = getMaxTokens();
+  const pct = Math.min((total / max) * 100, 100);
+  const fill = document.getElementById('gaugeFill');
+  const label = document.getElementById('ctxLabel');
+  const pctEl = document.getElementById('ctxPct');
+  const warn = document.getElementById('ctxWarning');
+
+  fill.style.width = pct + '%';
+  fill.className = 'gauge-fill' + (pct > 90 || danger ? ' danger' : pct > 80 ? ' warn' : '');
+  label.textContent = `Context Window: ${total.toLocaleString()} / ${max.toLocaleString()}`;
+  pctEl.textContent = pct.toFixed(1) + '%';
+  pctEl.style.color = pct > 90 || danger ? 'var(--red)' : pct > 80 ? 'var(--yellow)' : 'var(--text)';
+
+  if (pct > 90 || danger) {
+    warn.textContent = '&#128308; Compaction imminent!';
+    warn.className = 'context-warning show danger';
+  } else if (pct > 80) {
+    warn.textContent = '&#9888; Context 80% 초과';
+    warn.className = 'context-warning show warn';
+  } else {
+    warn.className = 'context-warning';
+  }
+}
+
+function updateCompBars(layers) {
+  const max = getMaxTokens();
+  const track = document.getElementById('compBarTrack');
+  const bars = document.getElementById('compBars');
+  track.innerHTML = '';
+  bars.innerHTML = '';
+
+  const colors = { system:'var(--layer-system)', bootstrap:'var(--layer-bootstrap)', tools:'var(--layer-tools)', skills:'var(--layer-skills)', session:'var(--layer-session)', results:'var(--layer-results)' };
+
+  layers.forEach(l => {
+    const pct = (l.tokens / max) * 100;
+    const seg = document.createElement('div');
+    seg.className = 'comp-bar-seg';
+    seg.style.width = pct + '%';
+    seg.style.background = l.color;
+    track.appendChild(seg);
+
+    const item = document.createElement('div');
+    item.className = 'comp-item';
+    item.innerHTML = `<span class="comp-dot" style="background:${l.color}"></span>${l.name}: ${l.tokens.toLocaleString()} (${pct.toFixed(1)}%)`;
+    item.onclick = () => selectLayer(l);
+    bars.appendChild(item);
+  });
+}
+
+function updateLoopState(state) {
+  const llm = document.getElementById('loopLLM');
+  const tool = document.getElementById('loopTool');
+  const reply = document.getElementById('loopReply');
+  [llm, tool, reply].forEach(n => n.classList.remove('active'));
+
+  if (state === 'llm-tool') {
+    llm.classList.add('active');
+    setTimeout(() => { llm.classList.remove('active'); tool.classList.add('active'); }, 500 / config.speed);
+  } else if (state === 'tool-llm') {
+    tool.classList.add('active');
+    setTimeout(() => { tool.classList.remove('active'); llm.classList.add('active'); }, 500 / config.speed);
+  } else if (state === 'reply') {
+    reply.classList.add('active');
+  }
+}
+
+function updateTimeline(step) {
+  const tl = document.getElementById('timeline');
+  const max = getMaxTokens();
+  timelineData.push({ tokens: step.totalTokens, label: step.label });
+
+  tl.innerHTML = '';
+  const maxT = Math.max(...timelineData.map(d => d.tokens));
+  timelineData.forEach((d, i) => {
+    const h = Math.max(20, (d.tokens / max) * 100);
+    const bar = document.createElement('div');
+    bar.className = 'timeline-bar';
+    const pct = (d.tokens / max) * 100;
+    const color = pct > 90 ? 'var(--red)' : pct > 80 ? 'var(--yellow)' : 'var(--accent)';
+    bar.style.cssText = `height:${h}%;background:${color};flex:1;`;
+    bar.dataset.label = `${d.tokens.toLocaleString()} 토큰`;
+    tl.appendChild(bar);
+  });
+}
+
+function updateStepDots(scenario, step) {
+  const dots = document.getElementById('stepDots');
+  dots.innerHTML = '';
+  const total = scenario.steps.length;
+  for (let i = 0; i < total; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'step-dot' + (i < step ? ' done' : i === step ? ' current' : '');
+    dots.appendChild(dot);
+  }
+}
+
+function renderStep(stepIdx, animate) {
+  const scenario = SCENARIOS[currentScenario];
+  if (stepIdx < 0 || stepIdx >= scenario.steps.length) return;
+
+  currentStep = stepIdx;
+  const step = scenario.steps[stepIdx];
+
+  renderStack(step.layers, animate);
+  updateGauge(step.totalTokens, step.danger);
+  updateCompBars(step.layers);
+  updateLoopState(step.loopState);
+  updateTimeline(step);
+  updateStepDots(scenario, stepIdx);
+
+  document.getElementById('simStepLabel').textContent = step.label + ' — ' + step.desc;
+  document.getElementById('btnPrev').disabled = stepIdx <= 0;
+  document.getElementById('btnNext').disabled = stepIdx >= scenario.steps.length - 1;
+
+  // Auto-show session content if exists
+  if (step.sessionContent && (!selectedLayer || selectedLayer === 'session' || selectedLayer === 'results')) {
+    showContent('session');
+  }
+
+  // Compaction overlay
+  if (step.compaction) {
+    showCompaction();
+  }
+
+  // Memory flush
+  if (step.memoryFlush) {
+    showMemoryFlush();
+  }
+}
+
+function showCompaction() {
+  const overlay = document.getElementById('compactionOverlay');
+  const before = document.getElementById('compBefore');
+  const after = document.getElementById('compAfter');
+  const flush = document.getElementById('memoryFlush');
+
+  before.innerHTML = `
+<div class="line">User: 안녕 (턴 1)</div>
+<div class="line">Assistant: 안녕하세요 (턴 1)</div>
+<div class="line">User: 날씨? (턴 2)</div>
+<div class="line">Assistant: 맑습니다 (턴 2)</div>
+<div class="line">User: 뭐해? (턴 3)</div>
+<div class="line">Assistant: 코딩 중 (턴 3)</div>
+<div class="line">User: 게임 만들어줘 (턴 4)</div>
+<div class="line">Assistant: 어떤 게임? (턴 4)</div>
+<div class="line" style="color:var(--accent)">User: 고스톱 (턴 5) ← 유지</div>
+<div class="line" style="color:var(--accent)">Assistant: PRD 작성 중... (턴 5) ← 유지</div>`;
+
+  after.innerHTML = `
+<div class="summary-line">&#128203; Summary: 사용자가 인사를 나누고 날씨를 물었으며,<br>코딩 중이고 고스톱 게임 제작을 요청함.<br>Agent는 고스톱 PRD 작성을 시작함.</div>
+<div style="margin-top:8px;color:var(--accent)">User: 고스톱 (턴 5) ← 최근 대화 유지</div>
+<div style="color:var(--accent)">Assistant: PRD 작성 중... (턴 5) ← 최근 대화 유지</div>`;
+
+  after.style.display = 'none';
+  flush.style.display = 'none';
+  overlay.classList.add('show');
+
+  // Animate shrinking
+  setTimeout(() => {
+    const lines = before.querySelectorAll('.line');
+    for (let i = 0; i < 8; i++) {
+      setTimeout(() => {
+        if (lines[i]) lines[i].classList.add('shrinking');
+      }, i * (200 / config.speed));
+    }
+    setTimeout(() => {
+      after.style.display = 'block';
+      flush.style.display = 'block';
+    }, 8 * (200 / config.speed) + 400);
+  }, 600 / config.speed);
+}
+
+function showMemoryFlush() {
+  // Memory flush is shown inside compaction overlay
+}
+
+function closeCompaction() {
+  document.getElementById('compactionOverlay').classList.remove('show');
+}
+
+function simToggle() {
+  if (simInterval) {
+    clearInterval(simInterval);
+    simInterval = null;
+    document.getElementById('btnPlay').innerHTML = '&#9654; 재생';
+    document.getElementById('btnPlay').classList.remove('active');
+    return;
+  }
+
+  document.getElementById('btnPlay').innerHTML = '&#9724; 정지';
+  document.getElementById('btnPlay').classList.add('active');
+
+  if (currentStep < 0) {
+    timelineData = [];
+    currentStep = -1;
+  }
+
+  const scenario = SCENARIOS[currentScenario];
+  simInterval = setInterval(() => {
+    const nextStep = currentStep + 1;
+    if (nextStep >= scenario.steps.length) {
+      clearInterval(simInterval);
+      simInterval = null;
+      document.getElementById('btnPlay').innerHTML = '&#9654; 시뮬레이션';
+      document.getElementById('btnPlay').classList.remove('active');
+      return;
+    }
+    renderStep(nextStep, true);
+  }, 2000 / config.speed);
+
+  // Start immediately if not started
+  if (currentStep < 0) {
+    renderStep(0, true);
+  }
+}
+
+function simPrev() {
+  if (currentStep > 0) renderStep(currentStep - 1, false);
+}
+
+function simNext() {
+  const scenario = SCENARIOS[currentScenario];
+  if (currentStep < scenario.steps.length - 1) {
+    renderStep(currentStep + 1, true);
+  }
+}
+
+function changeScenario(idx) {
+  currentScenario = parseInt(idx);
+  currentStep = -1;
+  timelineData = [];
+  selectedLayer = null;
+  if (simInterval) {
+    clearInterval(simInterval);
+    simInterval = null;
+    document.getElementById('btnPlay').innerHTML = '&#9654; 시뮬레이션';
+    document.getElementById('btnPlay').classList.remove('active');
+  }
+
+  // Reset UI
+  document.getElementById('stackContainer').innerHTML = '';
+  document.getElementById('detailTitle').textContent = '레이어를 선택하세요';
+  document.getElementById('detailBadge').textContent = '';
+  document.getElementById('detailContent').innerHTML = '<div style="color:var(--text2);text-align:center;margin-top:60px;"><div style="font-size:48px;margin-bottom:12px;">&#128269;</div><div>시뮬레이션을 시작하면<br>컨텍스트 스택이 여기에 표시됩니다</div></div>';
+  document.getElementById('gaugeFill').style.width = '0%';
+  document.getElementById('ctxLabel').textContent = `Context Window: 0 / ${getMaxTokens().toLocaleString()}`;
+  document.getElementById('ctxPct').textContent = '0%';
+  document.getElementById('ctxWarning').className = 'context-warning';
+  document.getElementById('compBarTrack').innerHTML = '';
+  document.getElementById('compBars').innerHTML = '';
+  document.getElementById('timeline').innerHTML = '';
+  document.getElementById('stepDots').innerHTML = '';
+  document.getElementById('simStepLabel').textContent = SCENARIOS[currentScenario].name + ' — 시뮬레이션을 시작하세요';
+  ['loopLLM','loopTool','loopReply'].forEach(id => document.getElementById(id).classList.remove('active'));
+}
+
+// Settings
+function toggleSettings() {
+  document.getElementById('settingsModal').classList.toggle('show');
+}
+
+function setSpeed(s) {
+  config.speed = s;
+  ['sp05','sp1','sp2'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(s === 0.5 ? 'sp05' : s === 1 ? 'sp1' : 'sp2').classList.add('active');
+}
+
+function setModel(m) {
+  config.model = m;
+  ['mdGlm','mdCla','mdGpt'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(m === 'glm5' ? 'mdGlm' : m === 'claude' ? 'mdCla' : 'mdGpt').classList.add('active');
+  // Update gauge label
+  document.getElementById('ctxLabel').textContent = `Context Window: ${currentStep >= 0 ? SCENARIOS[currentScenario].steps[currentStep].totalTokens.toLocaleString() : '0'} / ${getMaxTokens().toLocaleString()}`;
+  if (currentStep >= 0) {
+    updateGauge(SCENARIOS[currentScenario].steps[currentStep].totalTokens);
+    updateCompBars(SCENARIOS[currentScenario].steps[currentStep].layers);
+  }
+}
+
+function setLang(l) {
+  config.lang = l;
+  ['lnKo','lnEn'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(l === 'ko' ? 'lnKo' : 'lnEn').classList.add('active');
+  // Minimal i18n - just update header
+  if (l === 'en') {
+    document.querySelector('.logo-sub').textContent = "Look inside AI's prompt";
+  } else {
+    document.querySelector('.logo-sub').textContent = "AI의 프롬프트를 들여다보세요";
+  }
+}
+
+function setTheme(t) {
+  config.theme = t;
+  ['thDark','thLight'].forEach(id => document.getElementById(id).classList.remove('active'));
+  document.getElementById(t === 'dark' ? 'thDark' : 'thLight').classList.add('active');
+  if (t === 'light') {
+    document.body.classList.add('light');
+  } else {
+    document.body.classList.remove('light');
+  }
+}
+
+function exportCSV() {
+  if (currentStep < 0) { alert('시뮬레이션을 먼저 실행하세요.'); return; }
+  const scenario = SCENARIOS[currentScenario];
+  let csv = 'Step,Label,Total Tokens,Layers\n';
+  for (let i = 0; i <= currentStep; i++) {
+    const s = scenario.steps[i];
+    const layerStr = s.layers.map(l => l.name + ':' + l.tokens).join('; ');
+    csv += `${i+1},"${s.label}",${s.totalTokens},"${layerStr}"\n`;
+  }
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `context-viz-scenario${currentScenario+1}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Init
+changeScenario(0);
+document.getElementById('simStepLabel').textContent = SCENARIOS[0].name + ' — 시뮬레이션을 시작하세요';
+</script>
+</body>
+</html>

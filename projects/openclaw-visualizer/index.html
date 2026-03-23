@@ -1,0 +1,3196 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Visualizer v4</title>
+<style>
+:root {
+  --bg: #0a0a2e;
+  --bg-light: #12124a;
+  --layer1: #4CAF50;
+  --layer2: #FF9800;
+  --layer3: #9C27B0;
+  --layer4: #00BCD4;
+  --neon: #00ffff;
+  --text: #e0e0e0;
+  --text-dim: #888;
+  --accent: #ffd700;
+  --node-bg: #1a1a3e;
+  --node-active: rgba(255,255,255,0.15);
+  --panel-bg: #0d0d35;
+  --border: #2a2a5e;
+}
+/* Light theme */
+body.light-theme {
+  --bg: #f0f2f5;
+  --bg-light: #ffffff;
+  --text: #1a1a2e;
+  --text-dim: #666;
+  --node-bg: #e8eaf0;
+  --node-active: rgba(0,0,0,0.08);
+  --panel-bg: #f8f9fc;
+  --border: #c0c4d0;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Entry Animation Overlay */
+.entry-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: entry-fade 4s ease-out forwards;
+}
+.entry-title {
+  font-size: 1.8rem;
+  color: var(--accent);
+  text-shadow: 0 0 30px rgba(255,215,0,0.6);
+  animation: entry-text 2s ease-out;
+  margin-bottom: 20px;
+}
+.entry-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  animation: entry-text 2s ease-out 0.5s both;
+}
+.entry-char {
+  font-size: 3rem;
+  margin-top: 20px;
+  animation: entry-wave 1s ease-in-out 2s both;
+}
+@keyframes entry-fade {
+  0%, 75% { opacity: 1; }
+  100% { opacity: 0; pointer-events: none; }
+}
+@keyframes entry-text {
+  0% { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes entry-wave {
+  0% { opacity: 0; transform: scale(0.5) rotate(-15deg); }
+  50% { opacity: 1; transform: scale(1.1) rotate(15deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: var(--panel-bg);
+  border-bottom: 2px solid var(--border);
+}
+.header h1 {
+  font-size: 1.2rem;
+  color: var(--accent);
+}
+.main-tabs {
+  display: flex;
+  gap: 6px;
+}
+.main-tab {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.main-tab.active {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  font-weight: bold;
+}
+.mode-tabs {
+  display: flex;
+  gap: 8px;
+}
+.mode-tab {
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.85rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+.mode-tab.active {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  font-weight: bold;
+}
+
+/* Tab Content Areas */
+.tab-content { display: none; }
+.tab-content.active { display: flex; }
+.tab-content-block { display: none; }
+.tab-content-block.active { display: block; }
+
+/* Main Layout */
+.main {
+  display: flex;
+  height: calc(100vh - 52px - 44px);
+}
+.map-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  position: relative;
+  padding-bottom: 60px;
+}
+.sidebar {
+  width: 280px;
+  border-left: 2px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+/* Message Input Bar */
+.msg-input-bar {
+  display: flex;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+}
+.msg-input-bar input {
+  flex: 1;
+  background: var(--node-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.msg-input-bar input:focus { border-color: var(--accent); }
+.msg-input-bar button {
+  background: var(--accent);
+  color: #000;
+  border: none;
+  padding: 8px 16px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: bold;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.msg-input-bar button:hover { background: #ffed4a; }
+.msg-input-bar .scenario-chips {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.scenario-chip {
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.7rem;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.scenario-chip:hover, .scenario-chip.active {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Journey Step Explanation */
+.step-explanation {
+  background: rgba(255,215,0,0.08);
+  border: 1px solid rgba(255,215,0,0.2);
+  border-radius: 6px;
+  padding: 6px 12px;
+  margin: 6px 16px;
+  font-size: 0.75rem;
+  color: var(--accent);
+  display: none;
+  animation: fadeIn 0.3s ease-out;
+}
+.step-explanation.visible { display: block; }
+
+/* AI Wallet - Bottom Stats Bar */
+.ai-wallet {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--panel-bg);
+  border-top: 2px solid var(--border);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 50;
+  font-size: 0.8rem;
+  height: 44px;
+}
+.wallet-stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+.wallet-stat .w-icon { font-size: 0.9rem; }
+.wallet-stat .w-value {
+  color: var(--accent);
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+.wallet-stat .w-label { color: var(--text-dim); font-size: 0.7rem; }
+.context-bar {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 100px;
+}
+.context-bar-track {
+  flex: 1;
+  height: 8px;
+  background: var(--node-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.context-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--layer1), var(--accent));
+  border-radius: 3px;
+  transition: width 0.5s;
+  width: 0%;
+}
+.context-bar-text {
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+/* Decision Tooltip */
+.decision-tooltip {
+  position: fixed;
+  background: rgba(10,10,46,0.97);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  padding: 14px;
+  max-width: 280px;
+  z-index: 500;
+  box-shadow: 0 0 30px rgba(255,215,0,0.2);
+  animation: tooltip-appear 0.2s ease-out;
+  font-size: 0.75rem;
+}
+.decision-tooltip .dt-title {
+  color: var(--accent);
+  font-weight: bold;
+  margin-bottom: 8px;
+  font-size: 0.85rem;
+}
+.decision-tooltip .dt-reason {
+  color: var(--text);
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+.decision-tooltip .dt-alt {
+  color: var(--text-dim);
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+.decision-tooltip .dt-alt-item { margin: 2px 0; }
+.decision-tooltip .dt-close {
+  position: absolute;
+  top: 6px; right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  cursor: pointer;
+  font-size: 1rem;
+  font-family: inherit;
+}
+@keyframes tooltip-appear {
+  0% { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* FAQ / AI Manual */
+.faq-container {
+  padding: 20px;
+  max-width: 700px;
+  margin: 0 auto;
+  overflow-y: auto;
+  height: calc(100vh - 52px - 44px);
+}
+.faq-title {
+  font-size: 1.4rem;
+  color: var(--accent);
+  text-align: center;
+  margin-bottom: 20px;
+}
+.faq-item {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+  transition: border-color 0.2s;
+}
+.faq-item:hover { border-color: var(--accent); }
+.faq-question {
+  padding: 12px 16px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.9rem;
+  color: var(--text);
+  background: var(--panel-bg);
+  user-select: none;
+}
+.faq-question .faq-arrow {
+  transition: transform 0.2s;
+  color: var(--accent);
+}
+.faq-item.open .faq-arrow { transform: rotate(180deg); }
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+  background: var(--bg-light);
+}
+.faq-item.open .faq-answer {
+  max-height: 500px;
+  padding: 12px 16px;
+}
+
+/* Settings Panel */
+.settings-container {
+  padding: 20px;
+  max-width: 500px;
+  margin: 0 auto;
+  overflow-y: auto;
+  height: calc(100vh - 52px - 44px);
+}
+.settings-title {
+  font-size: 1.4rem;
+  color: var(--accent);
+  text-align: center;
+  margin-bottom: 20px;
+}
+.setting-group {
+  margin-bottom: 16px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-bg);
+}
+.setting-label {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+.setting-options {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.setting-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.setting-btn.active {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+.setting-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.toggle-switch {
+  width: 44px;
+  height: 24px;
+  background: var(--border);
+  border-radius: 12px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+}
+.toggle-switch.on { background: var(--accent); }
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.toggle-switch.on::after { transform: translateX(20px); }
+
+/* Minimap */
+.minimap {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  width: 90px;
+  background: rgba(10,10,46,0.9);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px;
+  z-index: 10;
+  font-size: 0.55rem;
+}
+.minimap-title {
+  text-align: center;
+  color: var(--accent);
+  margin-bottom: 6px;
+  font-size: 0.5rem;
+}
+.minimap-layer {
+  height: 14px;
+  margin: 3px 0;
+  border-radius: 3px;
+  border: 1px solid;
+  opacity: 0.4;
+  transition: opacity 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.45rem;
+  color: #fff;
+  position: relative;
+}
+.minimap-layer.active { opacity: 1; }
+.minimap-l1 { border-color: var(--layer1); background: rgba(76,175,80,0.2); }
+.minimap-l2 { border-color: var(--layer2); background: rgba(255,152,0,0.2); }
+.minimap-l3 { border-color: var(--layer3); background: rgba(156,39,176,0.2); }
+.minimap-l4 { border-color: var(--layer4); background: rgba(0,188,212,0.2); }
+
+/* Minimap blinking dot */
+.minimap-dot {
+  position: absolute;
+  right: 3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+  display: none;
+  animation: mm-blink 0.8s ease-in-out infinite;
+}
+.minimap-layer.mm-highlight .minimap-dot {
+  display: block;
+}
+
+/* Dungeon Layers */
+.layer {
+  border: 2px solid;
+  border-radius: 8px;
+  margin-bottom: 0;
+  padding: 14px;
+  position: relative;
+  transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
+}
+/* Layer-specific gradient backgrounds */
+.l1 { background: linear-gradient(135deg, rgba(76,175,80,.05) 0%, var(--bg-light) 100%); }
+.l2 { background: linear-gradient(135deg, rgba(255,152,0,.05) 0%, var(--bg-light) 100%); }
+.l3 { background: linear-gradient(135deg, rgba(156,39,176,.05) 0%, var(--bg-light) 100%); }
+.l4 { background: linear-gradient(135deg, rgba(0,188,212,.05) 0%, var(--bg-light) 100%); }
+
+.layer.active-layer {
+  box-shadow: 0 0 15px rgba(255,255,255,0.1);
+}
+.layer-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+.layer-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #000;
+}
+.l1 { border-color: var(--layer1); }
+.l1 .layer-num { background: var(--layer1); }
+.l1 .layer-header { color: var(--layer1); }
+.l2 { border-color: var(--layer2); }
+.l2 .layer-num { background: var(--layer2); }
+.l2 .layer-header { color: var(--layer2); }
+.l3 { border-color: var(--layer3); }
+.l3 .layer-num { background: var(--layer3); }
+.l3 .layer-header { color: var(--layer3); }
+.l4 { border-color: var(--layer4); }
+.l4 .layer-num { background: var(--layer4); }
+.l4 .layer-header { color: var(--layer4); }
+
+/* Layer entry flash */
+.layer.layer-flash {
+  animation: layer-flash-anim 0.6s ease-out;
+}
+@keyframes layer-flash-anim {
+  0% { background: rgba(255,255,255,0.12); }
+  100% { background: transparent; }
+}
+.l1.layer-flash { animation-name: l1-flash; }
+.l2.layer-flash { animation-name: l2-flash; }
+.l3.layer-flash { animation-name: l3-flash; }
+.l4.layer-flash { animation-name: l4-flash; }
+@keyframes l1-flash {
+  0% { background: rgba(76,175,80,0.25); }
+  100% { background: linear-gradient(135deg, rgba(76,175,80,.05) 0%, var(--bg-light) 100%); }
+}
+@keyframes l2-flash {
+  0% { background: rgba(255,152,0,0.25); }
+  100% { background: linear-gradient(135deg, rgba(255,152,0,.05) 0%, var(--bg-light) 100%); }
+}
+@keyframes l3-flash {
+  0% { background: rgba(156,39,176,0.25); }
+  100% { background: linear-gradient(135deg, rgba(156,39,176,.05) 0%, var(--bg-light) 100%); }
+}
+@keyframes l4-flash {
+  0% { background: rgba(0,188,212,0.25); }
+  100% { background: linear-gradient(135deg, rgba(0,188,212,.05) 0%, var(--bg-light) 100%); }
+}
+
+/* Nodes - v3 design */
+.nodes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+.node {
+  background: transparent;
+  border: 2px dashed var(--border);
+  border-radius: 12px;
+  padding: 6px 8px;
+  text-align: center;
+  width: 100px;
+  height: 60px;
+  cursor: pointer;
+  transition: all 0.3s;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.node-icon { font-size: 28px; display: block; line-height: 1; }
+.node-label { font-size: 0.65rem; color: var(--text-dim); margin-top: 2px; }
+.node-status {
+  font-size: 0.55rem;
+  color: var(--accent);
+  margin-top: 2px;
+  min-height: 12px;
+  position: absolute;
+  bottom: 2px;
+  left: 0;
+  right: 0;
+}
+
+.node.active {
+  background: var(--node-active);
+  border-style: solid;
+  border-color: var(--neon);
+  box-shadow: 0 0 30px rgba(0,255,255,.6), 0 0 60px rgba(0,255,255,.2);
+  transform: scale(1.08);
+  transition: all 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+.node.done {
+  border-style: solid;
+  border-color: var(--layer1);
+  background: rgba(76,175,80,0.08);
+  opacity: 0.7;
+}
+.node.active .node-label { color: var(--neon); }
+.node.active .node-icon { animation: icon-pulse 0.6s ease-in-out; }
+.node.error-flash {
+  animation: error-flash 0.3s ease 3;
+  border-color: #ff0000 !important;
+  box-shadow: 0 0 20px rgba(255,0,0,.5) !important;
+}
+
+/* Character - CSS glow circle */
+.character {
+  position: absolute;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, var(--neon) 40%, rgba(0,255,255,0.3) 70%, transparent 100%);
+  box-shadow: 0 0 15px var(--neon), 0 0 30px rgba(0,255,255,0.4), 0 0 45px rgba(0,255,255,0.15);
+  transition: all 0.8s ease-in-out;
+  z-index: 20;
+  pointer-events: none;
+  animation: char-glow 2s ease-in-out infinite;
+}
+@keyframes char-glow {
+  0%, 100% { box-shadow: 0 0 15px var(--neon), 0 0 30px rgba(0,255,255,0.4); }
+  50% { box-shadow: 0 0 25px var(--neon), 0 0 50px rgba(0,255,255,0.6), 0 0 70px rgba(0,255,255,0.2); }
+}
+
+/* Path trail */
+.path-trail {
+  position: absolute;
+  pointer-events: none;
+  z-index: 15;
+}
+.path-trail-visited {
+  stroke: var(--neon);
+  stroke-width: 2;
+  stroke-opacity: 0.6;
+  fill: none;
+}
+.path-trail-remaining {
+  stroke: var(--neon);
+  stroke-width: 2;
+  stroke-opacity: 0.3;
+  stroke-dasharray: 6 4;
+  fill: none;
+}
+
+/* Magic Circle (Pi Runtime) */
+.magic-circle {
+  position: absolute;
+  top: -8px; left: -8px; right: -8px; bottom: -8px;
+  border: 2px dashed rgba(156,39,176,.5);
+  border-radius: 50%;
+  animation: spin 4s linear infinite;
+  pointer-events: none;
+}
+.magic-circle.active {
+  border-color: #9C27B0;
+  animation-duration: 1s;
+  box-shadow: 0 0 15px rgba(156,39,176,.4);
+}
+
+/* XP float-up */
+.xp-float {
+  position: fixed;
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(255,215,0,0.8);
+  pointer-events: none;
+  z-index: 100;
+  animation: float-up 1.2s ease-out forwards;
+}
+
+/* Level Up overlay */
+.levelup-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  pointer-events: none;
+  animation: levelup-fade 3s ease-out forwards;
+}
+.levelup-text {
+  font-size: 3rem;
+  font-weight: bold;
+  color: var(--accent);
+  text-shadow: 0 0 30px rgba(255,215,0,0.8), 0 0 60px rgba(255,215,0,0.4);
+  animation: levelup-scale 0.6s cubic-bezier(.34,1.56,.64,1);
+}
+
+/* Layer highlight transition */
+.layer.layer-highlight {
+  background: rgba(255,255,255,0.08) !important;
+  transition: background 0.3s;
+}
+
+/* Quest entry fadeIn */
+.quest-entry-new {
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* Background Particles */
+.particle {
+  position: fixed;
+  width: 3px; height: 3px;
+  background: rgba(0,255,255,0.15);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Data packet on connector SVG */
+.connector-svg {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 100%;
+  pointer-events: none;
+}
+.data-packet {
+  fill: var(--neon);
+  filter: drop-shadow(0 0 4px rgba(0,255,255,0.8));
+}
+
+/* Sound toggle */
+.sound-toggle {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  padding: 4px 10px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.sound-toggle:hover { border-color: var(--accent); color: var(--accent); }
+.sound-toggle.muted { opacity: 0.5; }
+
+/* Minimap active layer highlight */
+.minimap-layer.mm-highlight {
+  opacity: 1;
+  box-shadow: 0 0 6px currentColor;
+  transition: all 0.3s;
+}
+
+/* Heartbeat for Cron */
+.node-heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}
+
+/* Connector between layers - v3 staircase style */
+.connector {
+  text-align: center;
+  color: var(--border);
+  font-size: 0.9rem;
+  margin: 0;
+  padding: 4px 0;
+  transition: color 0.3s;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 36px;
+}
+.connector.active { color: var(--accent); }
+
+.connector-line {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--border);
+  transform: translateX(-50%);
+  transition: background 0.3s;
+}
+.connector.active .connector-line {
+  background: var(--accent);
+}
+
+.connector-arrow {
+  position: relative;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  transition: all 0.3s;
+}
+.connector.active .connector-arrow {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 8px rgba(255,215,0,0.3);
+}
+
+/* Moving dot on connector */
+.connector-moving-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--neon);
+  box-shadow: 0 0 8px var(--neon);
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  pointer-events: none;
+}
+.connector.active .connector-moving-dot {
+  opacity: 1;
+  animation: dot-travel 1s ease-in-out infinite;
+}
+@keyframes dot-travel {
+  0% { top: 0; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 100%; opacity: 0; }
+}
+
+/* Boss loading bar */
+.loading-bar-container {
+  width: 100%;
+  height: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  margin-top: 6px;
+  overflow: hidden;
+  display: none;
+}
+.loading-bar-container.visible { display: block; }
+.loading-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--layer3), var(--accent));
+  border-radius: 2px;
+  transition: width 0.3s linear;
+  animation: loading-shimmer 1.5s ease-in-out infinite;
+}
+@keyframes loading-shimmer {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Quest Complete banner */
+.quest-complete-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.5);
+  z-index: 300;
+  padding: 20px 40px;
+  background: linear-gradient(135deg, rgba(10,10,46,0.95), rgba(26,26,62,0.95));
+  border: 3px solid var(--accent);
+  border-radius: 16px;
+  text-align: center;
+  pointer-events: none;
+  animation: banner-appear 2.5s ease-out forwards;
+  box-shadow: 0 0 40px rgba(255,215,0,0.4), 0 0 80px rgba(255,215,0,0.1);
+}
+.quest-complete-banner h2 {
+  font-size: 1.8rem;
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(255,215,0,0.6);
+  margin-bottom: 6px;
+}
+.quest-complete-banner p {
+  font-size: 0.9rem;
+  color: var(--text);
+}
+@keyframes banner-appear {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+  15% { opacity: 1; transform: translate(-50%, -50%) scale(1.05); }
+  25% { transform: translate(-50%, -50%) scale(1); }
+  75% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
+}
+
+/* Agent Core special */
+.agent-core-box {
+  background: transparent;
+  border: 2px dashed var(--layer3);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  position: relative;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.agent-core-box.active {
+  background: rgba(156,39,176,0.15);
+  border-style: solid;
+  border-color: var(--accent);
+  box-shadow: 0 0 12px rgba(156,39,176,0.3);
+}
+.agent-core-box.done {
+  border-style: solid;
+  border-color: var(--layer1);
+  background: rgba(76,175,80,0.08);
+  opacity: 0.7;
+}
+.agent-title {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: var(--layer3);
+}
+.agent-core-box.active .agent-title { color: var(--accent); }
+.agent-files {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.agent-file {
+  background: rgba(156,39,176,0.2);
+  border: 1px solid var(--layer3);
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+}
+.agent-loop {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+.agent-status {
+  font-size: 0.7rem;
+  color: var(--accent);
+  margin-top: 6px;
+  min-height: 16px;
+}
+
+/* Sidebar - Character Status */
+.char-status {
+  padding: 14px;
+  border-bottom: 2px solid var(--border);
+  background: var(--panel-bg);
+}
+.char-title {
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-bottom: 10px;
+  text-align: center;
+}
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 0.8rem;
+}
+.stat-label { color: var(--text-dim); }
+.stat-value { color: var(--text); font-weight: bold; }
+.stat-hp .stat-value { color: #ff4444; }
+.stat-mp .stat-value { color: #4488ff; }
+.stat-lv .stat-value { color: var(--accent); }
+.stat-xp .stat-value { color: var(--layer1); }
+
+.xp-bar {
+  margin-top: 8px;
+  background: #1a1a3e;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  height: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--layer1), var(--accent));
+  border-radius: 3px;
+  transition: width 0.5s;
+}
+.xp-text {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.6rem;
+  line-height: 16px;
+  color: #fff;
+  text-shadow: 0 0 2px #000;
+}
+
+/* Quest Log */
+.quest-log {
+  flex: 1;
+  padding: 14px;
+  border-bottom: 2px solid var(--border);
+  background: var(--panel-bg);
+  overflow-y: auto;
+}
+.quest-title {
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.quest-entries {
+  font-size: 0.7rem;
+  line-height: 1.6;
+}
+.quest-entry {
+  color: var(--text-dim);
+  padding: 2px 0;
+}
+.quest-entry.current { color: var(--accent); }
+.quest-entry.done { color: var(--layer1); }
+.quest-entry .q-time { color: var(--text-dim); }
+.quest-xp { color: var(--accent); font-weight: bold; margin-top: 6px; }
+
+/* Controls */
+.controls {
+  padding: 14px;
+  background: var(--panel-bg);
+  border-bottom: 2px solid var(--border);
+}
+.control-title {
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.control-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+.ctrl-select {
+  flex: 1;
+  background: var(--node-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.ctrl-btn {
+  background: var(--node-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+.ctrl-btn.primary {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+  font-weight: bold;
+}
+.ctrl-btn.primary:hover { background: #ffed4a; }
+.ctrl-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.speed-controls {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  font-size: 0.7rem;
+}
+.speed-btn {
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  padding: 3px 8px;
+  font-family: inherit;
+  font-size: 0.65rem;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.speed-btn.active {
+  background: var(--accent);
+  color: #000;
+  border-color: var(--accent);
+}
+
+/* Live Mode */
+.live-panel {
+  padding: 14px;
+  background: var(--panel-bg);
+  display: none;
+}
+.live-panel.visible { display: block; }
+.live-title {
+  font-size: 0.85rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.live-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+.live-status {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #666;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: all 0.3s;
+}
+.live-status.connected {
+  background: var(--layer1);
+  box-shadow: 0 0 8px rgba(76,175,80,0.6);
+  animation: live-pulse 2s ease-in-out infinite;
+}
+.live-status.error {
+  background: #ff4444;
+  box-shadow: 0 0 8px rgba(255,68,68,0.6);
+}
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 4px rgba(76,175,80,0.4); }
+  50% { box-shadow: 0 0 12px rgba(76,175,80,0.8); }
+}
+.live-input {
+  flex: 1;
+  background: var(--node-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  min-width: 0;
+}
+.live-label {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.live-msg-input {
+  width: 100%;
+  background: var(--node-bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 8px;
+  font-family: inherit;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  resize: none;
+  height: 60px;
+}
+
+/* Keyframes */
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes float-up {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-60px) scale(1.3); }
+}
+@keyframes levelup-scale {
+  0% { transform: scale(0.3); }
+  100% { transform: scale(1); }
+}
+@keyframes levelup-fade {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+@keyframes error-flash {
+  0%, 100% { border-color: #ff0000; box-shadow: 0 0 15px rgba(255,0,0,.5); }
+  50% { border-color: transparent; box-shadow: none; }
+}
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateX(-10px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+@keyframes icon-pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+@keyframes particle-float {
+  0% { transform: translate(0, 0); opacity: 0; }
+  10% { opacity: 0.15; }
+  90% { opacity: 0.15; }
+  100% { transform: translate(var(--dx), var(--dy)); opacity: 0; }
+}
+@keyframes mm-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+/* Counter animation helper */
+@keyframes counter-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); color: #fff; }
+  100% { transform: scale(1); }
+}
+.counter-pop { animation: counter-pop 0.3s ease-out; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .main {
+    flex-direction: column;
+    height: auto;
+  }
+  .sidebar {
+    width: 100%;
+    border-left: none;
+    border-top: 2px solid var(--border);
+  }
+  .minimap { display: none; }
+  .header h1 { font-size: 1rem; }
+  .header { flex-wrap: wrap; gap: 6px; padding: 8px 12px; }
+  .nodes { gap: 8px; }
+  .node { width: 85px; height: 55px; }
+  .layer { padding: 10px; }
+  .ai-wallet { gap: 10px; padding: 6px 12px; font-size: 0.7rem; }
+  .msg-input-bar { flex-wrap: wrap; }
+  .scenario-chips { width: 100%; }
+}
+
+/* Mobile 480px */
+@media (max-width: 480px) {
+  .main {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 52px - 44px);
+  }
+  .sidebar {
+    width: 100%;
+    border-left: none;
+    border-top: 2px solid var(--border);
+    flex-direction: row;
+    flex-wrap: wrap;
+    max-height: 50vh;
+    overflow-y: auto;
+  }
+  .sidebar > div {
+    min-width: 0;
+  }
+  .controls {
+    width: 100%;
+    order: -1;
+  }
+  .char-status {
+    width: 50%;
+    border-right: 1px solid var(--border);
+  }
+  .quest-log {
+    width: 50%;
+  }
+  .live-panel {
+    width: 100%;
+  }
+  .header {
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 10px;
+  }
+  .header h1 { font-size: 0.85rem; }
+  .main-tab { padding: 4px 8px; font-size: 0.65rem; }
+  .mode-tab { padding: 4px 10px; font-size: 0.75rem; }
+  .minimap { display: none; }
+  .map-area { padding: 8px; padding-bottom: 60px; }
+  .layer { padding: 8px; }
+  .layer-header { font-size: 0.75rem; }
+  .nodes { gap: 6px; }
+  .node {
+    width: 70px;
+    height: 48px;
+    padding: 4px 6px;
+  }
+  .node-icon { font-size: 20px; }
+  .node-label { font-size: 0.55rem; }
+  .node-status { font-size: 0.5rem; }
+  .connector { height: 28px; }
+  .connector-arrow { width: 20px; height: 20px; font-size: 0.6rem; }
+  .stat-row { font-size: 0.7rem; }
+  .quest-entries { font-size: 0.6rem; }
+  .ctrl-btn { padding: 4px 8px; font-size: 0.7rem; }
+  .agent-core-box { padding: 10px; }
+  .agent-title { font-size: 0.85rem; }
+  .agent-file { font-size: 0.55rem; padding: 1px 5px; }
+  .quest-complete-banner h2 { font-size: 1.2rem; }
+  .quest-complete-banner p { font-size: 0.75rem; }
+  .quest-complete-banner { padding: 14px 24px; }
+  .ai-wallet {
+    flex-wrap: wrap;
+    height: auto;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 0.65rem;
+  }
+  .context-bar { width: 100%; min-width: unset; }
+  .msg-input-bar {
+    flex-direction: column;
+    padding: 8px;
+  }
+  .msg-input-bar input { width: 100%; }
+  .scenario-chips { width: 100%; overflow-x: auto; flex-wrap: nowrap; }
+  .faq-container, .settings-container { padding: 12px; }
+  .faq-title, .settings-title { font-size: 1.1rem; }
+  .decision-tooltip { max-width: 240px; font-size: 0.7rem; }
+  /* Bottom sheet style for decision tooltip on mobile */
+  .decision-tooltip.mobile-sheet {
+    position: fixed;
+    bottom: 44px;
+    left: 0;
+    right: 0;
+    top: auto;
+    max-width: 100%;
+    border-radius: 12px 12px 0 0;
+    animation: slide-up 0.3s ease-out;
+  }
+  @keyframes slide-up {
+    0% { transform: translateY(100%); }
+    100% { transform: translateY(0); }
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- Entry Animation -->
+<div class="entry-overlay" id="entry-overlay">
+  <div class="entry-title">AI의 내부를 들여다보세요</div>
+  <div class="entry-subtitle">OpenClaw Visualizer v4</div>
+  <div class="entry-char">&#x1F916;</div>
+</div>
+
+<!-- Header -->
+<div class="header">
+  <h1>OpenClaw Visualizer</h1>
+  <div class="main-tabs">
+    <button class="main-tab active" onclick="setMainTab('journey')">&#x1F3AC; 메시지 여행</button>
+    <button class="main-tab" onclick="setMainTab('faq')">&#x1F4D6; AI 설명서</button>
+    <button class="main-tab" onclick="setMainTab('settings')">&#x2699;&#xFE0F; 설정</button>
+  </div>
+</div>
+
+<!-- Tab: Message Journey -->
+<div class="tab-content active" id="tab-journey">
+
+  <!-- Message Input Bar -->
+  <div class="msg-input-bar">
+    <span style="font-size:1.1rem">&#x1F4AC;</span>
+    <input type="text" id="msg-journey-input" placeholder="메시지를 입력하세요..." onkeydown="if(event.key==='Enter')startJourney()"/>
+    <button onclick="startJourney()">&#x25B6; 여행 시작</button>
+    <div class="scenario-chips">
+      <button class="scenario-chip" onclick="setJourneyScenario('beginner')">&#x1F331; 날씨</button>
+      <button class="scenario-chip" onclick="setJourneyScenario('intermediate')">&#x1F5BC;&#xFE0F; 이미지</button>
+      <button class="scenario-chip" onclick="setJourneyScenario('boss')">&#x1F3AE; 게임</button>
+      <button class="scenario-chip" onclick="setJourneyScenario('time')">&#x23F0; 리마인더</button>
+    </div>
+  </div>
+
+  <!-- Step Explanation -->
+  <div class="step-explanation" id="step-explanation"></div>
+
+  <!-- Sub-mode tabs -->
+  <div style="display:flex;gap:6px;padding:6px 16px;background:var(--panel-bg);border-bottom:1px solid var(--border);align-items:center;">
+    <button class="mode-tab active" onclick="setMode('sim')">시뮬레이션 모드</button>
+    <button class="mode-tab" onclick="setMode('live')">라이브 모드</button>
+    <button class="sound-toggle" id="sound-toggle" onclick="toggleSound()">&#x1F50A; ON</button>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <!-- Map Area -->
+    <div class="map-area" id="map-area">
+
+      <!-- Character (CSS glow circle) -->
+      <div class="character" id="character" style="display:none;"></div>
+
+      <!-- Path trail SVG -->
+      <svg class="path-trail" id="path-trail" style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:15;"></svg>
+
+      <!-- Minimap -->
+      <div class="minimap">
+        <div class="minimap-title">MINIMAP</div>
+        <div class="minimap-layer minimap-l1" id="mm-l1">INGESTION<div class="minimap-dot"></div></div>
+        <div class="minimap-layer minimap-l2" id="mm-l2">CONTROL<div class="minimap-dot"></div></div>
+        <div class="minimap-layer minimap-l3" id="mm-l3">AGENT<div class="minimap-dot"></div></div>
+        <div class="minimap-layer minimap-l4" id="mm-l4">EXECUTE<div class="minimap-dot"></div></div>
+      </div>
+
+      <!-- Layer 1: INGESTION -->
+      <div class="layer l1" id="layer-1">
+        <div class="layer-header">
+          <div class="layer-num">1</div>
+          <span>INGESTION</span>
+        </div>
+        <div class="nodes">
+          <div class="node" id="node-tg" onclick="showDecisionTooltip('tg',event)">
+            <span class="node-icon">&#x1F4AC;</span>
+            <span class="node-label">Telegram</span>
+            <div class="node-status" id="status-tg"></div>
+          </div>
+          <div class="node" id="node-dc" onclick="showDecisionTooltip('dc',event)">
+            <span class="node-icon">&#x1F3AE;</span>
+            <span class="node-label">Discord</span>
+            <div class="node-status" id="status-dc"></div>
+          </div>
+          <div class="node" id="node-wa" onclick="showDecisionTooltip('wa',event)">
+            <span class="node-icon">&#x1F4F1;</span>
+            <span class="node-label">WhatsApp</span>
+            <div class="node-status" id="status-wa"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="connector" id="conn-1-2">
+        <div class="connector-line"></div>
+        <div class="connector-arrow">&#x25BC;</div>
+        <div class="connector-moving-dot"></div>
+        <svg class="connector-svg" id="svg-conn-1-2" viewBox="0 0 40 20" style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:40px;height:20px;overflow:visible;display:none;">
+          <circle class="data-packet" r="3" cx="20" cy="2"><animate attributeName="cy" from="2" to="18" dur="0.6s" repeatCount="indefinite"/></circle>
+        </svg>
+      </div>
+
+      <!-- Layer 2: CONTROL PLANE -->
+      <div class="layer l2" id="layer-2">
+        <div class="layer-header">
+          <div class="layer-num">2</div>
+          <span>CONTROL PLANE</span>
+        </div>
+        <div class="nodes">
+          <div class="node" id="node-router" onclick="showDecisionTooltip('router',event)">
+            <span class="node-icon">&#x1F500;</span>
+            <span class="node-label">Router</span>
+            <div class="node-status" id="status-router"></div>
+          </div>
+          <div class="node" id="node-access" onclick="showDecisionTooltip('access',event)">
+            <span class="node-icon">&#x1F510;</span>
+            <span class="node-label">Access</span>
+            <div class="node-status" id="status-access"></div>
+          </div>
+          <div class="node" id="node-queue" onclick="showDecisionTooltip('queue',event)">
+            <span class="node-icon">&#x1F4CB;</span>
+            <span class="node-label">Queue</span>
+            <div class="node-status" id="status-queue"></div>
+          </div>
+          <div class="node" id="node-cron" onclick="showDecisionTooltip('cron',event)">
+            <span class="node-icon">&#x23F0;</span>
+            <span class="node-label">Cron</span>
+            <div class="node-status" id="status-cron"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="connector" id="conn-2-3">
+        <div class="connector-line"></div>
+        <div class="connector-arrow">&#x25BC;</div>
+        <div class="connector-moving-dot"></div>
+        <svg class="connector-svg" id="svg-conn-2-3" viewBox="0 0 40 20" style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:40px;height:20px;overflow:visible;display:none;">
+          <circle class="data-packet" r="3" cx="20" cy="2"><animate attributeName="cy" from="2" to="18" dur="0.6s" repeatCount="indefinite"/></circle>
+        </svg>
+      </div>
+
+      <!-- Layer 3: AGENT CORE -->
+      <div class="layer l3" id="layer-3">
+        <div class="layer-header">
+          <div class="layer-num">3</div>
+          <span>AGENT CORE</span>
+        </div>
+        <div class="agent-core-box" id="node-pi" style="position:relative;overflow:visible;" onclick="showDecisionTooltip('pi',event)">
+          <div class="magic-circle" id="magic-circle"></div>
+          <div class="agent-title">Pi Runtime</div>
+          <div class="agent-files">
+            <span class="agent-file">AGENTS.md</span>
+            <span class="agent-file">SOUL.md</span>
+            <span class="agent-file">TOOLS.md</span>
+            <span class="agent-file">MEMORY.md</span>
+          </div>
+          <div class="agent-loop">call &rarr; tool &rarr; feed &rarr; repeat</div>
+          <div class="agent-status" id="status-pi"></div>
+          <div class="loading-bar-container" id="boss-loading-bar">
+            <div class="loading-bar-fill" id="boss-loading-fill"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="connector" id="conn-3-4">
+        <div class="connector-line"></div>
+        <div class="connector-arrow">&#x25BC;</div>
+        <div class="connector-moving-dot"></div>
+        <svg class="connector-svg" id="svg-conn-3-4" viewBox="0 0 40 20" style="position:absolute;top:0;left:50%;transform:translateX(-50%);width:40px;height:20px;overflow:visible;display:none;">
+          <circle class="data-packet" r="3" cx="20" cy="2"><animate attributeName="cy" from="2" to="18" dur="0.6s" repeatCount="indefinite"/></circle>
+        </svg>
+      </div>
+
+      <!-- Layer 4: EXECUTE -->
+      <div class="layer l4" id="layer-4">
+        <div class="layer-header">
+          <div class="layer-num">4</div>
+          <span>EXECUTE</span>
+        </div>
+        <div class="nodes">
+          <div class="node" id="node-search" onclick="showDecisionTooltip('search',event)">
+            <span class="node-icon">&#x1F50D;</span>
+            <span class="node-label">Search</span>
+            <div class="node-status" id="status-search"></div>
+          </div>
+          <div class="node" id="node-file" onclick="showDecisionTooltip('file',event)">
+            <span class="node-icon">&#x1F4C1;</span>
+            <span class="node-label">File</span>
+            <div class="node-status" id="status-file"></div>
+          </div>
+          <div class="node" id="node-exec" onclick="showDecisionTooltip('exec',event)">
+            <span class="node-icon">&#x2699;&#xFE0F;</span>
+            <span class="node-label">Exec</span>
+            <div class="node-status" id="status-exec"></div>
+          </div>
+          <div class="node" id="node-memory" onclick="showDecisionTooltip('memory',event)">
+            <span class="node-icon">&#x1F4BE;</span>
+            <span class="node-label">Memory</span>
+            <div class="node-status" id="status-memory"></div>
+          </div>
+          <div class="node" id="node-message" onclick="showDecisionTooltip('message',event)">
+            <span class="node-icon">&#x1F4E8;</span>
+            <span class="node-label">Message</span>
+            <div class="node-status" id="status-message"></div>
+          </div>
+          <div class="node" id="node-vision" onclick="showDecisionTooltip('vision',event)">
+            <span class="node-icon">&#x1F441;&#xFE0F;</span>
+            <span class="node-label">Vision</span>
+            <div class="node-status" id="status-vision"></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+
+      <!-- Controls -->
+      <div class="controls">
+        <div class="control-title">컨트롤 패널</div>
+        <div class="control-row">
+          <select class="ctrl-select" id="scenario-select">
+            <option value="beginner">초보: "날씨 알려줘"</option>
+            <option value="intermediate">중급: "이미지 분석해줘"</option>
+            <option value="boss">보스: "랄프톤으로 게임 만들어줘"</option>
+            <option value="time">시간: "리마인더 설정해줘"</option>
+          </select>
+        </div>
+        <div class="control-row">
+          <button class="ctrl-btn primary" id="btn-start" onclick="startSim()">&#x25B6; 시작</button>
+          <button class="ctrl-btn" id="btn-next" onclick="nextStep()" disabled>&#x23ED;&#xFE0F; 다음</button>
+          <button class="ctrl-btn" id="btn-reset" onclick="resetSim()">&#x1F504; 리셋</button>
+        </div>
+        <div class="control-row">
+          <div class="speed-controls">
+            <span style="color:var(--text-dim)">속도:</span>
+            <button class="speed-btn" onclick="setSpeed(0.5)">0.5x</button>
+            <button class="speed-btn active" onclick="setSpeed(1)">1x</button>
+            <button class="speed-btn" onclick="setSpeed(2)">2x</button>
+            <button class="speed-btn" onclick="setSpeed(3)">3x</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Character Status -->
+      <div class="char-status">
+        <div class="char-title" id="char-msg-title">대기 중...</div>
+        <div class="stat-row stat-hp">
+          <span class="stat-label">&#x2764;&#xFE0F; HP</span>
+          <span class="stat-value" id="stat-hp">100</span>
+        </div>
+        <div class="stat-row stat-mp">
+          <span class="stat-label">&#x1F499; MP (토큰)</span>
+          <span class="stat-value" id="stat-mp">0</span>
+        </div>
+        <div class="stat-row stat-lv">
+          <span class="stat-label">&#x2B50; Level</span>
+          <span class="stat-value" id="stat-lv">1</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">&#x1F5E1;&#xFE0F; 툴호출</span>
+          <span class="stat-value" id="stat-tools">0</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">&#x1F4B0; 코스트</span>
+          <span class="stat-value" id="stat-cost">$0.00</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">&#x23F1;&#xFE0F; 레이턴시</span>
+          <span class="stat-value" id="stat-latency">0.0s</span>
+        </div>
+        <div class="stat-row stat-xp">
+          <span class="stat-label">XP</span>
+          <span class="stat-value" id="stat-xp-text">0 / 100</span>
+        </div>
+        <div class="xp-bar">
+          <div class="xp-fill" id="xp-fill" style="width:0%"></div>
+          <div class="xp-text" id="xp-percent">0%</div>
+        </div>
+      </div>
+
+      <!-- Quest Log -->
+      <div class="quest-log">
+        <div class="quest-title">퀘스트 로그</div>
+        <div class="quest-entries" id="quest-entries">
+          <div class="quest-entry" style="color:var(--text-dim)">시나리오를 선택하고 시작하세요...</div>
+        </div>
+      </div>
+
+      <!-- Live Mode Panel -->
+      <div class="live-panel" id="live-panel">
+        <div class="live-title">라이브 연결</div>
+
+        <div class="live-label">WebSocket</div>
+        <div class="live-row">
+          <div class="live-status" id="ws-status"></div>
+          <input class="live-input" id="ws-url" value="ws://127.0.0.1:18800/ws" />
+          <button class="ctrl-btn" id="ws-btn" onclick="toggleWS()">연결</button>
+        </div>
+
+        <div class="live-label">OpenAI API</div>
+        <div class="live-row">
+          <div class="live-status" id="api-status"></div>
+          <input class="live-input" id="api-url" value="http://127.0.0.1:18789/v1/chat/completions" />
+          <button class="ctrl-btn" id="api-btn" onclick="testAPI()">테스트</button>
+        </div>
+
+        <div class="live-label" style="margin-top:8px">메시지 입력</div>
+        <textarea class="live-msg-input" id="live-msg" placeholder="메시지를 입력하세요..."></textarea>
+        <button class="ctrl-btn primary" style="margin-top:6px;width:100%" onclick="sendLiveMsg()">전송</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Tab: FAQ -->
+<div class="tab-content-block" id="tab-faq">
+  <div class="faq-container">
+    <div class="faq-title">&#x1F4D6; AI 설명서</div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question"><span>Q: AI는 어떻게 "생각"하나요?</span><span class="faq-arrow">&#x25BC;</span></div>
+      <div class="faq-answer">AI는 4단계로 생각합니다:<br><br>
+        <b>1. 수신</b> - 사용자 메시지를 받습니다<br>
+        <b>2. 이해</b> - 무엇을 원하는지 파악합니다<br>
+        <b>3. 도구</b> - 필요한 도구를 선택하고 실행합니다<br>
+        <b>4. 응답</b> - 결과를 바탕으로 답변을 생성합니다<br><br>
+        이 과정을 "메시지 여행" 탭에서 직접 눈으로 확인할 수 있습니다!</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question"><span>Q: 왜 같은 질문에 다른 답이 나오나요?</span><span class="faq-arrow">&#x25BC;</span></div>
+      <div class="faq-answer">AI는 확률적으로 다음 단어를 예측합니다. <b>온도(temperature)</b> 설정에 따라 창의성과 일관성의 균형이 달라집니다.<br><br>
+        - <b>낮은 온도 (0.1~0.3)</b>: 일관되고 예측 가능한 답변<br>
+        - <b>높은 온도 (0.7~1.0)</b>: 창의적이고 다양한 답변<br><br>
+        마치 주사위를 던지는 것처럼, 매번 약간씩 다른 결과가 나옵니다.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question"><span>Q: AI의 기억은 어떻게 작동하나요?</span><span class="faq-arrow">&#x25BC;</span></div>
+      <div class="faq-answer">두 가지 기억이 있습니다:<br><br>
+        <b>&#x1F4AD; 단기 기억 (Context Window)</b><br>
+        현재 대화 내용을 기억합니다. 대화가 길어지면 오래된 내용은 잊혀집니다. 보통 128K~1M 토큰의 용량이 있습니다.<br><br>
+        <b>&#x1F4BE; 장기 기억 (MEMORY.md)</b><br>
+        중요한 정보를 파일에 저장합니다. 다음 대화에서도 기억할 수 있습니다. 사용자의 선호도, 프로젝트 정보 등을 저장합니다.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question"><span>Q: 툴(Tool)이 뭔가요?</span><span class="faq-arrow">&#x25BC;</span></div>
+      <div class="faq-answer">AI가 직접 행동할 수 있는 도구입니다:<br><br>
+        &#x1F50D; <b>검색</b> - 웹에서 실시간 정보 검색<br>
+        &#x1F4C1; <b>파일 읽기/쓰기</b> - 파일 시스템 조작<br>
+        &#x2699;&#xFE0F; <b>코드 실행</b> - 프로그램 실행<br>
+        &#x1F4BE; <b>메모리 저장</b> - 중요 정보 기록<br>
+        &#x1F4E8; <b>메시지 전송</b> - 텔레그램 등으로 응답<br>
+        &#x1F441;&#xFE0F; <b>비전</b> - 이미지 분석<br><br>
+        AI는 질문의 성격에 따라 적절한 툴을 자동으로 선택합니다.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question"><span>Q: 토큰(Token)이 뭔가요?</span><span class="faq-arrow">&#x25BC;</span></div>
+      <div class="faq-answer">토큰은 AI가 텍스트를 처리하는 최소 단위입니다.<br><br>
+        - 영어: 약 4글자 = 1토큰 ("hello" = 1토큰)<br>
+        - 한국어: 약 1~2글자 = 1토큰 ("안녕" = 2토큰)<br><br>
+        <b>토큰이 중요한 이유:</b><br>
+        &#x1F4B0; 비용: 토큰 수에 따라 API 비용이 결정됩니다<br>
+        &#x1F4CF; 한계: Context Window 크기가 토큰으로 제한됩니다<br>
+        &#x23F1;&#xFE0F; 속도: 토큰이 많을수록 응답이 느려집니다</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question"><span>Q: AI 에이전트와 챗봇의 차이는?</span><span class="faq-arrow">&#x25BC;</span></div>
+      <div class="faq-answer"><b>챗봇</b>: 대화만 가능. 텍스트를 주고받는 것이 전부입니다.<br><br>
+        <b>AI 에이전트</b>: 대화 + 행동이 가능합니다.<br>
+        - 스스로 도구를 선택하고 실행<br>
+        - 여러 단계의 작업을 자율적으로 수행<br>
+        - 외부 시스템과 연동 (검색, 파일, API 등)<br>
+        - 결과를 분석하고 다음 행동을 결정<br><br>
+        OpenClaw는 <b>AI 에이전트</b>입니다!</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question"><span>Q: 컨텍스트 윈도우(Context Window)란?</span><span class="faq-arrow">&#x25BC;</span></div>
+      <div class="faq-answer">AI가 한 번에 "볼 수 있는" 텍스트의 양입니다.<br><br>
+        마치 책상 위 공간과 같습니다:<br>
+        - 책상이 넓으면(큰 컨텍스트) 더 많은 자료를 동시에 볼 수 있고<br>
+        - 책상이 좁으면(작은 컨텍스트) 오래된 자료를 치워야 합니다<br><br>
+        <b>모델별 크기:</b><br>
+        - GPT-4: 128K 토큰<br>
+        - Claude: 200K ~ 1M 토큰<br><br>
+        "AI 지갑" 바에서 현재 사용률을 확인할 수 있습니다.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question"><span>Q: AI는 감정이 있나요?</span><span class="faq-arrow">&#x25BC;</span></div>
+      <div class="faq-answer">AI는 감정을 <b>시뮬레이션</b>할 수 있지만, 실제로 느끼지는 않습니다.<br><br>
+        "슬프다"고 말할 수 있지만, 그것은 학습된 패턴에 따른 텍스트 생성일 뿐입니다. 하지만 사용자와의 상호작용에서 적절한 공감을 표현하도록 설계되어 있습니다.<br><br>
+        OpenClaw의 SOUL.md 파일에는 AI의 "성격"이 정의되어 있어, 일관된 페르소나를 유지합니다.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question"><span>Q: 비용은 어떻게 계산되나요?</span><span class="faq-arrow">&#x25BC;</span></div>
+      <div class="faq-answer">AI API 비용은 주로 <b>토큰 수</b>로 결정됩니다:<br><br>
+        <b>입력 토큰</b>: 사용자의 메시지 + 시스템 프롬프트 + 대화 기록<br>
+        <b>출력 토큰</b>: AI의 응답<br><br>
+        예시 (Claude Sonnet 기준):<br>
+        - 간단한 질문: ~$0.002 (2원)<br>
+        - 복잡한 코딩: ~$0.05 (50원)<br>
+        - 대규모 프로젝트: ~$0.50+ (500원+)<br><br>
+        "AI 지갑"에서 실시간으로 비용을 확인할 수 있습니다.</div>
+    </div>
+
+    <div class="faq-item" onclick="toggleFaq(this)">
+      <div class="faq-question"><span>Q: "랄프톤"이 뭔가요?</span><span class="faq-arrow">&#x25BC;</span></div>
+      <div class="faq-answer"><b>랄프톤(Ralphton)</b>은 OpenClaw의 AI 코딩 에이전트입니다.<br><br>
+        사용자가 "게임 만들어줘"처럼 복잡한 요청을 하면, Pi Runtime이 랄프톤을 호출합니다. 랄프톤은:<br><br>
+        1. 요구사항 문서(PRD)를 읽고<br>
+        2. 기존 코드를 분석하고<br>
+        3. Claude Code를 실행하여 코드를 생성하고<br>
+        4. 결과를 검증합니다<br><br>
+        "보스" 시나리오에서 이 과정을 볼 수 있습니다!</div>
+    </div>
+  </div>
+</div>
+
+<!-- Tab: Settings -->
+<div class="tab-content-block" id="tab-settings">
+  <div class="settings-container">
+    <div class="settings-title">&#x2699;&#xFE0F; 설정</div>
+
+    <div class="setting-group">
+      <div class="setting-label">&#x23F1;&#xFE0F; 애니메이션 속도</div>
+      <div class="setting-options">
+        <button class="setting-btn" onclick="setSpeed(0.5);updateSettingBtns('speed',this)">0.5x</button>
+        <button class="setting-btn active" onclick="setSpeed(1);updateSettingBtns('speed',this)">1x</button>
+        <button class="setting-btn" onclick="setSpeed(2);updateSettingBtns('speed',this)">2x</button>
+        <button class="setting-btn" onclick="setSpeed(3);updateSettingBtns('speed',this)">3x</button>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-toggle">
+        <span class="setting-label" style="margin-bottom:0">&#x1F50A; 소리</span>
+        <div class="toggle-switch on" id="toggle-sound" onclick="toggleSoundSetting()"></div>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-label">&#x1F3A8; 테마</div>
+      <div class="setting-options">
+        <button class="setting-btn active" onclick="setTheme('dark');updateSettingBtns('theme',this)">다크</button>
+        <button class="setting-btn" onclick="setTheme('light');updateSettingBtns('theme',this)">라이트</button>
+      </div>
+    </div>
+
+    <div class="setting-group">
+      <div class="setting-label">&#x1F30D; 언어</div>
+      <div class="setting-options">
+        <button class="setting-btn active" onclick="setLang('ko');updateSettingBtns('lang',this)">한국어</button>
+        <button class="setting-btn" onclick="setLang('en');updateSettingBtns('lang',this)">English</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Wallet (bottom bar) -->
+<div class="ai-wallet" id="ai-wallet">
+  <div class="wallet-stat">
+    <span class="w-icon">&#x1FA99;</span>
+    <span class="w-label">토큰:</span>
+    <span class="w-value" id="w-tokens">0</span>
+  </div>
+  <div class="wallet-stat">
+    <span class="w-icon">&#x1F4B5;</span>
+    <span class="w-value" id="w-cost">$0.000</span>
+  </div>
+  <div class="wallet-stat">
+    <span class="w-icon">&#x23F1;&#xFE0F;</span>
+    <span class="w-value" id="w-time">0.0s</span>
+  </div>
+  <div class="wallet-stat">
+    <span class="w-icon">&#x1F6E0;&#xFE0F;</span>
+    <span class="w-value" id="w-tools">0</span>
+    <span class="w-label">회</span>
+  </div>
+  <div class="context-bar">
+    <span class="context-bar-text">context</span>
+    <div class="context-bar-track">
+      <div class="context-bar-fill" id="context-fill"></div>
+    </div>
+    <span class="context-bar-text" id="context-pct">0%</span>
+  </div>
+</div>
+
+<script>
+// ========== STATE ==========
+var state = {
+  mode: 'sim',
+  mainTab: 'journey',
+  running: false,
+  stepIndex: -1,
+  speed: 1,
+  autoPlay: false,
+  timer: null,
+  hp: 100,
+  mp: 0,
+  level: 1,
+  xp: 0,
+  xpMax: 100,
+  toolCalls: 0,
+  cost: 0,
+  latency: 0,
+  msgCount: 0,
+  ws: null,
+  wsConnected: false,
+  apiConnected: false,
+  soundEnabled: true,
+  currentLayer: 0,
+  heartbeatInterval: null,
+  bossLoadingInterval: null,
+  pathHistory: [],
+  lang: 'ko',
+  theme: 'dark',
+  contextUsed: 0,
+  contextMax: 200000
+};
+
+// ========== i18n ==========
+var i18n = {
+  ko: {
+    msgJourney: '\uD83C\uDFAC 메시지 여행',
+    faq: '\uD83D\uDCD6 AI 설명서',
+    settings: '\u2699\uFE0F 설정',
+    simMode: '시뮬레이션 모드',
+    liveMode: '라이브 모드',
+    inputPlaceholder: '메시지를 입력하세요...',
+    startJourney: '\u25B6 여행 시작',
+    weather: '\uD83C\uDF31 날씨',
+    image: '\uD83D\uDDBC\uFE0F 이미지',
+    game: '\uD83C\uDFAE 게임',
+    reminder: '\u23F0 리마인더',
+    control: '컨트롤 패널',
+    start: '\u25B6 시작',
+    next: '\u23ED\uFE0F 다음',
+    reset: '\uD83D\uDD04 리셋',
+    speed: '속도:',
+    waiting: '대기 중...',
+    questLog: '퀘스트 로그',
+    selectScenario: '시나리오를 선택하고 시작하세요...',
+    questComplete: '퀘스트 완료!',
+    complete: '\u2705 완료!',
+    tokens: '토큰:',
+    tools: '회',
+    context: 'context'
+  },
+  en: {
+    msgJourney: '\uD83C\uDFAC Message Journey',
+    faq: '\uD83D\uDCD6 AI Manual',
+    settings: '\u2699\uFE0F Settings',
+    simMode: 'Simulation',
+    liveMode: 'Live Mode',
+    inputPlaceholder: 'Type a message...',
+    startJourney: '\u25B6 Start Journey',
+    weather: '\uD83C\uDF31 Weather',
+    image: '\uD83D\uDDBC\uFE0F Image',
+    game: '\uD83C\uDFAE Game',
+    reminder: '\u23F0 Reminder',
+    control: 'Control Panel',
+    start: '\u25B6 Start',
+    next: '\u23ED\uFE0F Next',
+    reset: '\uD83D\uDD04 Reset',
+    speed: 'Speed:',
+    waiting: 'Waiting...',
+    questLog: 'Quest Log',
+    selectScenario: 'Select a scenario and start...',
+    questComplete: 'Quest Complete!',
+    complete: '\u2705 Done!',
+    tokens: 'Tokens:',
+    tools: 'calls',
+    context: 'context'
+  }
+};
+
+// ========== SCENARIOS (v4 - 4 scenarios with explanations) ==========
+var scenarios = {
+  beginner: {
+    name: '날씨 알려줘',
+    nameEn: 'Tell me the weather',
+    xpReward: 50,
+    steps: [
+      { layer: 1, node: 'tg', status: '수신', log: '[\u2460] 텔레그램 수신 "날씨 알려줘"', mp: 10, latency: 0.1,
+        explain: '사용자의 메시지가 텔레그램을 통해 도착합니다. 이것이 여행의 시작점입니다.',
+        decision: { why: '"날씨 알려줘"라는 메시지가 텔레그램 봇으로 전송됨', alts: [] }
+      },
+      { layer: 2, node: 'router', status: '라우팅', log: '[\u2461] 라우팅 \u2192 메인 세션', latency: 0.1,
+        explain: '라우터가 메시지를 어떤 세션으로 보낼지 결정합니다. 채팅 ID를 기반으로 기존 세션을 찾습니다.',
+        decision: { why: '채팅 ID 기반으로 메인 세션으로 라우팅', alts: ['\u274C 새 세션 생성 (기존 세션 존재)', '\u274C 대기열에 추가 (우선순위 높음)'] }
+      },
+      { layer: 3, node: 'pi', status: '추론 중...', log: '[\u2462] Pi Runtime 추론...', mp: 30, latency: 0.8,
+        explain: 'AI가 메시지를 분석합니다. "날씨"와 "서울"이라는 키워드에서 실시간 정보가 필요하다고 판단합니다.',
+        decision: { why: '"날씨" + 실시간 정보 필요 \u2192 웹 검색 도구 선택', alts: ['\u274C 메모리 검색 (과거 정보X)', '\u274C 파일 읽기 (관련없음)', '\u274C 코드 실행 (불필요)'] }
+      },
+      { layer: 4, node: 'search', status: 'web_search 실행', log: '[\u2463] web_search("서울 내일 날씨")', tool: true, cost: 0.002, latency: 1.2,
+        explain: '검색 도구가 실행됩니다. 실시간 날씨 정보를 가져오기 위해 웹 검색이 필요합니다.',
+        decision: { why: '날씨는 실시간 정보 \u2192 웹 검색이 유일한 방법', alts: ['\u274C 내부 데이터베이스 (날씨 데이터 없음)', '\u274C 추측 (정확도 낮음)'] }
+      },
+      { layer: 3, node: 'pi', status: '응답 생성', log: '[\u2462] 검색 결과로 응답 생성', mp: 20, latency: 0.5,
+        explain: '검색 결과(맑음, 15\u00B0C)를 바탕으로 자연스러운 한국어 답변을 생성합니다.',
+        decision: { why: '검색 결과를 자연어로 변환하여 답변 생성', alts: [] }
+      },
+      { layer: 1, node: 'tg', status: '응답 전송', log: '[\u2460] "내일 서울은 맑음, 15\u00B0C입니다"', latency: 0.1,
+        explain: '최종 답변이 텔레그램을 통해 사용자에게 전달됩니다. 여행 완료!',
+        decision: { why: '원래 메시지가 온 채널로 응답 전송', alts: [] }
+      }
+    ]
+  },
+  intermediate: {
+    name: '이미지 분석해줘',
+    nameEn: 'Analyze this image',
+    xpReward: 120,
+    steps: [
+      { layer: 1, node: 'tg', status: '수신 (이미지)', log: '[\u2460] 텔레그램 수신 "이 사진 분석해줘" + 이미지', mp: 15, latency: 0.1,
+        explain: '이미지와 함께 메시지가 도착합니다. 멀티모달 처리가 필요합니다.',
+        decision: { why: '텍스트 + 이미지가 함께 수신됨', alts: [] }
+      },
+      { layer: 2, node: 'router', status: '라우팅', log: '[\u2461] 라우팅 \u2192 메인 세션 (이미지 포함)', latency: 0.1,
+        explain: '이미지가 포함된 메시지를 감지하고, 비전 처리가 가능한 세션으로 라우팅합니다.',
+        decision: { why: '이미지 포함 메시지 \u2192 비전 지원 세션', alts: ['\u274C 텍스트 전용 세션 (이미지 처리 불가)'] }
+      },
+      { layer: 2, node: 'access', status: '권한 확인', log: '[\u2461] 이미지 처리 권한 확인', latency: 0.2,
+        explain: '이미지 분석은 추가 비용이 들 수 있어, 사용자의 권한을 확인합니다.',
+        decision: { why: '비전 API는 추가 토큰을 소모 \u2192 권한 검증 필요', alts: [] }
+      },
+      { layer: 3, node: 'pi', status: '이미지 분석 중...', log: '[\u2462] Pi Runtime 이미지+텍스트 추론', mp: 80, latency: 2.0,
+        explain: 'AI가 이미지와 텍스트를 동시에 분석합니다. 비전 모델을 통해 이미지 내용을 이해합니다.',
+        decision: { why: '이미지 분석 요청 \u2192 비전 도구 + 검색 도구 사용 결정', alts: ['\u274C 텍스트만 분석 (이미지 무시)', '\u274C OCR만 수행 (분석 불충분)'] }
+      },
+      { layer: 4, node: 'vision', status: 'vision(analyze)', log: '[\u2463] Vision \u2192 이미지 분석', tool: true, cost: 0.01, latency: 1.5,
+        explain: '비전 도구가 이미지를 분석합니다. 물체, 텍스트, 장면 등을 인식합니다.',
+        decision: { why: '이미지 내용 파악을 위해 비전 도구 사용', alts: ['\u274C OCR만 (텍스트 없는 이미지일 수 있음)'] }
+      },
+      { layer: 4, node: 'search', status: 'web_search(추가정보)', log: '[\u2463] Search \u2192 관련 정보 검색', tool: true, cost: 0.002, latency: 0.8,
+        explain: '이미지에서 발견된 내용에 대한 추가 정보를 웹에서 검색합니다.',
+        decision: { why: '이미지 속 랜드마크/물체에 대한 추가 정보 필요', alts: ['\u274C 메모리 검색 (관련 기억 없음)', '\u274C 건너뛰기 (정보 부족)'] }
+      },
+      { layer: 3, node: 'pi', status: '응답 생성', log: '[\u2462] 분석 결과 + 검색 결과로 응답', mp: 30, latency: 0.8,
+        explain: '비전 분석과 웹 검색 결과를 종합하여 상세한 이미지 설명을 생성합니다.',
+        decision: { why: '비전 + 검색 결과를 종합하여 풍부한 답변 생성', alts: [] }
+      },
+      { layer: 1, node: 'tg', status: '응답 전송', log: '[\u2460] 이미지 분석 결과 전송', latency: 0.1,
+        explain: '상세한 이미지 분석 결과가 사용자에게 전달됩니다.',
+        decision: { why: '원래 채널로 분석 결과 전송', alts: [] }
+      }
+    ]
+  },
+  boss: {
+    name: '랄프톤으로 게임 만들어줘',
+    nameEn: 'Make a game with Ralphton',
+    xpReward: 500,
+    steps: [
+      { layer: 1, node: 'tg', status: '수신', log: '[\u2460] 텔레그램 수신 "랄프톤으로 게임 만들어줘"', mp: 10, latency: 0.1,
+        explain: '복잡한 코딩 요청이 도착합니다. 이것은 "보스급" 작업입니다.',
+        decision: { why: '사용자가 코딩 작업을 요청함', alts: [] }
+      },
+      { layer: 2, node: 'router', status: '라우팅', log: '[\u2461] 라우팅 \u2192 메인 세션', latency: 0.1,
+        explain: '라우터가 코딩 요청을 인식하고 메인 세션으로 라우팅합니다.',
+        decision: { why: '코딩 작업 \u2192 메인 세션에서 처리', alts: ['\u274C 경량 세션 (복잡한 작업 불가)'] }
+      },
+      { layer: 3, node: 'pi', status: '추론 중... (분석)', log: '[\u2462] Pi Runtime 추론 (요구사항 분석)', mp: 50, latency: 2.0, bossLoading: true,
+        explain: 'AI가 요청을 깊이 분석합니다. "게임 만들어줘"를 구체적인 작업 단계로 분해합니다.',
+        decision: { why: '"게임 만들어줘" \u2192 복잡한 코딩 작업 \u2192 랄프톤 호출 결정', alts: ['\u274C 직접 코드 작성 (품질 보장 어려움)', '\u274C 템플릿 제공 (사용자가 원하는 것 아님)'] }
+      },
+      { layer: 4, node: 'file', status: 'read(PRD.md)', log: '[\u2463] File \u2192 read(PRD.md)', tool: true, cost: 0.001, latency: 0.3,
+        explain: '요구사항 문서를 읽어 프로젝트의 목표와 제약 조건을 파악합니다.',
+        decision: { why: '코딩 전 요구사항 파악 필수', alts: ['\u274C 바로 코딩 시작 (요구사항 미확인)'] }
+      },
+      { layer: 4, node: 'file', status: 'read(index.html)', log: '[\u2463] File \u2192 read(v4/index.html)', tool: true, cost: 0.001, latency: 0.3,
+        explain: '기존 코드를 읽어 현재 상태를 파악합니다. 수정할 부분을 식별합니다.',
+        decision: { why: '기존 코드 이해 없이 수정하면 버그 발생', alts: ['\u274C 새로 작성 (기존 기능 손실)'] }
+      },
+      { layer: 4, node: 'exec', status: 'claude 실행 중...', log: '[\u2463] Exec \u2192 claude --code 실행', tool: true, cost: 0.05, latency: 15.0, bossLoading: true,
+        explain: '랄프톤이 Claude Code를 실행하여 게임 코드를 생성합니다. 가장 시간이 오래 걸리는 단계입니다.',
+        decision: { why: '전문 코딩 에이전트(랄프톤)에게 위임', alts: ['\u274C 직접 코드 생성 (복잡도 높은 작업엔 부적합)'] }
+      },
+      { layer: 4, node: 'file', status: '결과 확인', log: '[\u2463] File \u2192 결과 파일 확인', tool: true, cost: 0.001, latency: 0.3,
+        explain: '생성된 코드가 정상적으로 만들어졌는지 검증합니다.',
+        decision: { why: '코드 품질 검증은 필수 단계', alts: [] }
+      },
+      { layer: 4, node: 'exec', status: '테스트 실행', log: '[\u2463] Exec \u2192 테스트 실행', tool: true, cost: 0.005, latency: 2.0,
+        explain: '생성된 게임이 실제로 동작하는지 테스트합니다.',
+        decision: { why: '테스트 없이 배포하면 사용자에게 오류 발생', alts: ['\u274C 테스트 생략 (위험)'] }
+      },
+      { layer: 4, node: 'message', status: 'send(telegram)', log: '[\u2463] Message \u2192 send(telegram)', tool: true, cost: 0, latency: 0.2,
+        explain: '완성된 게임 링크와 설명을 텔레그램으로 전송합니다.',
+        decision: { why: '원래 요청 채널로 결과 전송', alts: [] }
+      },
+      { layer: 3, node: 'pi', status: '응답 생성', log: '[\u2462] 최종 응답 생성', mp: 30, latency: 1.0,
+        explain: '모든 작업 결과를 정리하여 사용자에게 보여줄 최종 응답을 생성합니다.',
+        decision: { why: '작업 결과 요약 및 사용법 안내', alts: [] }
+      },
+      { layer: 4, node: 'memory', status: 'memory_save', log: '[\u2463] Memory \u2192 프로젝트 기록 저장', tool: true, cost: 0.001, latency: 0.2,
+        explain: '이번 작업 내용을 메모리에 저장하여, 다음에 수정 요청이 올 때 참조합니다.',
+        decision: { why: '다음 대화에서 이 프로젝트를 기억하기 위해', alts: ['\u274C 저장 안함 (다음에 같은 작업 반복)'] }
+      },
+      { layer: 1, node: 'tg', status: '응답 전송', log: '[\u2460] "게임이 완성되었습니다! \u{1F3AE}"', latency: 0.1,
+        explain: '최종 결과가 사용자에게 전달됩니다. 보스 퀘스트 완료!',
+        decision: { why: '텔레그램으로 최종 응답 전송', alts: [] }
+      }
+    ]
+  },
+  time: {
+    name: '리마인더 설정해줘',
+    nameEn: 'Set a reminder',
+    xpReward: 150,
+    steps: [
+      { layer: 1, node: 'tg', status: '수신', log: '[\u2460] 텔레그램 수신 "내일 오전 9시에 회의 알려줘"', mp: 10, latency: 0.1,
+        explain: '리마인더 설정 요청이 도착합니다. 시간 관련 작업이 필요합니다.',
+        decision: { why: '사용자의 리마인더 요청 수신', alts: [] }
+      },
+      { layer: 2, node: 'router', status: '라우팅', log: '[\u2461] 라우팅 \u2192 메인 세션', latency: 0.1,
+        explain: '라우터가 시간 관련 요청을 인식하고 cron 시스템 접근이 필요한 세션으로 라우팅합니다.',
+        decision: { why: '시간 예약 작업 \u2192 cron 접근 가능한 세션', alts: [] }
+      },
+      { layer: 3, node: 'pi', status: '추론 중...', log: '[\u2462] Pi Runtime 추론 (시간 파싱)', mp: 30, latency: 0.8,
+        explain: 'AI가 "내일 오전 9시"를 구체적인 날짜와 시간으로 변환합니다.',
+        decision: { why: '"내일 오전 9시" \u2192 cron 표현식으로 변환 필요', alts: ['\u274C 단순 타이머 (서버 재시작 시 소실)', '\u274C 메모만 (알림 불가)'] }
+      },
+      { layer: 4, node: 'memory', status: 'memory_search', log: '[\u2463] Memory \u2192 기존 리마인더 검색', tool: true, cost: 0.001, latency: 0.5,
+        explain: '기존에 설정된 리마인더가 있는지 확인합니다. 중복 방지를 위해 필요합니다.',
+        decision: { why: '같은 시간에 중복 리마인더가 있을 수 있음', alts: ['\u274C 확인 안함 (중복 알림 발생 가능)'] }
+      },
+      { layer: 4, node: 'memory', status: 'memory_save', log: '[\u2463] Memory \u2192 리마인더 정보 저장', tool: true, cost: 0.001, latency: 0.3,
+        explain: '리마인더 내용("회의 알림")을 메모리에 저장합니다.',
+        decision: { why: '알림 시 내용을 읽어와야 하므로 저장 필요', alts: [] }
+      },
+      { layer: 2, node: 'cron', status: 'cron(add)', log: '[\u2461] Cron \u2192 cron(add) "0 9 * * *"', tool: true, latency: 0.2,
+        explain: 'cron 시스템에 예약 작업을 등록합니다. 지정된 시간에 자동으로 트리거됩니다.',
+        decision: { why: 'cron은 시간 기반 예약 작업을 안정적으로 실행', alts: ['\u274C setTimeout (서버 재시작 시 소실)', '\u274C 외부 서비스 (의존성 증가)'] }
+      },
+      { layer: 1, node: 'tg', status: '확인 전송', log: '[\u2460] "내일 오전 9시 리마인더 설정 완료!"', latency: 0.1,
+        explain: '설정 완료 메시지를 사용자에게 전달합니다.',
+        decision: { why: '사용자에게 설정 완료 확인 필요', alts: [] }
+      },
+      { layer: 2, node: 'cron', status: '대기 중... (시간 도달)', log: '[\u2461] Cron 대기 중... (내일 오전 9시)', latency: 5.0,
+        explain: '시간이 될 때까지 cron이 대기합니다. 시뮬레이션에서는 5초로 축소됩니다.',
+        decision: { why: '지정된 시간까지 대기 (실제로는 몇 시간~며칠)', alts: [] }
+      },
+      { layer: 2, node: 'cron', status: '트리거!', log: '[\u2461] Cron 트리거 발동!', latency: 0.1,
+        explain: '시간이 되어 cron이 트리거됩니다! systemEvent가 Pi Runtime으로 전달됩니다.',
+        decision: { why: '예약된 시간 도달 \u2192 systemEvent 발생', alts: [] }
+      },
+      { layer: 3, node: 'pi', status: 'systemEvent 처리', log: '[\u2462] systemEvent \u2192 리마인더 내용 조회', mp: 20, latency: 0.5,
+        explain: 'Pi Runtime이 메모리에서 리마인더 내용을 읽어와 알림 메시지를 생성합니다.',
+        decision: { why: 'systemEvent를 처리하여 알림 메시지 생성', alts: [] }
+      },
+      { layer: 1, node: 'tg', status: '알림 전송', log: '[\u2460] "\u23F0 회의 시간입니다!"', latency: 0.1,
+        explain: '리마인더 알림이 텔레그램으로 전달됩니다. 리마인더 여행 완료!',
+        decision: { why: '알림을 사용자에게 전송', alts: [] }
+      }
+    ]
+  }
+};
+
+// ========== DOM HELPERS ==========
+function $(id) { return document.getElementById(id); }
+
+function clearAllNodes() {
+  var nodes = document.querySelectorAll('.node, .agent-core-box');
+  for (var i = 0; i < nodes.length; i++) {
+    nodes[i].classList.remove('active', 'done');
+  }
+  var statuses = document.querySelectorAll('.node-status, .agent-status');
+  for (var i = 0; i < statuses.length; i++) {
+    statuses[i].textContent = '';
+  }
+  var layers = document.querySelectorAll('.layer');
+  for (var i = 0; i < layers.length; i++) {
+    layers[i].classList.remove('active-layer');
+  }
+  var conns = document.querySelectorAll('.connector');
+  for (var i = 0; i < conns.length; i++) {
+    conns[i].classList.remove('active');
+  }
+  var mms = document.querySelectorAll('.minimap-layer');
+  for (var i = 0; i < mms.length; i++) {
+    mms[i].classList.remove('active');
+  }
+  clearPathTrail();
+}
+
+function activateNode(nodeId, statusText) {
+  var actives = document.querySelectorAll('.node.active, .agent-core-box.active');
+  for (var i = 0; i < actives.length; i++) {
+    actives[i].classList.remove('active');
+    actives[i].classList.add('done');
+  }
+
+  var nodeEl = $('node-' + nodeId);
+  if (nodeEl) {
+    nodeEl.classList.remove('done');
+    nodeEl.classList.add('active');
+  }
+
+  var statusEl = $('status-' + nodeId);
+  if (statusEl) statusEl.textContent = statusText;
+
+  // Phase 2: sound, character, magic circle
+  playSound('activate');
+  moveCharacter(nodeId);
+  setMagicCircleActive(nodeId === 'pi');
+}
+
+function activateLayer(layerNum) {
+  var prevLayer = state.currentLayer;
+  var layers = document.querySelectorAll('.layer');
+  for (var i = 0; i < layers.length; i++) layers[i].classList.remove('active-layer');
+  $('layer-' + layerNum).classList.add('active-layer');
+
+  var mms = document.querySelectorAll('.minimap-layer');
+  for (var i = 0; i < mms.length; i++) mms[i].classList.remove('active');
+  $('mm-l' + layerNum).classList.add('active');
+
+  var conns = document.querySelectorAll('.connector');
+  for (var i = 0; i < conns.length; i++) conns[i].classList.remove('active');
+  if (layerNum > 1) {
+    var c = $('conn-' + (layerNum - 1) + '-' + layerNum);
+    if (c) c.classList.add('active');
+  }
+  if (layerNum < 4) {
+    var c = $('conn-' + layerNum + '-' + (layerNum + 1));
+    if (c) c.classList.add('active');
+  }
+
+  // v3: layer flash, data packets, minimap
+  if (prevLayer !== layerNum) {
+    flashLayer(layerNum);
+    hideAllDataPackets();
+    if (prevLayer > 0) showDataPacket(prevLayer, layerNum);
+  }
+  updateMinimapHighlight(layerNum);
+  state.currentLayer = layerNum;
+}
+
+// v3: HP = progress percentage
+function updateStats() {
+  var sc = getScenario();
+  if (sc && state.running && state.stepIndex >= 0) {
+    state.hp = Math.max(0, Math.round(((sc.steps.length - state.stepIndex) / sc.steps.length) * 100));
+  }
+  $('stat-hp').textContent = state.hp;
+  $('stat-mp').textContent = state.mp;
+  $('stat-lv').textContent = state.level;
+  $('stat-tools').textContent = state.toolCalls;
+  $('stat-cost').textContent = '$' + state.cost.toFixed(3);
+  $('stat-latency').textContent = state.latency.toFixed(1) + 's';
+  $('stat-xp-text').textContent = state.xp + ' / ' + state.xpMax;
+  var pct = Math.min(100, (state.xp / state.xpMax) * 100);
+  $('xp-fill').style.width = pct + '%';
+  $('xp-percent').textContent = Math.floor(pct) + '%';
+
+  // Update AI Wallet
+  updateWallet();
+}
+
+function updateWallet() {
+  var tokEl = $('w-tokens');
+  var costEl = $('w-cost');
+  var timeEl = $('w-time');
+  var toolsEl = $('w-tools');
+
+  animateCounter(tokEl, state.mp);
+  costEl.textContent = '$' + state.cost.toFixed(3);
+  timeEl.textContent = state.latency.toFixed(1) + 's';
+  animateCounter(toolsEl, state.toolCalls);
+
+  // Context usage
+  state.contextUsed = state.mp * 150; // rough estimate
+  var ctxPct = Math.min(100, (state.contextUsed / state.contextMax) * 100);
+  $('context-fill').style.width = ctxPct + '%';
+  $('context-pct').textContent = Math.round(ctxPct) + '%';
+}
+
+function animateCounter(el, target) {
+  var current = parseInt(el.textContent) || 0;
+  if (current !== target) {
+    el.textContent = target;
+    el.classList.remove('counter-pop');
+    void el.offsetWidth;
+    el.classList.add('counter-pop');
+  }
+}
+
+function addQuestEntry(text, cls) {
+  var entries = $('quest-entries');
+  var div = document.createElement('div');
+  div.className = 'quest-entry quest-entry-new ' + (cls || '');
+  var elapsed = state.latency.toFixed(1);
+  div.innerHTML = '<span class="q-time">' + formatTime(elapsed) + '</span> ' + text;
+  entries.appendChild(div);
+  entries.scrollTo({ top: entries.scrollHeight, behavior: 'smooth' });
+}
+
+function formatTime(seconds) {
+  var s = parseFloat(seconds);
+  var m = Math.floor(s / 60);
+  var sec = Math.floor(s % 60).toString().padStart(2, '0');
+  return m.toString().padStart(2, '0') + ':' + sec;
+}
+
+function checkLevelUp() {
+  while (state.xp >= state.xpMax) {
+    state.level++;
+    state.xp -= state.xpMax;
+    state.xpMax = Math.floor(state.xpMax * 1.5);
+    addQuestEntry('\u2B06\uFE0F 레벨 업! LV.' + state.level, 'done');
+    showLevelUp(state.level);
+  }
+}
+
+// ========== STEP EXPLANATION ==========
+function showStepExplanation(text) {
+  var el = $('step-explanation');
+  if (!el) return;
+  el.textContent = '\uD83D\uDCA1 ' + text;
+  el.classList.add('visible');
+}
+
+function hideStepExplanation() {
+  var el = $('step-explanation');
+  if (el) el.classList.remove('visible');
+}
+
+// ========== DECISION TOOLTIP ==========
+var decisionData = {
+  tg: { title: '\uD83D\uDCAC Telegram (메시지 수신/전송)', reason: '텔레그램은 사용자와 AI를 연결하는 주요 채널입니다. 메시지가 여기서 시작되고, 최종 응답도 여기서 전달됩니다.', alts: ['\u2705 Discord (지원됨)', '\u2705 WhatsApp (지원됨)', '\u2705 웹 인터페이스 (지원됨)'] },
+  dc: { title: '\uD83C\uDFAE Discord (게이밍 채널)', reason: 'Discord는 커뮤니티 기반 대화에 최적화된 채널입니다. 봇이 서버에 참여하여 메시지를 처리합니다.', alts: [] },
+  wa: { title: '\uD83D\uDCF1 WhatsApp (모바일)', reason: 'WhatsApp Business API를 통해 모바일 사용자의 메시지를 처리합니다.', alts: [] },
+  router: { title: '\uD83D\uDD00 Router (메시지 라우팅)', reason: '라우터는 들어온 메시지를 적절한 세션으로 전달합니다. 채팅 ID, 사용자 정보, 메시지 유형을 분석하여 최적의 처리 경로를 결정합니다.', alts: ['\u274C 브로드캐스트 (모든 세션에 전달 - 비효율)', '\u274C 랜덤 (품질 보장 불가)'] },
+  access: { title: '\uD83D\uDD10 Access (권한 관리)', reason: '사용자의 권한을 확인합니다. API 키, 사용량 제한, 기능별 접근 권한 등을 검증합니다.', alts: [] },
+  queue: { title: '\uD83D\uDCCB Queue (작업 대기열)', reason: '동시에 많은 요청이 들어올 때, 순서대로 처리하기 위한 대기열입니다. 우선순위에 따라 처리 순서가 결정됩니다.', alts: [] },
+  cron: { title: '\u23F0 Cron (예약 작업)', reason: 'cron은 시간 기반 예약 작업 시스템입니다. 리마인더, 정기 보고서, 자동 백업 등 시간에 따라 실행되어야 하는 작업을 관리합니다.', alts: ['\u274C setTimeout (서버 재시작 시 소실)', '\u274C 외부 스케줄러 (의존성 증가)'] },
+  pi: { title: '\uD83E\uDDE0 Pi Runtime (AI 두뇌)', reason: 'Pi Runtime은 AI의 핵심 추론 엔진입니다. AGENTS.md의 행동 규칙, SOUL.md의 성격, TOOLS.md의 도구 목록, MEMORY.md의 기억을 참조하여 최적의 행동을 결정합니다.', alts: ['\u274C 규칙 기반 시스템 (유연성 부족)', '\u274C 단순 검색 (추론 불가)'] },
+  search: { title: '\uD83D\uDD0D Search (웹 검색)', reason: '실시간 정보가 필요할 때 사용됩니다. 날씨, 뉴스, 최신 정보 등 AI의 학습 데이터에 없는 정보를 가져옵니다.', alts: ['\u274C 메모리 검색 (과거 데이터만)', '\u274C 추측 (정확도 낮음)'] },
+  file: { title: '\uD83D\uDCC1 File (파일 읽기/쓰기)', reason: '파일 시스템에 접근하여 코드를 읽거나, 결과물을 저장합니다. 코딩 작업에서 필수적인 도구입니다.', alts: ['\u274C 메모리만 (용량 제한)', '\u274C API 호출 (파일 접근 불가)'] },
+  exec: { title: '\u2699\uFE0F Exec (코드 실행)', reason: '실제로 프로그램을 실행합니다. 테스트, 빌드, 배포 등 코드를 동작시켜야 할 때 사용됩니다.', alts: ['\u274C 시뮬레이션 (실제 결과와 다를 수 있음)', '\u274C 수동 실행 요청 (사용자 대기 필요)'] },
+  memory: { title: '\uD83D\uDCBE Memory (기억 저장소)', reason: '중요한 정보를 영구적으로 저장합니다. 사용자 선호도, 프로젝트 정보, 이전 작업 결과 등을 기억합니다.', alts: ['\u274C 컨텍스트만 (대화 종료 시 소실)', '\u274C 외부 DB (설정 복잡)'] },
+  message: { title: '\uD83D\uDCE8 Message (메시지 전송)', reason: '처리 결과를 사용자에게 전달합니다. 텔레그램, Discord 등 원래 메시지가 온 채널로 응답합니다.', alts: [] },
+  vision: { title: '\uD83D\uDC41\uFE0F Vision (이미지 분석)', reason: '이미지를 분석하여 내용을 이해합니다. 물체 인식, 텍스트 추출, 장면 설명 등이 가능합니다.', alts: ['\u274C OCR만 (텍스트 없는 이미지 처리 불가)', '\u274C 이미지 무시 (사용자 요청 무시)'] }
+};
+
+function showDecisionTooltip(nodeId, event) {
+  closeDecisionTooltip();
+  var data = decisionData[nodeId];
+  if (!data) return;
+
+  // Check if this node has current step-specific decision info
+  var sc = getScenario();
+  var stepDecision = null;
+  if (sc && state.running && state.stepIndex >= 0 && state.stepIndex < sc.steps.length) {
+    var step = sc.steps[state.stepIndex];
+    if (step.node === nodeId && step.decision) {
+      stepDecision = step.decision;
+    }
+  }
+
+  var tooltip = document.createElement('div');
+  tooltip.className = 'decision-tooltip';
+  tooltip.id = 'active-tooltip';
+  if (window.innerWidth <= 480) tooltip.classList.add('mobile-sheet');
+
+  var html = '<button class="dt-close" onclick="closeDecisionTooltip()">\u2715</button>';
+  html += '<div class="dt-title">' + data.title + '</div>';
+
+  if (stepDecision && stepDecision.why) {
+    html += '<div class="dt-reason"><b>\uD83E\uDD14 왜 이 결정을?</b><br>' + stepDecision.why + '</div>';
+    if (stepDecision.alts && stepDecision.alts.length > 0) {
+      html += '<div class="dt-alt"><b>다른 선택지:</b>';
+      for (var i = 0; i < stepDecision.alts.length; i++) {
+        html += '<div class="dt-alt-item">' + stepDecision.alts[i] + '</div>';
+      }
+      html += '</div>';
+    }
+  } else {
+    html += '<div class="dt-reason">' + data.reason + '</div>';
+    if (data.alts && data.alts.length > 0) {
+      html += '<div class="dt-alt">';
+      for (var i = 0; i < data.alts.length; i++) {
+        html += '<div class="dt-alt-item">' + data.alts[i] + '</div>';
+      }
+      html += '</div>';
+    }
+  }
+
+  tooltip.innerHTML = html;
+  document.body.appendChild(tooltip);
+
+  // Position
+  if (window.innerWidth > 480) {
+    var x = event.clientX + 10;
+    var y = event.clientY + 10;
+    if (x + 280 > window.innerWidth) x = event.clientX - 290;
+    if (y + 200 > window.innerHeight) y = event.clientY - 210;
+    tooltip.style.left = Math.max(5, x) + 'px';
+    tooltip.style.top = Math.max(5, y) + 'px';
+  }
+
+  event.stopPropagation();
+}
+
+function closeDecisionTooltip() {
+  var existing = document.getElementById('active-tooltip');
+  if (existing) existing.remove();
+}
+
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('.decision-tooltip') && !e.target.closest('.node') && !e.target.closest('.agent-core-box')) {
+    closeDecisionTooltip();
+  }
+});
+
+// ========== SIMULATION ==========
+function getScenario() {
+  return scenarios[$('scenario-select').value];
+}
+
+function startSim() {
+  if (state.running) return;
+  state.running = true;
+  state.stepIndex = -1;
+  state.autoPlay = true;
+  state.msgCount++;
+  state.pathHistory = [];
+
+  var sc = getScenario();
+  clearAllNodes();
+  $('quest-entries').innerHTML = '';
+  $('char-msg-title').textContent = '\uBA54\uC2DC\uC9C0 #' + state.msgCount + ' - ' + sc.name;
+  $('btn-start').disabled = true;
+  $('btn-next').disabled = false;
+  hideBossLoading();
+  hideStepExplanation();
+
+  advanceStep();
+}
+
+function startJourney() {
+  var input = $('msg-journey-input');
+  var msg = input.value.trim();
+
+  // Match to closest scenario or use beginner
+  if (msg) {
+    if (msg.match(/이미지|사진|분석|photo|image/i)) {
+      $('scenario-select').value = 'intermediate';
+    } else if (msg.match(/게임|만들|game|code|코딩|랄프톤/i)) {
+      $('scenario-select').value = 'boss';
+    } else if (msg.match(/리마인더|알림|알려|시간|reminder|timer|cron/i)) {
+      $('scenario-select').value = 'time';
+    } else {
+      $('scenario-select').value = 'beginner';
+    }
+  }
+
+  startSim();
+}
+
+function setJourneyScenario(key) {
+  $('scenario-select').value = key;
+  var chips = document.querySelectorAll('.scenario-chip');
+  for (var i = 0; i < chips.length; i++) chips[i].classList.remove('active');
+  event.target.classList.add('active');
+
+  // Set input text
+  var texts = { beginner: '날씨 알려줘', intermediate: '이 사진 분석해줘', boss: '랄프톤으로 게임 만들어줘', time: '내일 오전 9시에 회의 알려줘' };
+  $('msg-journey-input').value = texts[key] || '';
+}
+
+function nextStep() {
+  state.autoPlay = false;
+  if (state.timer) { clearTimeout(state.timer); state.timer = null; }
+  advanceStep();
+}
+
+function advanceStep() {
+  var sc = getScenario();
+  state.stepIndex++;
+
+  if (state.stepIndex >= sc.steps.length) {
+    finishSim(sc);
+    return;
+  }
+
+  var step = sc.steps[state.stepIndex];
+
+  if (step.mp) {
+    // v3: MP randomly decreases sometimes
+    state.mp += step.mp;
+    if (Math.random() < 0.3) {
+      var decrease = Math.floor(Math.random() * 10) + 5;
+      state.mp = Math.max(0, state.mp - decrease);
+    }
+  }
+  if (step.tool) { state.toolCalls++; playSound('tool'); }
+  if (step.cost) state.cost += step.cost;
+  if (step.latency) state.latency += step.latency;
+
+  activateLayer(step.layer);
+  activateNode(step.node, step.status);
+
+  // Track path for trail
+  state.pathHistory.push({ node: step.node, layer: step.layer });
+  updatePathTrail();
+
+  // Heartbeat for cron node
+  if (step.node === 'cron') startHeartbeat();
+  else stopHeartbeat();
+
+  // Boss loading bar
+  if (step.bossLoading) {
+    showBossLoading(step.latency);
+  } else {
+    hideBossLoading();
+  }
+
+  // Step explanation
+  if (step.explain) {
+    showStepExplanation(step.explain);
+  } else {
+    hideStepExplanation();
+  }
+
+  addQuestEntry(step.log, 'current');
+
+  var entries = $('quest-entries').children;
+  for (var i = 0; i < entries.length - 1; i++) {
+    entries[i].classList.remove('current');
+    entries[i].classList.add('done');
+  }
+
+  updateStats();
+
+  if (state.autoPlay) {
+    var delay = (step.latency || 0.5) * 1000 / state.speed;
+    state.timer = setTimeout(advanceStep, Math.max(300, Math.min(delay, 3000)));
+  }
+}
+
+function finishSim(sc) {
+  playSound('complete');
+  showXPFloat(sc.xpReward);
+  state.xp += sc.xpReward;
+  addQuestEntry('\u2705 완료! XP +' + sc.xpReward + ' 획득', 'done');
+  checkLevelUp();
+  state.hp = 100;
+  updateStats();
+  hideStepExplanation();
+
+  var actives = document.querySelectorAll('.node.active, .agent-core-box.active');
+  for (var i = 0; i < actives.length; i++) {
+    actives[i].classList.remove('active');
+    actives[i].classList.add('done');
+  }
+
+  state.running = false;
+  state.autoPlay = false;
+  $('btn-start').disabled = false;
+  $('btn-next').disabled = true;
+  if (state.timer) { clearTimeout(state.timer); state.timer = null; }
+  stopHeartbeat();
+  setMagicCircleActive(false);
+  hideAllDataPackets();
+  hideBossLoading();
+  $('character').style.display = 'none';
+
+  // v3: Quest Complete banner
+  showQuestCompleteBanner(sc.name, sc.xpReward);
+}
+
+function resetSim() {
+  if (state.timer) { clearTimeout(state.timer); state.timer = null; }
+  state.running = false;
+  state.autoPlay = false;
+  state.stepIndex = -1;
+  state.hp = 100;
+  state.mp = 0;
+  state.level = 1;
+  state.xp = 0;
+  state.xpMax = 100;
+  state.toolCalls = 0;
+  state.cost = 0;
+  state.latency = 0;
+  state.msgCount = 0;
+  state.currentLayer = 0;
+  state.pathHistory = [];
+  state.contextUsed = 0;
+
+  clearAllNodes();
+  updateStats();
+  hideStepExplanation();
+  $('quest-entries').innerHTML = '<div class="quest-entry" style="color:var(--text-dim)">시나리오를 선택하고 시작하세요...</div>';
+  $('char-msg-title').textContent = '대기 중...';
+  $('btn-start').disabled = false;
+  $('btn-next').disabled = true;
+  stopHeartbeat();
+  setMagicCircleActive(false);
+  hideAllDataPackets();
+  hideBossLoading();
+  $('character').style.display = 'none';
+  var mms = document.querySelectorAll('.minimap-layer');
+  for (var i = 0; i < mms.length; i++) mms[i].classList.remove('mm-highlight');
+}
+
+// ========== SPEED ==========
+function setSpeed(s) {
+  state.speed = s;
+  var btns = document.querySelectorAll('.speed-btn');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', btns[i].textContent === s + 'x');
+  }
+}
+
+// ========== MODE ==========
+function setMode(mode) {
+  state.mode = mode;
+  var tabs = document.querySelectorAll('.mode-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    var txt = tabs[i].textContent;
+    tabs[i].classList.toggle('active',
+      (mode === 'sim' && txt.indexOf('\uC2DC\uBBAC\uB808\uC774\uC158') >= 0) ||
+      (mode === 'sim' && txt.indexOf('Simulation') >= 0) ||
+      (mode === 'live' && txt.indexOf('\uB77C\uC774\uBE0C') >= 0) ||
+      (mode === 'live' && txt.indexOf('Live') >= 0)
+    );
+  }
+  $('live-panel').classList.toggle('visible', mode === 'live');
+}
+
+// ========== MAIN TAB ==========
+function setMainTab(tab) {
+  state.mainTab = tab;
+  var tabs = document.querySelectorAll('.main-tab');
+  for (var i = 0; i < tabs.length; i++) {
+    var t = tabs[i];
+    var isActive = false;
+    if (tab === 'journey' && (t.textContent.indexOf('\uBA54\uC2DC\uC9C0') >= 0 || t.textContent.indexOf('Message') >= 0)) isActive = true;
+    if (tab === 'faq' && (t.textContent.indexOf('\uC124\uBA85\uC11C') >= 0 || t.textContent.indexOf('Manual') >= 0)) isActive = true;
+    if (tab === 'settings' && (t.textContent.indexOf('\uC124\uC815') >= 0 || t.textContent.indexOf('Settings') >= 0)) isActive = true;
+    t.classList.toggle('active', isActive);
+  }
+
+  $('tab-journey').classList.toggle('active', tab === 'journey');
+  $('tab-journey').style.display = tab === 'journey' ? '' : 'none';
+  $('tab-faq').classList.toggle('active', tab === 'faq');
+  $('tab-settings').classList.toggle('active', tab === 'settings');
+}
+
+// ========== FAQ ==========
+function toggleFaq(item) {
+  item.classList.toggle('open');
+}
+
+// ========== SETTINGS ==========
+function updateSettingBtns(group, activeBtn) {
+  var parent = activeBtn.parentElement;
+  var btns = parent.querySelectorAll('.setting-btn');
+  for (var i = 0; i < btns.length; i++) btns[i].classList.remove('active');
+  activeBtn.classList.add('active');
+}
+
+function toggleSoundSetting() {
+  state.soundEnabled = !state.soundEnabled;
+  var toggle = $('toggle-sound');
+  toggle.classList.toggle('on', state.soundEnabled);
+  var btn = $('sound-toggle');
+  if (btn) {
+    btn.textContent = state.soundEnabled ? '\uD83D\uDD0A ON' : '\uD83D\uDD07 OFF';
+    btn.classList.toggle('muted', !state.soundEnabled);
+  }
+}
+
+function setTheme(theme) {
+  state.theme = theme;
+  document.body.classList.toggle('light-theme', theme === 'light');
+}
+
+function setLang(lang) {
+  state.lang = lang;
+  var t = i18n[lang];
+
+  // Update main tabs
+  var mainTabs = document.querySelectorAll('.main-tab');
+  if (mainTabs[0]) mainTabs[0].textContent = t.msgJourney;
+  if (mainTabs[1]) mainTabs[1].textContent = t.faq;
+  if (mainTabs[2]) mainTabs[2].textContent = t.settings;
+
+  // Update mode tabs
+  var modeTabs = document.querySelectorAll('.mode-tab');
+  if (modeTabs[0]) modeTabs[0].textContent = t.simMode;
+  if (modeTabs[1]) modeTabs[1].textContent = t.liveMode;
+
+  // Update input
+  var input = $('msg-journey-input');
+  if (input) input.placeholder = t.inputPlaceholder;
+
+  // Update chips
+  var chips = document.querySelectorAll('.scenario-chip');
+  if (chips[0]) chips[0].textContent = t.weather;
+  if (chips[1]) chips[1].textContent = t.image;
+  if (chips[2]) chips[2].textContent = t.game;
+  if (chips[3]) chips[3].textContent = t.reminder;
+
+  // Wallet
+  var wLabels = document.querySelectorAll('.w-label');
+  if (wLabels[0]) wLabels[0].textContent = t.tokens;
+  if (wLabels[1]) wLabels[1].textContent = t.tools;
+}
+
+// ========== LIVE MODE ==========
+function toggleWS() {
+  if (state.wsConnected) {
+    if (state.ws) state.ws.close();
+    state.wsConnected = false;
+    $('ws-status').classList.remove('connected');
+    $('ws-btn').textContent = '\uC5F0\uACB0';
+    return;
+  }
+
+  var url = $('ws-url').value;
+  try {
+    state.ws = new WebSocket(url);
+    state.ws.onopen = function() {
+      state.wsConnected = true;
+      $('ws-status').classList.add('connected');
+      $('ws-status').classList.remove('error');
+      $('ws-btn').textContent = '\uD574\uC81C';
+      addQuestEntry('[WS] \uC5F0\uACB0 \uC131\uACF5', 'done');
+    };
+    state.ws.onmessage = function(e) {
+      try {
+        var data = JSON.parse(e.data);
+        handleLiveEvent(data);
+      } catch(err) {
+        addQuestEntry('[WS] ' + e.data, 'current');
+      }
+    };
+    state.ws.onclose = function() {
+      state.wsConnected = false;
+      $('ws-status').classList.remove('connected');
+      $('ws-btn').textContent = '\uC5F0\uACB0';
+      addQuestEntry('[WS] \uC5F0\uACB0 \uC885\uB8CC', '');
+    };
+    state.ws.onerror = function() {
+      $('ws-status').classList.add('error');
+      $('ws-status').classList.remove('connected');
+      addQuestEntry('[WS] \uC5F0\uACB0 \uC2E4\uD328', '');
+    };
+  } catch(err) {
+    $('ws-status').classList.add('error');
+    addQuestEntry('[WS] \uC624\uB958: ' + err.message, '');
+  }
+}
+
+function testAPI() {
+  var url = $('api-url').value;
+  fetch(url.replace('/chat/completions', '/models'))
+    .then(function(r) { return r.json(); })
+    .then(function() {
+      state.apiConnected = true;
+      $('api-status').classList.add('connected');
+      $('api-status').classList.remove('error');
+      addQuestEntry('[API] \uC5F0\uACB0 \uC131\uACF5', 'done');
+    })
+    .catch(function() {
+      $('api-status').classList.add('error');
+      $('api-status').classList.remove('connected');
+      addQuestEntry('[API] \uC5F0\uACB0 \uC2E4\uD328', '');
+    });
+}
+
+function sendLiveMsg() {
+  var msg = $('live-msg').value.trim();
+  if (!msg) return;
+
+  if (state.wsConnected && state.ws) {
+    state.ws.send(JSON.stringify({ type: 'message', content: msg }));
+    addQuestEntry('[\uC804\uC1A1] ' + msg, 'current');
+    $('live-msg').value = '';
+  } else if (state.apiConnected) {
+    var url = $('api-url').value;
+    addQuestEntry('[\uC804\uC1A1] ' + msg, 'current');
+    state.msgCount++;
+    $('char-msg-title').textContent = '\uBA54\uC2DC\uC9C0 #' + state.msgCount;
+
+    activateLayer(1);
+    activateNode('tg', '\uC218\uC2E0');
+
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'openclaw',
+        messages: [{ role: 'user', content: msg }]
+      })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var reply = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+      if (reply) {
+        addQuestEntry('[\uC751\uB2F5] ' + reply.substring(0, 80) + (reply.length > 80 ? '...' : ''), 'done');
+      }
+      activateLayer(1);
+      activateNode('tg', '\uC751\uB2F5 \uC804\uC1A1');
+    })
+    .catch(function(err) {
+      addQuestEntry('[\uC624\uB958] ' + err.message, '');
+    });
+
+    $('live-msg').value = '';
+  } else {
+    addQuestEntry('[\uC624\uB958] \uC5F0\uACB0\uC774 \uD544\uC694\uD569\uB2C8\uB2E4', '');
+  }
+}
+
+function handleLiveEvent(data) {
+  var type = data.type || data.event || '';
+  var detail = data.detail || data.message || data.content || JSON.stringify(data).substring(0, 60);
+
+  if (type === 'ingestion' || type === 'message_received') {
+    activateLayer(1);
+    activateNode('tg', '\uC218\uC2E0');
+    state.msgCount++;
+    $('char-msg-title').textContent = '\uBA54\uC2DC\uC9C0 #' + state.msgCount;
+    addQuestEntry('[\u2460] ' + detail, 'current');
+  } else if (type === 'routing' || type === 'control') {
+    activateLayer(2);
+    activateNode('router', '\uB77C\uC6B0\uD305');
+    addQuestEntry('[\u2461] ' + detail, 'current');
+  } else if (type === 'reasoning' || type === 'agent') {
+    activateLayer(3);
+    activateNode('pi', '\uCD94\uB860 \uC911...');
+    state.mp += 10;
+    addQuestEntry('[\u2462] ' + detail, 'current');
+  } else if (type === 'tool_call' || type === 'execute') {
+    activateLayer(4);
+    var toolName = data.tool || data.name || 'exec';
+    var nodeMap = { web_search: 'search', file_read: 'file', file_write: 'file', exec: 'exec', memory: 'memory', send: 'message', vision: 'vision' };
+    var nodeId = nodeMap[toolName] || 'exec';
+    activateNode(nodeId, toolName);
+    state.toolCalls++;
+    addQuestEntry('[\u2463] ' + detail, 'current');
+  } else if (type === 'response' || type === 'complete') {
+    activateLayer(1);
+    activateNode('tg', '\uC751\uB2F5 \uC804\uC1A1');
+    state.xp += 50;
+    checkLevelUp();
+    addQuestEntry('\u2705 ' + detail, 'done');
+  } else {
+    addQuestEntry('[?] ' + detail, '');
+  }
+
+  updateStats();
+}
+
+// ========== WEB AUDIO - SOUND EFFECTS ==========
+function playSound(type) {
+  if (!state.soundEnabled) return;
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    gain.gain.value = 0.08;
+
+    switch(type) {
+      case 'move':
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(600, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(900, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.15);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.2);
+        break;
+      case 'activate':
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.setValueAtTime(1200, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.08, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.25);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+        break;
+      case 'tool':
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(200, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(120, ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+        break;
+      case 'complete':
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523, ctx.currentTime);
+        osc.frequency.setValueAtTime(659, ctx.currentTime + 0.12);
+        osc.frequency.setValueAtTime(784, ctx.currentTime + 0.24);
+        osc.frequency.setValueAtTime(1047, ctx.currentTime + 0.36);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.5);
+        break;
+      case 'levelup':
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523, ctx.currentTime);
+        osc.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(784, ctx.currentTime + 0.2);
+        osc.frequency.setValueAtTime(1047, ctx.currentTime + 0.3);
+        osc.frequency.setValueAtTime(1319, ctx.currentTime + 0.45);
+        osc.frequency.setValueAtTime(1568, ctx.currentTime + 0.6);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.8);
+        break;
+      case 'heartbeat':
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(60, ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.2);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.2);
+        break;
+      case 'error':
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(80, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.07, ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+        break;
+    }
+  } catch(e) {}
+}
+
+function toggleSound() {
+  state.soundEnabled = !state.soundEnabled;
+  var btn = $('sound-toggle');
+  btn.textContent = state.soundEnabled ? '\uD83D\uDD0A ON' : '\uD83D\uDD07 OFF';
+  btn.classList.toggle('muted', !state.soundEnabled);
+  var toggle = $('toggle-sound');
+  if (toggle) toggle.classList.toggle('on', state.soundEnabled);
+}
+
+// ========== CHARACTER MOVEMENT ==========
+function moveCharacter(nodeId) {
+  var charEl = $('character');
+  var targetEl = $('node-' + nodeId);
+  if (!targetEl || !charEl) return;
+
+  var mapArea = $('map-area');
+  var mapRect = mapArea.getBoundingClientRect();
+  var targetRect = targetEl.getBoundingClientRect();
+  var scrollTop = mapArea.scrollTop;
+
+  charEl.style.display = 'block';
+  charEl.style.top = (targetRect.top - mapRect.top + scrollTop - 24) + 'px';
+  charEl.style.left = (targetRect.left - mapRect.left + targetRect.width / 2 - 10) + 'px';
+
+  playSound('move');
+}
+
+// ========== PATH TRAIL ==========
+function getNodeCenter(nodeId) {
+  var el = $('node-' + nodeId);
+  if (!el) return null;
+  var mapArea = $('map-area');
+  var mapRect = mapArea.getBoundingClientRect();
+  var rect = el.getBoundingClientRect();
+  var scrollTop = mapArea.scrollTop;
+  return {
+    x: rect.left - mapRect.left + rect.width / 2,
+    y: rect.top - mapRect.top + scrollTop + rect.height / 2
+  };
+}
+
+function updatePathTrail() {
+  var svg = $('path-trail');
+  if (!svg || state.pathHistory.length < 2) return;
+
+  var html = '';
+  // Visited path (solid line)
+  for (var i = 0; i < state.pathHistory.length - 1; i++) {
+    var from = getNodeCenter(state.pathHistory[i].node);
+    var to = getNodeCenter(state.pathHistory[i + 1].node);
+    if (from && to) {
+      html += '<line class="path-trail-visited" x1="' + from.x + '" y1="' + from.y + '" x2="' + to.x + '" y2="' + to.y + '"/>';
+    }
+  }
+
+  // Remaining path (dashed) - show next steps if available
+  var sc = getScenario();
+  if (sc && state.stepIndex < sc.steps.length - 1) {
+    var lastVisited = getNodeCenter(state.pathHistory[state.pathHistory.length - 1].node);
+    if (lastVisited) {
+      for (var j = state.stepIndex + 1; j < Math.min(state.stepIndex + 3, sc.steps.length); j++) {
+        var nextPos = getNodeCenter(sc.steps[j].node);
+        if (nextPos && lastVisited) {
+          html += '<line class="path-trail-remaining" x1="' + lastVisited.x + '" y1="' + lastVisited.y + '" x2="' + nextPos.x + '" y2="' + nextPos.y + '"/>';
+          lastVisited = nextPos;
+        }
+      }
+    }
+  }
+
+  svg.innerHTML = html;
+}
+
+function clearPathTrail() {
+  var svg = $('path-trail');
+  if (svg) svg.innerHTML = '';
+}
+
+// ========== MAGIC CIRCLE ==========
+function setMagicCircleActive(active) {
+  var mc = $('magic-circle');
+  if (mc) {
+    if (active) mc.classList.add('active');
+    else mc.classList.remove('active');
+  }
+}
+
+// ========== XP FLOAT EFFECT ==========
+function showXPFloat(amount) {
+  var el = document.createElement('div');
+  el.className = 'xp-float';
+  el.textContent = '+' + amount + ' XP';
+  el.style.left = '50%';
+  el.style.top = '50%';
+  el.style.transform = 'translateX(-50%)';
+  document.body.appendChild(el);
+  setTimeout(function() { el.remove(); }, 1200);
+}
+
+// ========== LEVEL UP EFFECT ==========
+function showLevelUp(level) {
+  playSound('levelup');
+  var overlay = document.createElement('div');
+  overlay.className = 'levelup-overlay';
+  overlay.innerHTML = '<div class="levelup-text">\u2B50 LEVEL UP! LV.' + level + '</div>';
+  document.body.appendChild(overlay);
+  setTimeout(function() { overlay.remove(); }, 3000);
+}
+
+// ========== QUEST COMPLETE BANNER ==========
+function showQuestCompleteBanner(questName, xp) {
+  var banner = document.createElement('div');
+  banner.className = 'quest-complete-banner';
+  banner.innerHTML = '<h2>\uD034\uC2A4\uD2B8 \uC644\uB8CC!</h2><p>"' + questName + '" - XP +' + xp + '</p>';
+  document.body.appendChild(banner);
+  setTimeout(function() { banner.remove(); }, 2500);
+}
+
+// ========== HEARTBEAT (Cron) ==========
+function startHeartbeat() {
+  var cronNode = $('node-cron');
+  if (cronNode && !cronNode.classList.contains('node-heartbeat')) {
+    cronNode.classList.add('node-heartbeat');
+  }
+  if (!state.heartbeatInterval) {
+    state.heartbeatInterval = setInterval(function() {
+      playSound('heartbeat');
+    }, 1500);
+  }
+}
+function stopHeartbeat() {
+  var cronNode = $('node-cron');
+  if (cronNode) cronNode.classList.remove('node-heartbeat');
+  if (state.heartbeatInterval) {
+    clearInterval(state.heartbeatInterval);
+    state.heartbeatInterval = null;
+  }
+}
+
+// ========== BOSS LOADING BAR ==========
+function showBossLoading(duration) {
+  var container = $('boss-loading-bar');
+  var fill = $('boss-loading-fill');
+  if (!container || !fill) return;
+
+  container.classList.add('visible');
+  fill.style.width = '0%';
+
+  var elapsed = 0;
+  var interval = 100;
+  var totalMs = (duration * 1000) / state.speed;
+
+  if (state.bossLoadingInterval) clearInterval(state.bossLoadingInterval);
+  state.bossLoadingInterval = setInterval(function() {
+    elapsed += interval;
+    var pct = Math.min(100, (elapsed / totalMs) * 100);
+    fill.style.width = pct + '%';
+    if (pct >= 100) {
+      clearInterval(state.bossLoadingInterval);
+      state.bossLoadingInterval = null;
+    }
+  }, interval);
+}
+
+function hideBossLoading() {
+  var container = $('boss-loading-bar');
+  if (container) container.classList.remove('visible');
+  if (state.bossLoadingInterval) {
+    clearInterval(state.bossLoadingInterval);
+    state.bossLoadingInterval = null;
+  }
+}
+
+// ========== ERROR EFFECT ==========
+function showErrorEffect(nodeId) {
+  var el = $('node-' + nodeId);
+  if (!el) return;
+  playSound('error');
+  el.classList.add('error-flash');
+  setTimeout(function() { el.classList.remove('error-flash'); }, 900);
+}
+
+// ========== LAYER FLASH (v3) ==========
+function flashLayer(layerNum) {
+  var layerEl = $('layer-' + layerNum);
+  if (!layerEl) return;
+  layerEl.classList.remove('layer-flash');
+  void layerEl.offsetWidth; // force reflow
+  layerEl.classList.add('layer-flash');
+  setTimeout(function() { layerEl.classList.remove('layer-flash'); }, 600);
+}
+
+// ========== LAYER HIGHLIGHT ==========
+function highlightLayer(layerNum) {
+  var layerEl = $('layer-' + layerNum);
+  if (!layerEl) return;
+  layerEl.classList.add('layer-highlight');
+  setTimeout(function() { layerEl.classList.remove('layer-highlight'); }, 1000);
+}
+
+// ========== DATA PACKET ON CONNECTORS ==========
+function showDataPacket(fromLayer, toLayer) {
+  var min = Math.min(fromLayer, toLayer);
+  var max = Math.max(fromLayer, toLayer);
+  for (var i = min; i < max; i++) {
+    var svg = $('svg-conn-' + i + '-' + (i + 1));
+    if (svg) svg.style.display = 'block';
+  }
+}
+function hideAllDataPackets() {
+  var svgs = document.querySelectorAll('.connector-svg');
+  for (var i = 0; i < svgs.length; i++) svgs[i].style.display = 'none';
+}
+
+// ========== MINIMAP HIGHLIGHT ==========
+function updateMinimapHighlight(layerNum) {
+  var mms = document.querySelectorAll('.minimap-layer');
+  for (var i = 0; i < mms.length; i++) mms[i].classList.remove('mm-highlight');
+  var mm = $('mm-l' + layerNum);
+  if (mm) mm.classList.add('mm-highlight');
+}
+
+// ========== BACKGROUND PARTICLES ==========
+function createParticles() {
+  for (var i = 0; i < 20; i++) {
+    var p = document.createElement('div');
+    p.className = 'particle';
+    var x = Math.random() * 100;
+    var y = Math.random() * 100;
+    var dx = (Math.random() - 0.5) * 200;
+    var dy = (Math.random() - 0.5) * 200;
+    var dur = 15 + Math.random() * 25;
+    var delay = Math.random() * dur;
+    p.style.left = x + '%';
+    p.style.top = y + '%';
+    p.style.setProperty('--dx', dx + 'px');
+    p.style.setProperty('--dy', dy + 'px');
+    p.style.animation = 'particle-float ' + dur + 's linear ' + delay + 's infinite';
+    p.style.width = (2 + Math.random() * 3) + 'px';
+    p.style.height = p.style.width;
+    document.body.appendChild(p);
+  }
+}
+
+// ========== ENTRY ANIMATION ==========
+function initEntryAnimation() {
+  var overlay = $('entry-overlay');
+  if (!overlay) return;
+  setTimeout(function() {
+    overlay.style.pointerEvents = 'none';
+    setTimeout(function() { overlay.remove(); }, 500);
+  }, 3800);
+}
+
+// Init
+updateStats();
+createParticles();
+initEntryAnimation();
+</script>
+</body>
+</html>

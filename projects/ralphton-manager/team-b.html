@@ -1,0 +1,3653 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ralphton Manager - 실행 관리</title>
+<style>
+/* ============================================================
+   RESET & BASE
+   ============================================================ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-primary: #0a0e1a;
+  --bg-secondary: #111627;
+  --bg-card: rgba(17, 22, 39, 0.7);
+  --bg-card-hover: rgba(25, 32, 55, 0.85);
+  --bg-input: rgba(10, 14, 26, 0.8);
+  --border-color: rgba(102, 126, 234, 0.15);
+  --border-glow: rgba(102, 126, 234, 0.5);
+  --text-primary: #e8eaf6;
+  --text-secondary: #9aa0b8;
+  --text-muted: #5a6080;
+  --accent-gradient: linear-gradient(135deg, #667eea, #764ba2);
+  --accent-blue: #667eea;
+  --accent-purple: #764ba2;
+  --accent-green: #4caf50;
+  --accent-red: #ef5350;
+  --accent-orange: #ff9800;
+  --accent-gray: #78849e;
+  --status-pending: #78849e;
+  --status-running: #667eea;
+  --status-completed: #4caf50;
+  --status-failed: #ef5350;
+  --glass-bg: rgba(17, 22, 39, 0.6);
+  --glass-border: rgba(102, 126, 234, 0.12);
+  --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 16px;
+  --transition: 0.25s ease;
+}
+
+html {
+  font-size: 15px;
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans KR', sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Background ambient glow */
+body::before {
+  content: '';
+  position: fixed;
+  top: -30%;
+  left: -10%;
+  width: 60%;
+  height: 60%;
+  background: radial-gradient(ellipse at center, rgba(102, 126, 234, 0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -20%;
+  right: -10%;
+  width: 50%;
+  height: 50%;
+  background: radial-gradient(ellipse at center, rgba(118, 75, 162, 0.05) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ============================================================
+   FOCUS VISIBLE & ACCESSIBILITY
+   ============================================================ */
+:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+[role="alert"] {
+  position: relative;
+}
+
+/* ============================================================
+   CUSTOM SCROLLBAR
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.5);
+}
+
+/* ============================================================
+   APP HEADER
+   ============================================================ */
+.app-header {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--glass-border);
+  padding: 1rem 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.header-title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  background: var(--accent-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.header-title-icon {
+  font-size: 1.2rem;
+  -webkit-text-fill-color: initial;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-badge {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  background: rgba(102, 126, 234, 0.15);
+  color: var(--accent-blue);
+  border: 1px solid rgba(102, 126, 234, 0.25);
+}
+
+.header-clock {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.main-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   STATS BAR (Quick summary)
+   ============================================================ */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.stat-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 1rem 1.15rem;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  transition: var(--transition);
+}
+
+.stat-card:hover {
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: translateY(-1px);
+}
+
+.stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.stat-icon.blue { background: rgba(102, 126, 234, 0.12); }
+.stat-icon.green { background: rgba(76, 175, 80, 0.12); }
+.stat-icon.purple { background: rgba(118, 75, 162, 0.12); }
+.stat-icon.orange { background: rgba(255, 152, 0, 0.12); }
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.1rem;
+}
+
+/* ============================================================
+   SECTION TABS
+   ============================================================ */
+.section-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0;
+  overflow-x: auto;
+}
+
+.section-tab {
+  padding: 0.75rem 1.25rem;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: var(--transition);
+  white-space: nowrap;
+  font-family: inherit;
+  position: relative;
+}
+
+.section-tab:hover {
+  color: var(--text-primary);
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.section-tab.active {
+  color: var(--accent-blue);
+  border-bottom-color: var(--accent-blue);
+}
+
+.section-tab .tab-count {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
+  background: rgba(102, 126, 234, 0.15);
+  color: var(--accent-blue);
+  margin-left: 0.4rem;
+  vertical-align: middle;
+}
+
+.section-panel {
+  display: none;
+}
+
+.section-panel.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ============================================================
+   GLASSMORPHISM CARD
+   ============================================================ */
+.glass-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  box-shadow: var(--glass-shadow);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: var(--transition);
+}
+
+.glass-card:hover {
+  border-color: rgba(102, 126, 234, 0.25);
+}
+
+/* ============================================================
+   SECTION TITLES
+   ============================================================ */
+.section-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-title .icon {
+  font-size: 1.2rem;
+}
+
+.section-count {
+  font-size: 0.8rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 10px;
+  background: rgba(102, 126, 234, 0.15);
+  color: var(--accent-blue);
+  margin-left: 0.5rem;
+}
+
+.section-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-top: -0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* ============================================================
+   SESSION CARDS (Active Sessions)
+   ============================================================ */
+.sessions-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.sessions-filter {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.filter-chip {
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.filter-chip:hover {
+  border-color: var(--border-glow);
+  background: rgba(102, 126, 234, 0.06);
+}
+
+.filter-chip.active {
+  background: rgba(102, 126, 234, 0.12);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1rem;
+}
+
+.session-card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 1.15rem;
+  position: relative;
+  overflow: hidden;
+  transition: var(--transition);
+}
+
+.session-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.session-card[data-status="pending"]::before { background: var(--status-pending); }
+.session-card[data-status="running"]::before { background: var(--status-running); }
+.session-card[data-status="completed"]::before { background: var(--status-completed); }
+.session-card[data-status="failed"]::before { background: var(--status-failed); }
+
+.session-card:hover {
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+}
+
+.session-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.session-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.session-project {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  margin-top: 0.15rem;
+}
+
+.session-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.session-status[data-status="pending"] {
+  background: rgba(120, 132, 158, 0.15);
+  color: var(--status-pending);
+}
+
+.session-status[data-status="running"] {
+  background: rgba(102, 126, 234, 0.15);
+  color: var(--status-running);
+}
+
+.session-status[data-status="completed"] {
+  background: rgba(76, 175, 80, 0.15);
+  color: var(--status-completed);
+}
+
+.session-status[data-status="failed"] {
+  background: rgba(239, 83, 80, 0.15);
+  color: var(--status-failed);
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.status-dot[data-status="pending"] { background: var(--status-pending); }
+.status-dot[data-status="running"] { background: var(--status-running); animation: pulse-dot 1.5s ease-in-out infinite; }
+.status-dot[data-status="completed"] { background: var(--status-completed); }
+.status-dot[data-status="failed"] { background: var(--status-failed); }
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
+
+.session-progress {
+  margin: 0.65rem 0;
+}
+
+.session-progress-bar {
+  height: 4px;
+  background: rgba(102, 126, 234, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.session-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+.session-progress-fill.running {
+  background: var(--accent-blue);
+  animation: progressPulse 2s ease infinite;
+}
+
+.session-progress-fill.pending { background: var(--status-pending); }
+.session-progress-fill.completed { background: var(--status-completed); }
+.session-progress-fill.failed { background: var(--status-failed); }
+
+@keyframes progressPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.session-progress-text {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.session-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  margin-bottom: 0.85rem;
+  font-size: 0.82rem;
+}
+
+.session-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.session-meta-label {
+  color: var(--text-muted);
+}
+
+.session-meta-value {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.session-meta-value.timer {
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  color: var(--accent-blue);
+}
+
+.session-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.btn:hover {
+  border-color: var(--border-glow);
+  color: var(--text-primary);
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--accent-gradient);
+  color: #fff;
+  border-color: transparent;
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  filter: brightness(1.15);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  color: #fff;
+}
+
+.btn-danger {
+  border-color: rgba(239, 83, 80, 0.3);
+  color: var(--accent-red);
+}
+
+.btn-danger:hover {
+  background: rgba(239, 83, 80, 0.1);
+  border-color: var(--accent-red);
+}
+
+.btn-success {
+  border-color: rgba(76, 175, 80, 0.3);
+  color: var(--accent-green);
+}
+
+.btn-success:hover {
+  background: rgba(76, 175, 80, 0.1);
+  border-color: var(--accent-green);
+}
+
+.btn-sm {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+}
+
+.btn-lg {
+  padding: 0.65rem 2rem;
+  font-size: 0.95rem;
+}
+
+.btn-icon {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: var(--radius-sm);
+}
+
+/* ============================================================
+   EMPTY STATE
+   ============================================================ */
+.empty-state {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+}
+
+.empty-state .empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 0.95rem;
+}
+
+.empty-state .empty-action {
+  margin-top: 1rem;
+}
+
+/* ============================================================
+   COMPLETED RUNS TABLE
+   ============================================================ */
+.table-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.85rem;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.table-search {
+  position: relative;
+  max-width: 280px;
+  width: 100%;
+}
+
+.table-search input {
+  width: 100%;
+  padding: 0.5rem 0.75rem 0.5rem 2rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.table-search input:focus {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  outline: none;
+}
+
+.table-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.table-search-icon {
+  position: absolute;
+  left: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  pointer-events: none;
+}
+
+.table-container {
+  overflow-x: auto;
+  border-radius: var(--radius);
+  border: 1px solid var(--glass-border);
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.data-table thead {
+  background: rgba(17, 22, 39, 0.9);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.data-table th {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+  user-select: none;
+  position: relative;
+}
+
+.data-table th.sortable {
+  cursor: pointer;
+  transition: var(--transition);
+  padding-right: 1.8rem;
+}
+
+.data-table th.sortable:hover {
+  color: var(--accent-blue);
+  background: rgba(102, 126, 234, 0.05);
+}
+
+.data-table th .sort-indicator {
+  position: absolute;
+  right: 0.6rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.7rem;
+  opacity: 0.35;
+  display: inline-flex;
+  flex-direction: column;
+  line-height: 0.6;
+}
+
+.data-table th.sort-asc .sort-indicator,
+.data-table th.sort-desc .sort-indicator {
+  opacity: 1;
+  color: var(--accent-blue);
+}
+
+.data-table td {
+  padding: 0.7rem 1rem;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.06);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.data-table tbody tr {
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.data-table tbody tr:hover {
+  background: rgba(102, 126, 234, 0.06);
+}
+
+.data-table tbody tr:hover td {
+  color: var(--text-primary);
+}
+
+.data-table tbody tr:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: -2px;
+}
+
+.score-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.score-high {
+  background: rgba(76, 175, 80, 0.15);
+  color: var(--accent-green);
+}
+
+.score-medium {
+  background: rgba(255, 152, 0, 0.15);
+  color: var(--accent-orange);
+}
+
+.score-low {
+  background: rgba(239, 83, 80, 0.15);
+  color: var(--accent-red);
+}
+
+.type-badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 10px;
+  font-size: 0.76rem;
+  font-weight: 500;
+}
+
+.type-ralphton { background: rgba(102, 126, 234, 0.15); color: var(--accent-blue); }
+.type-iterative { background: rgba(118, 75, 162, 0.2); color: #b388ff; }
+.type-team { background: rgba(76, 175, 80, 0.15); color: var(--accent-green); }
+.type-evolve { background: rgba(255, 152, 0, 0.15); color: var(--accent-orange); }
+
+/* ============================================================
+   PAGINATION
+   ============================================================ */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.pagination-info {
+  white-space: nowrap;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.page-btn {
+  min-width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+}
+
+.page-btn:hover:not(:disabled) {
+  border-color: var(--border-glow);
+  color: var(--text-primary);
+  background: rgba(102, 126, 234, 0.1);
+}
+
+.page-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-btn.active {
+  background: var(--accent-gradient);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
+}
+
+.page-btn.ellipsis {
+  border: none;
+  background: none;
+  cursor: default;
+  min-width: 28px;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   NEW RUN FORM
+   ============================================================ */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+
+.form-grid .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-label {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.4rem;
+}
+
+.form-label .required {
+  color: var(--accent-red);
+  margin-left: 0.2rem;
+}
+
+.form-hint {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+  width: 100%;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.form-input:hover,
+.form-select:hover,
+.form-textarea:hover {
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+  border-color: var(--border-glow);
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.12);
+  outline: none;
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.form-select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239aa0b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.2rem;
+}
+
+.form-select option {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 100px;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.form-error {
+  font-size: 0.78rem;
+  color: var(--accent-red);
+  margin-top: 0.3rem;
+  display: none;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.form-error.visible {
+  display: flex;
+  animation: shakeX 0.4s ease;
+}
+
+@keyframes shakeX {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-4px); }
+  40%, 80% { transform: translateX(4px); }
+}
+
+.form-group.has-error .form-input,
+.form-group.has-error .form-select,
+.form-group.has-error .form-textarea {
+  border-color: var(--accent-red);
+  box-shadow: 0 0 0 3px rgba(239, 83, 80, 0.1);
+}
+
+/* New project fields */
+.new-project-fields {
+  display: none;
+  padding: 1rem;
+  border: 1px dashed rgba(102, 126, 234, 0.25);
+  border-radius: var(--radius);
+  margin-top: 0.75rem;
+  background: rgba(102, 126, 234, 0.02);
+  animation: fadeIn 0.3s ease;
+}
+
+.new-project-fields.visible {
+  display: block;
+}
+
+.new-project-fields .npf-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent-blue);
+  margin-bottom: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.new-project-fields .form-group:last-child {
+  margin-bottom: 0;
+}
+
+/* ============================================================
+   TYPE SELECTION CARDS
+   ============================================================ */
+.type-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.85rem;
+}
+
+.type-card {
+  position: relative;
+  background: var(--glass-bg);
+  border: 2px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.type-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: calc(var(--radius) - 2px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.type-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.type-card.selected {
+  transform: translateY(-2px);
+}
+
+.type-card[data-type="ralphton"] { --card-color: var(--accent-blue); }
+.type-card[data-type="iterative-ralphton"] { --card-color: #b388ff; }
+.type-card[data-type="team-ralphton"] { --card-color: var(--accent-green); }
+.type-card[data-type="team-ralphton-evolve"] { --card-color: var(--accent-orange); }
+
+.type-card:hover {
+  border-color: var(--card-color);
+}
+
+.type-card.selected {
+  border-color: var(--card-color);
+  box-shadow: 0 0 20px rgba(102, 126, 234, 0.15), 0 0 40px rgba(102, 126, 234, 0.05);
+}
+
+.type-card.selected::after {
+  opacity: 1;
+  box-shadow: inset 0 0 30px rgba(102, 126, 234, 0.05);
+}
+
+@keyframes selectGlow {
+  0% { box-shadow: 0 0 0 0 var(--card-color); }
+  50% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.2); }
+  100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.15), 0 0 40px rgba(102, 126, 234, 0.05); }
+}
+
+.type-card.selected {
+  animation: selectGlow 0.5s ease;
+}
+
+.type-card-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  margin-bottom: 0.7rem;
+}
+
+.type-card[data-type="ralphton"] .type-card-icon { background: rgba(102, 126, 234, 0.12); }
+.type-card[data-type="iterative-ralphton"] .type-card-icon { background: rgba(179, 136, 255, 0.12); }
+.type-card[data-type="team-ralphton"] .type-card-icon { background: rgba(76, 175, 80, 0.12); }
+.type-card[data-type="team-ralphton-evolve"] .type-card-icon { background: rgba(255, 152, 0, 0.12); }
+
+.type-card-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.type-card-desc {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 0.6rem;
+}
+
+.type-card-stats {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.type-card-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.type-card .check-mark {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.3s ease;
+}
+
+.type-card.selected .check-mark {
+  opacity: 1;
+  transform: scale(1);
+  background: var(--card-color);
+  color: #fff;
+}
+
+.type-card-tooltip {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.85rem;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  width: 260px;
+  z-index: 50;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+}
+
+.type-card-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--bg-secondary);
+}
+
+.type-card:hover .type-card-tooltip {
+  display: block;
+  animation: tooltipIn 0.2s ease;
+}
+
+@keyframes tooltipIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* ============================================================
+   COMMAND PREVIEW
+   ============================================================ */
+.command-preview {
+  background: rgba(10, 14, 26, 0.9);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.command-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.85rem;
+  background: rgba(17, 22, 39, 0.8);
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.command-preview-header .terminal-dots {
+  display: flex;
+  gap: 5px;
+}
+
+.command-preview-header .terminal-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.terminal-dot.red { background: #ff5f57; }
+.terminal-dot.yellow { background: #febc2e; }
+.terminal-dot.green { background: #28c840; }
+
+.command-preview-body {
+  padding: 0.85rem;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  min-height: 60px;
+}
+
+.cmd-keyword { color: #c792ea; }
+.cmd-flag { color: #82aaff; }
+.cmd-string { color: #c3e88d; }
+.cmd-comment { color: #546e7a; font-style: italic; }
+.cmd-prompt { color: var(--accent-blue); }
+.cmd-operator { color: #89ddff; }
+
+/* ============================================================
+   MODAL
+   ============================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.modal-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 700px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
+  transform: scale(0.95) translateY(10px);
+  transition: transform 0.25s ease;
+}
+
+.modal-overlay.active .modal {
+  transform: scale(1) translateY(0);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.modal-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(102, 126, 234, 0.1);
+  color: var(--text-secondary);
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.modal-close:hover {
+  background: rgba(239, 83, 80, 0.15);
+  color: var(--accent-red);
+}
+
+.modal-body {
+  padding: 1.25rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modal-footer {
+  padding: 0.85rem 1.25rem;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   LOG VIEWER
+   ============================================================ */
+.log-viewer {
+  background: #0d1117;
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.78rem;
+  line-height: 1.65;
+  max-height: 400px;
+  overflow-y: auto;
+  color: #8b949e;
+}
+
+.log-line {
+  margin-bottom: 0.15rem;
+  padding: 0.1rem 0;
+}
+
+.log-line:hover {
+  background: rgba(102, 126, 234, 0.04);
+}
+
+.log-time { color: #546e7a; }
+.log-info { color: #58a6ff; }
+.log-success { color: #3fb950; }
+.log-warn { color: #d29922; }
+.log-error { color: #f85149; }
+.log-debug { color: #8b949e; }
+
+/* ============================================================
+   VALIDATION RESULTS
+   ============================================================ */
+.validation-summary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.validation-summary-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.validation-summary-item.pass { color: var(--accent-green); }
+.validation-summary-item.warn { color: var(--accent-orange); }
+.validation-summary-item.fail { color: var(--accent-red); }
+
+.validation-results {
+  padding: 0;
+}
+
+.validation-item {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.06);
+  font-size: 0.88rem;
+}
+
+.validation-item:last-child { border-bottom: none; }
+
+.validation-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+
+.validation-pass .validation-icon {
+  background: rgba(76, 175, 80, 0.15);
+  color: var(--accent-green);
+}
+
+.validation-fail .validation-icon {
+  background: rgba(239, 83, 80, 0.15);
+  color: var(--accent-red);
+}
+
+.validation-warn .validation-icon {
+  background: rgba(255, 152, 0, 0.15);
+  color: var(--accent-orange);
+}
+
+/* ============================================================
+   RUN DETAIL MODAL
+   ============================================================ */
+.detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.detail-item {
+  padding: 0.6rem;
+  background: rgba(10, 14, 26, 0.4);
+  border-radius: var(--radius-sm);
+}
+
+.detail-item-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 0.2rem;
+}
+
+.detail-item-value {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.detail-score-bar {
+  margin-top: 1.25rem;
+}
+
+.detail-score-track {
+  background: rgba(102, 126, 234, 0.08);
+  border-radius: 6px;
+  height: 8px;
+  overflow: hidden;
+}
+
+.detail-score-fill {
+  height: 100%;
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+
+/* ============================================================
+   CONFIRM DIALOG
+   ============================================================ */
+.confirm-body {
+  text-align: center;
+  padding: 1rem 0;
+}
+
+.confirm-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+  font-size: 1.5rem;
+  background: rgba(239, 83, 80, 0.12);
+  color: var(--accent-red);
+}
+
+.confirm-text {
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+  line-height: 1.55;
+}
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================ */
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 0.85rem 1.1rem;
+  min-width: 300px;
+  max-width: 420px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  pointer-events: auto;
+  animation: toastIn 0.35s ease;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.toast::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  width: 100%;
+  animation: toastTimer 4s linear forwards;
+}
+
+.toast-success::after { background: var(--accent-green); }
+.toast-error::after { background: var(--accent-red); }
+.toast-info::after { background: var(--accent-blue); }
+.toast-warning::after { background: var(--accent-orange); }
+
+@keyframes toastTimer {
+  from { width: 100%; }
+  to { width: 0%; }
+}
+
+.toast.removing {
+  animation: toastOut 0.3s ease forwards;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toastOut {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(40px); }
+}
+
+.toast-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  margin-top: 0.05rem;
+}
+
+.toast-success .toast-icon { background: rgba(76, 175, 80, 0.15); color: var(--accent-green); }
+.toast-error .toast-icon { background: rgba(239, 83, 80, 0.15); color: var(--accent-red); }
+.toast-info .toast-icon { background: rgba(102, 126, 234, 0.15); color: var(--accent-blue); }
+.toast-warning .toast-icon { background: rgba(255, 152, 0, 0.15); color: var(--accent-orange); }
+
+.toast-content {
+  flex: 1;
+}
+
+.toast-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.toast-message {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-top: 0.1rem;
+}
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 0.2rem;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.toast-close:hover {
+  color: var(--text-primary);
+}
+
+/* ============================================================
+   RUNNING SESSION GLOW
+   ============================================================ */
+.session-card[data-status="running"] {
+  animation: sessionPulse 3s ease-in-out infinite;
+}
+
+@keyframes sessionPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
+  50% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.1); }
+}
+
+/* ============================================================
+   RESPONSIVE - 768px BREAKPOINT
+   ============================================================ */
+@media (max-width: 768px) {
+  html {
+    font-size: 14px;
+  }
+
+  .header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .stats-bar {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .section-tabs {
+    gap: 0;
+  }
+
+  .section-tab {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.85rem;
+  }
+
+  .sessions-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .type-cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .session-meta {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .modal {
+    max-height: 90vh;
+    margin: 0.5rem;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 0.55rem 0.65rem;
+    font-size: 0.8rem;
+  }
+
+  .toast {
+    min-width: auto;
+    max-width: calc(100vw - 2rem);
+  }
+
+  .command-preview-body {
+    font-size: 0.75rem;
+  }
+
+  .table-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .table-search {
+    max-width: none;
+  }
+
+  .sessions-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .sessions-filter {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-bar {
+    grid-template-columns: 1fr;
+  }
+
+  .type-card-tooltip {
+    display: none !important;
+  }
+
+  .session-actions {
+    flex-direction: column;
+  }
+
+  .session-actions .btn {
+    width: 100%;
+  }
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.flex-between {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.divider {
+  height: 1px;
+  background: var(--border-color);
+  margin: 1rem 0;
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 0.3rem;
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     HEADER
+     ============================================================ -->
+<header class="app-header" role="banner">
+  <div class="header-inner">
+    <h1 class="header-title">
+      <span class="header-title-icon" aria-hidden="true">&#128260;</span>
+      Ralphton Manager - 실행 관리
+    </h1>
+    <div class="header-right">
+      <span class="header-badge" aria-label="현재 탭">실행 관리</span>
+      <span class="header-clock" id="header-clock" aria-live="off"></span>
+    </div>
+  </div>
+</header>
+
+<!-- ============================================================
+     MAIN CONTENT
+     ============================================================ -->
+<main class="main-content" role="main">
+
+  <!-- Quick Stats -->
+  <div class="stats-bar" id="stats-bar" aria-label="실행 통계 요약">
+    <div class="stat-card">
+      <div class="stat-icon blue" aria-hidden="true">&#9889;</div>
+      <div>
+        <div class="stat-value" id="stat-active">0</div>
+        <div class="stat-label">활성 세션</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon green" aria-hidden="true">&#10003;</div>
+      <div>
+        <div class="stat-value" id="stat-completed">0</div>
+        <div class="stat-label">완료된 실행</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon purple" aria-hidden="true">&#128196;</div>
+      <div>
+        <div class="stat-value" id="stat-total-lines">0</div>
+        <div class="stat-label">총 생성 줄수</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon orange" aria-hidden="true">&#9733;</div>
+      <div>
+        <div class="stat-value" id="stat-avg-score">0</div>
+        <div class="stat-label">평균 점수</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sub-tabs -->
+  <nav class="section-tabs" role="tablist" aria-label="실행 관리 섹션">
+    <button class="section-tab active" role="tab" aria-selected="true" aria-controls="panel-active" id="tab-active" data-panel="panel-active">
+      &#9889; 활성 세션 <span class="tab-count" id="tab-count-active">0</span>
+    </button>
+    <button class="section-tab" role="tab" aria-selected="false" aria-controls="panel-completed" id="tab-completed" data-panel="panel-completed">
+      &#10003; 완료된 실행 <span class="tab-count" id="tab-count-completed">0</span>
+    </button>
+    <button class="section-tab" role="tab" aria-selected="false" aria-controls="panel-new" id="tab-new" data-panel="panel-new">
+      &#9654; 새 실행 시작
+    </button>
+  </nav>
+
+  <!-- ===================== ACTIVE SESSIONS PANEL ===================== -->
+  <section class="section-panel active" id="panel-active" role="tabpanel" aria-labelledby="tab-active">
+    <div class="flex-between mb-1">
+      <h2 class="section-title">
+        <span class="icon" aria-hidden="true">&#9889;</span>
+        활성 세션
+        <span class="section-count" id="active-count">0</span>
+      </h2>
+    </div>
+    <p class="section-subtitle">현재 실행 중이거나 대기 중인 Ralphton 세션을 모니터링합니다.</p>
+
+    <div class="sessions-toolbar">
+      <div class="sessions-filter" role="group" aria-label="세션 필터">
+        <button class="filter-chip active" data-filter="all">전체</button>
+        <button class="filter-chip" data-filter="running">실행 중</button>
+        <button class="filter-chip" data-filter="pending">대기 중</button>
+        <button class="filter-chip" data-filter="completed">완료</button>
+        <button class="filter-chip" data-filter="failed">실패</button>
+      </div>
+      <button class="btn btn-sm" id="refresh-sessions-btn" aria-label="새로고침">&#8635; 새로고침</button>
+    </div>
+
+    <div class="sessions-grid" id="sessions-grid" aria-live="polite">
+      <!-- Populated by JS -->
+    </div>
+  </section>
+
+  <!-- ===================== COMPLETED RUNS PANEL ===================== -->
+  <section class="section-panel" id="panel-completed" role="tabpanel" aria-labelledby="tab-completed">
+    <h2 class="section-title">
+      <span class="icon" aria-hidden="true">&#10003;</span>
+      완료된 실행 기록
+      <span class="section-count" id="completed-count">0</span>
+    </h2>
+    <p class="section-subtitle">모든 프로젝트의 완료된 실행 기록을 확인하고 분석합니다.</p>
+
+    <div class="table-toolbar">
+      <div class="table-search">
+        <span class="table-search-icon" aria-hidden="true">&#128269;</span>
+        <input type="text" id="table-search-input" placeholder="프로젝트 이름으로 검색..." aria-label="실행 기록 검색">
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center;">
+        <span style="font-size:0.78rem;color:var(--text-muted);">페이지당:</span>
+        <select class="form-select" id="page-size-select" style="width:auto;padding:0.35rem 1.8rem 0.35rem 0.6rem;font-size:0.8rem;" aria-label="페이지 크기">
+          <option value="10">10</option>
+          <option value="20" selected>20</option>
+          <option value="50">50</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="glass-card" style="padding: 0;">
+      <div class="table-container">
+        <table class="data-table" id="completed-table" aria-label="완료된 실행 목록">
+          <thead>
+            <tr>
+              <th class="sortable" data-sort="date" aria-sort="none">
+                날짜 <span class="sort-indicator" aria-hidden="true">&#9650;&#9660;</span>
+              </th>
+              <th class="sortable" data-sort="project" aria-sort="none">
+                프로젝트 <span class="sort-indicator" aria-hidden="true">&#9650;&#9660;</span>
+              </th>
+              <th class="sortable" data-sort="type" aria-sort="none">
+                타입 <span class="sort-indicator" aria-hidden="true">&#9650;&#9660;</span>
+              </th>
+              <th>Phase</th>
+              <th>줄수</th>
+              <th>크기(KB)</th>
+              <th>점수</th>
+              <th>소요시간</th>
+            </tr>
+          </thead>
+          <tbody id="completed-tbody">
+            <!-- Populated by JS -->
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination-bar" id="pagination-bar">
+        <span class="pagination-info" id="pagination-info" aria-live="polite"></span>
+        <div class="pagination-controls" id="pagination-controls" role="navigation" aria-label="페이지 네비게이션">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== NEW RUN PANEL ===================== -->
+  <section class="section-panel" id="panel-new" role="tabpanel" aria-labelledby="tab-new">
+    <h2 class="section-title">
+      <span class="icon" aria-hidden="true">&#9654;</span>
+      새 실행 시작
+    </h2>
+    <p class="section-subtitle">새로운 Ralphton 세션을 구성하고 시작합니다.</p>
+
+    <form id="new-run-form" class="glass-card" novalidate>
+      <!-- Project selection -->
+      <div class="form-group" id="fg-project">
+        <label class="form-label" for="project-select">프로젝트 선택 <span class="required" aria-label="필수">*</span></label>
+        <select class="form-select" id="project-select" required aria-required="true">
+          <option value="">프로젝트를 선택하세요</option>
+        </select>
+        <div class="form-error" id="err-project" role="alert">&#9888; 프로젝트를 선택해주세요.</div>
+      </div>
+
+      <!-- New project fields (hidden by default) -->
+      <div class="new-project-fields" id="new-project-fields" aria-hidden="true">
+        <div class="npf-title">&#10010; 새 프로젝트 정보</div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label class="form-label" for="np-name">프로젝트 이름 <span class="required" aria-label="필수">*</span></label>
+            <input type="text" class="form-input" id="np-name" placeholder="예: my-new-app" autocomplete="off">
+            <div class="form-error" id="err-np-name" role="alert">&#9888; 프로젝트 이름을 입력해주세요.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="np-desc">설명</label>
+            <input type="text" class="form-input" id="np-desc" placeholder="프로젝트에 대한 간단한 설명">
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="np-path">프로젝트 경로 <span class="required" aria-label="필수">*</span></label>
+            <input type="text" class="form-input" id="np-path" placeholder="예: /home/user/projects/my-new-app" autocomplete="off">
+            <div class="form-error" id="err-np-path" role="alert">&#9888; 프로젝트 경로를 입력해주세요.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="np-lines">목표 줄수</label>
+            <input type="number" class="form-input" id="np-lines" placeholder="예: 3000" min="100" step="100">
+            <div class="form-hint">기본값: 3000줄</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Type selection -->
+      <div class="form-group" id="fg-type">
+        <label class="form-label">실행 타입 선택 <span class="required" aria-label="필수">*</span></label>
+        <div class="form-hint mb-1">프로젝트에 적합한 실행 방식을 선택하세요. 카드 위에 마우스를 올리면 상세 설명을 볼 수 있습니다.</div>
+        <div class="type-cards-grid" id="type-cards-grid" role="radiogroup" aria-label="실행 타입">
+          <!-- ralphton -->
+          <div class="type-card" data-type="ralphton" role="radio" aria-checked="false" tabindex="0" aria-label="ralphton: 단일 1회 실행">
+            <div class="check-mark" aria-hidden="true">&#10003;</div>
+            <div class="type-card-icon" aria-hidden="true">&#9889;</div>
+            <div class="type-card-name">ralphton</div>
+            <div class="type-card-desc">단일 1회 실행. 가장 빠르고 간단한 코드 생성 방식.</div>
+            <div class="type-card-stats">
+              <span class="type-card-stat">&#128196; ~2K줄</span>
+              <span class="type-card-stat">&#9201; ~1시간</span>
+            </div>
+            <div class="type-card-tooltip">
+              Claude에게 단일 프롬프트로 전체 코드를 한 번에 생성하도록 합니다. 소규모 프로젝트나 빠른 프로토타입에 적합합니다. 결과물은 약 2,000줄 규모이며, 1시간 내외로 완료됩니다. 초기 탐색이나 실험에 추천됩니다.
+            </div>
+          </div>
+
+          <!-- iterative-ralphton -->
+          <div class="type-card" data-type="iterative-ralphton" role="radio" aria-checked="false" tabindex="0" aria-label="iterative-ralphton: 단일 N회 반복">
+            <div class="check-mark" aria-hidden="true">&#10003;</div>
+            <div class="type-card-icon" aria-hidden="true">&#128260;</div>
+            <div class="type-card-name">iterative-ralphton</div>
+            <div class="type-card-desc">단일 N회 반복 실행. 반복하며 코드 품질을 점진적으로 개선합니다.</div>
+            <div class="type-card-stats">
+              <span class="type-card-stat">&#128196; ~4.5K줄</span>
+              <span class="type-card-stat">&#9201; ~6시간</span>
+            </div>
+            <div class="type-card-tooltip">
+              여러 라운드에 걸쳐 코드를 반복적으로 개선합니다. 각 라운드에서 이전 결과를 검토하고 보완하여 더 완성도 높은 코드를 만듭니다. 중간 규모 프로젝트에 적합하며, 라운드 수를 조절할 수 있습니다.
+            </div>
+          </div>
+
+          <!-- team-ralphton -->
+          <div class="type-card" data-type="team-ralphton" role="radio" aria-checked="false" tabindex="0" aria-label="team-ralphton: Teams 반복 실행">
+            <div class="check-mark" aria-hidden="true">&#10003;</div>
+            <div class="type-card-icon" aria-hidden="true">&#128101;</div>
+            <div class="type-card-name">team-ralphton</div>
+            <div class="type-card-desc">Teams + 반복 실행. 여러 전문 팀이 협업하여 코드를 생성합니다.</div>
+            <div class="type-card-stats">
+              <span class="type-card-stat">&#128196; ~5K줄</span>
+              <span class="type-card-stat">&#9201; ~2.5시간</span>
+            </div>
+            <div class="type-card-tooltip">
+              프론트엔드, 백엔드, 테스트 등 전문 팀 역할을 나누어 병렬로 코드를 생성합니다. 각 팀의 결과를 통합하여 체계적인 프로젝트를 만듭니다. 대규모 프로젝트에 적합하며, 협업 시너지를 극대화합니다.
+            </div>
+          </div>
+
+          <!-- team-ralphton-evolve -->
+          <div class="type-card" data-type="team-ralphton-evolve" role="radio" aria-checked="false" tabindex="0" aria-label="team-ralphton-evolve: 기존 프로젝트 개선">
+            <div class="check-mark" aria-hidden="true">&#10003;</div>
+            <div class="type-card-icon" aria-hidden="true">&#128640;</div>
+            <div class="type-card-name">team-ralphton-evolve</div>
+            <div class="type-card-desc">기존 프로젝트를 끊임없이 진화시키는 무한 개선 모드.</div>
+            <div class="type-card-stats">
+              <span class="type-card-stat">&#128196; 무제한</span>
+              <span class="type-card-stat">&#9201; 무한 진화</span>
+            </div>
+            <div class="type-card-tooltip">
+              이미 존재하는 프로젝트를 기반으로 지속적으로 개선합니다. 새 기능 추가, 버그 수정, 리팩토링 등을 자동으로 수행하며, 프로젝트가 점진적으로 진화합니다. 장기 운영 프로젝트에 추천됩니다.
+            </div>
+          </div>
+        </div>
+        <div class="form-error" id="err-type" role="alert">&#9888; 실행 타입을 선택해주세요.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- PRD textarea -->
+      <div class="form-group" id="fg-prd">
+        <label class="form-label" for="prd-textarea">PRD.md 내용</label>
+        <textarea class="form-textarea" id="prd-textarea" rows="12" placeholder="프로젝트 요구사항 문서 (PRD)를 입력하세요..." aria-describedby="prd-hint"></textarea>
+        <div class="form-hint" id="prd-hint">프로젝트 설명, 기능 요구사항, 기술 스택 등을 Markdown 형식으로 작성하세요. 비워두면 기본 템플릿이 사용됩니다.</div>
+      </div>
+
+      <!-- Round number -->
+      <div class="form-group" id="fg-rounds">
+        <label class="form-label" for="round-input">라운드 수</label>
+        <input type="number" class="form-input" id="round-input" min="1" max="100" value="1" style="max-width: 180px;" aria-describedby="round-hint">
+        <div class="form-hint" id="round-hint">반복 실행 시 라운드 횟수를 지정합니다. (iterative/team 타입에 적용)</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Command preview -->
+      <div class="form-group">
+        <label class="form-label">실행 명령어 미리보기</label>
+        <div class="command-preview" id="command-preview">
+          <div class="command-preview-header">
+            <div class="terminal-dots" aria-hidden="true">
+              <span class="terminal-dot red"></span>
+              <span class="terminal-dot yellow"></span>
+              <span class="terminal-dot green"></span>
+            </div>
+            <span>터미널</span>
+            <button type="button" class="btn btn-sm" id="copy-cmd-btn" aria-label="명령어 복사">&#128203; 복사</button>
+          </div>
+          <div class="command-preview-body" id="command-preview-body">
+<span class="cmd-comment"># 프로젝트와 타입을 선택하면 명령어가 자동 생성됩니다.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Submit row -->
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap;">
+        <button type="button" class="btn" id="reset-form-btn">&#8635; 초기화</button>
+        <button type="submit" class="btn btn-primary btn-lg" id="submit-run-btn">
+          &#9654; 실행 시작
+        </button>
+      </div>
+    </form>
+  </section>
+
+</main>
+
+<!-- ============================================================
+     TOAST CONTAINER
+     ============================================================ -->
+<div class="toast-container" id="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<!-- ============================================================
+     LOG VIEWER MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="log-modal" role="dialog" aria-modal="true" aria-labelledby="log-modal-title">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="log-modal-title">세션 로그</h3>
+      <button class="modal-close" aria-label="닫기" data-close-modal="log-modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="log-viewer" id="log-viewer-content" role="log" aria-label="로그 출력">
+        <!-- Log lines rendered by JS -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-sm" id="log-auto-scroll-btn">자동 스크롤: 켜짐</button>
+      <button class="btn" data-close-modal="log-modal">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     STOP CONFIRM MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="stop-modal" role="alertdialog" aria-modal="true" aria-labelledby="stop-modal-title" aria-describedby="stop-confirm-text">
+  <div class="modal" style="max-width: 420px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="stop-modal-title">세션 중지 확인</h3>
+      <button class="modal-close" aria-label="닫기" data-close-modal="stop-modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="confirm-body">
+        <div class="confirm-icon" aria-hidden="true">&#9888;</div>
+        <p class="confirm-text" id="stop-confirm-text">
+          이 세션을 중지하시겠습니까?<br>진행 중인 작업이 취소됩니다.
+        </p>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content: center;">
+      <button class="btn" data-close-modal="stop-modal">취소</button>
+      <button class="btn btn-danger" id="confirm-stop-btn">&#9632; 중지</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     VALIDATION MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="validation-modal" role="dialog" aria-modal="true" aria-labelledby="validation-modal-title">
+  <div class="modal" style="max-width: 560px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="validation-modal-title">검증 결과</h3>
+      <button class="modal-close" aria-label="닫기" data-close-modal="validation-modal">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div id="validation-summary" class="validation-summary" aria-label="검증 요약"></div>
+      <div class="validation-results" id="validation-results" aria-label="검증 항목 목록">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close-modal="validation-modal">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     RUN DETAIL MODAL
+     ============================================================ -->
+<div class="modal-overlay" id="detail-modal" role="dialog" aria-modal="true" aria-labelledby="detail-modal-title">
+  <div class="modal" style="max-width: 560px;">
+    <div class="modal-header">
+      <h3 class="modal-title" id="detail-modal-title">실행 상세 정보</h3>
+      <button class="modal-close" aria-label="닫기" data-close-modal="detail-modal">&times;</button>
+    </div>
+    <div class="modal-body" id="detail-modal-body">
+      <!-- Populated by JS -->
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-close-modal="detail-modal">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     JAVASCRIPT
+     ============================================================ -->
+<script>
+(function() {
+  'use strict';
+
+  /* ===========================================================
+     INITIAL PROJECTS DATA
+     =========================================================== */
+  var INITIAL_PROJECTS = [
+    {
+      id: 'proj-001',
+      name: 'ralphton-manager',
+      description: 'Ralphton 프로세스 관리 대시보드',
+      path: '/home/user/.openclaw/workspace/projects/ralphton-manager',
+      targetLines: 5000,
+      createdAt: '2026-03-15T09:00:00Z',
+      runs: [
+        { id: 'run-001', date: '2026-03-15', type: 'team-ralphton', phase: 'Phase 1', lines: 2847, sizeKB: 89.5, score: 82, duration: '2h 15m', status: 'completed' },
+        { id: 'run-002', date: '2026-03-16', type: 'team-ralphton', phase: 'Phase 2', lines: 4213, sizeKB: 134.2, score: 88, duration: '2h 42m', status: 'completed' },
+        { id: 'run-003', date: '2026-03-17', type: 'team-ralphton-evolve', phase: 'Evolve 1', lines: 5102, sizeKB: 162.8, score: 91, duration: '3h 05m', status: 'completed' }
+      ]
+    },
+    {
+      id: 'proj-002',
+      name: 'api-gateway',
+      description: 'REST API 게이트웨이 서비스',
+      path: '/home/user/.openclaw/workspace/projects/api-gateway',
+      targetLines: 3000,
+      createdAt: '2026-03-10T14:30:00Z',
+      runs: [
+        { id: 'run-004', date: '2026-03-10', type: 'ralphton', phase: 'Initial', lines: 1823, sizeKB: 58.1, score: 76, duration: '0h 55m', status: 'completed' },
+        { id: 'run-005', date: '2026-03-11', type: 'iterative-ralphton', phase: 'Round 1', lines: 3156, sizeKB: 101.3, score: 84, duration: '5h 30m', status: 'completed' },
+        { id: 'run-006', date: '2026-03-12', type: 'iterative-ralphton', phase: 'Round 2', lines: 4501, sizeKB: 142.7, score: 89, duration: '6h 10m', status: 'completed' }
+      ]
+    },
+    {
+      id: 'proj-003',
+      name: 'ml-pipeline',
+      description: '머신러닝 데이터 파이프라인',
+      path: '/home/user/.openclaw/workspace/projects/ml-pipeline',
+      targetLines: 4000,
+      createdAt: '2026-03-08T11:00:00Z',
+      runs: [
+        { id: 'run-007', date: '2026-03-08', type: 'team-ralphton', phase: 'Phase 1', lines: 3245, sizeKB: 105.6, score: 80, duration: '2h 28m', status: 'completed' },
+        { id: 'run-008', date: '2026-03-09', type: 'team-ralphton-evolve', phase: 'Evolve 1', lines: 4187, sizeKB: 136.4, score: 86, duration: '3h 15m', status: 'completed' }
+      ]
+    },
+    {
+      id: 'proj-004',
+      name: 'chat-widget',
+      description: '실시간 채팅 위젯 컴포넌트',
+      path: '/home/user/.openclaw/workspace/projects/chat-widget',
+      targetLines: 2500,
+      createdAt: '2026-03-12T16:00:00Z',
+      runs: [
+        { id: 'run-009', date: '2026-03-12', type: 'ralphton', phase: 'Initial', lines: 1654, sizeKB: 52.3, score: 73, duration: '0h 48m', status: 'completed' },
+        { id: 'run-010', date: '2026-03-13', type: 'iterative-ralphton', phase: 'Round 1', lines: 2890, sizeKB: 91.8, score: 85, duration: '5h 45m', status: 'completed' },
+        { id: 'run-011', date: '2026-03-14', type: 'iterative-ralphton', phase: 'Round 2', lines: 3412, sizeKB: 108.5, score: 90, duration: '6h 20m', status: 'completed' },
+        { id: 'run-012', date: '2026-03-15', type: 'team-ralphton-evolve', phase: 'Evolve 1', lines: 3987, sizeKB: 127.6, score: 93, duration: '2h 55m', status: 'completed' }
+      ]
+    },
+    {
+      id: 'proj-005',
+      name: 'auth-service',
+      description: '인증/인가 마이크로서비스',
+      path: '/home/user/.openclaw/workspace/projects/auth-service',
+      targetLines: 3500,
+      createdAt: '2026-03-18T10:00:00Z',
+      runs: [
+        { id: 'run-013', date: '2026-03-18', type: 'team-ralphton', phase: 'Phase 1', lines: 2956, sizeKB: 94.2, score: 81, duration: '2h 20m', status: 'completed' },
+        { id: 'run-014', date: '2026-03-19', type: 'team-ralphton', phase: 'Phase 2', lines: 3801, sizeKB: 121.5, score: 87, duration: '2h 35m', status: 'completed' }
+      ]
+    },
+    {
+      id: 'proj-006',
+      name: 'dashboard-analytics',
+      description: '분석 대시보드 프론트엔드',
+      path: '/home/user/.openclaw/workspace/projects/dashboard-analytics',
+      targetLines: 6000,
+      createdAt: '2026-03-20T08:00:00Z',
+      runs: [
+        { id: 'run-015', date: '2026-03-20', type: 'ralphton', phase: 'Initial', lines: 2102, sizeKB: 67.4, score: 74, duration: '1h 02m', status: 'completed' },
+        { id: 'run-016', date: '2026-03-21', type: 'team-ralphton', phase: 'Phase 1', lines: 4356, sizeKB: 139.7, score: 83, duration: '2h 30m', status: 'completed' },
+        { id: 'run-017', date: '2026-03-22', type: 'team-ralphton-evolve', phase: 'Evolve 1', lines: 5689, sizeKB: 182.1, score: 92, duration: '3h 20m', status: 'completed' }
+      ]
+    }
+  ];
+
+  /* ===========================================================
+     APPLICATION STATE
+     =========================================================== */
+  var projects = JSON.parse(JSON.stringify(INITIAL_PROJECTS));
+  var activeSessions = [];
+  var completedRuns = [];
+  var selectedType = null;
+  var stopTargetSessionId = null;
+  var sessionFilter = 'all';
+  var searchQuery = '';
+  var logAutoScroll = true;
+
+  /* Pagination state */
+  var PAGE_SIZE = 20;
+  var currentPage = 1;
+  var sortColumn = 'date';
+  var sortDirection = 'desc';
+
+  /* Timer reference */
+  var timerInterval = null;
+  var clockInterval = null;
+
+  /* ===========================================================
+     INITIALIZATION
+     =========================================================== */
+  function init() {
+    loadFromStorage();
+    buildCompletedRuns();
+    createInitialSessions();
+    populateProjectDropdown();
+    setPrdTemplate();
+    updateStats();
+    renderActiveSessions();
+    renderCompletedTable();
+    bindEvents();
+    startTimers();
+    startClock();
+  }
+
+  function loadFromStorage() {
+    try {
+      var stored = localStorage.getItem('ralphton-manager-projects');
+      if (stored) {
+        var parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          projects = parsed;
+        }
+      }
+      var storedSessions = localStorage.getItem('ralphton-manager-sessions');
+      if (storedSessions) {
+        var parsed2 = JSON.parse(storedSessions);
+        if (Array.isArray(parsed2)) {
+          activeSessions = parsed2;
+        }
+      }
+    } catch (e) {
+      /* Ignore storage errors */
+    }
+  }
+
+  function saveToStorage() {
+    try {
+      localStorage.setItem('ralphton-manager-projects', JSON.stringify(projects));
+      localStorage.setItem('ralphton-manager-sessions', JSON.stringify(activeSessions));
+    } catch (e) {
+      /* Ignore storage errors */
+    }
+  }
+
+  function buildCompletedRuns() {
+    completedRuns = [];
+    projects.forEach(function(proj) {
+      proj.runs.forEach(function(run) {
+        if (run.status === 'completed') {
+          completedRuns.push({
+            id: run.id,
+            date: run.date,
+            project: proj.name,
+            projectId: proj.id,
+            type: run.type,
+            phase: run.phase,
+            lines: run.lines,
+            sizeKB: run.sizeKB,
+            score: run.score,
+            duration: run.duration,
+            status: run.status
+          });
+        }
+      });
+    });
+  }
+
+  function createInitialSessions() {
+    if (activeSessions.length > 0) return;
+    var now = Date.now();
+    activeSessions = [
+      {
+        id: 'sess-001',
+        name: 'team-ralphton-evolve #4',
+        project: 'ralphton-manager',
+        type: 'team-ralphton-evolve',
+        pid: 28451,
+        status: 'running',
+        startedAt: now - 3420000,
+        progress: 62
+      },
+      {
+        id: 'sess-002',
+        name: 'iterative-ralphton R3 #3',
+        project: 'api-gateway',
+        type: 'iterative-ralphton',
+        pid: 29102,
+        status: 'running',
+        startedAt: now - 1260000,
+        progress: 35
+      },
+      {
+        id: 'sess-003',
+        name: 'team-ralphton Phase 3',
+        project: 'auth-service',
+        type: 'team-ralphton',
+        pid: 30215,
+        status: 'pending',
+        startedAt: now - 120000,
+        progress: 0
+      }
+    ];
+  }
+
+  function updateStats() {
+    var totalLines = 0;
+    var totalScore = 0;
+    var scoreCount = 0;
+    completedRuns.forEach(function(r) {
+      totalLines += r.lines;
+      totalScore += r.score;
+      scoreCount++;
+    });
+
+    document.getElementById('stat-active').textContent = activeSessions.length;
+    document.getElementById('stat-completed').textContent = completedRuns.length;
+    document.getElementById('stat-total-lines').textContent = totalLines.toLocaleString();
+    document.getElementById('stat-avg-score').textContent = scoreCount > 0 ? Math.round(totalScore / scoreCount) : '0';
+
+    document.getElementById('tab-count-active').textContent = activeSessions.length;
+    document.getElementById('tab-count-completed').textContent = completedRuns.length;
+  }
+
+  /* ===========================================================
+     EVENT BINDINGS
+     =========================================================== */
+  function bindEvents() {
+    /* Section tabs */
+    document.querySelectorAll('.section-tab').forEach(function(tab) {
+      tab.addEventListener('click', function() {
+        switchTab(this.getAttribute('data-panel'));
+      });
+    });
+
+    /* Close modal buttons */
+    document.querySelectorAll('[data-close-modal]').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        closeModal(this.getAttribute('data-close-modal'));
+      });
+    });
+
+    /* Modal overlay click-to-close */
+    document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) {
+          overlay.classList.remove('active');
+        }
+      });
+    });
+
+    /* Escape key */
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        document.querySelectorAll('.modal-overlay.active').forEach(function(m) {
+          m.classList.remove('active');
+        });
+      }
+    });
+
+    /* Type card selection */
+    document.querySelectorAll('.type-card').forEach(function(card) {
+      card.addEventListener('click', function() {
+        selectTypeCard(this.getAttribute('data-type'));
+      });
+      card.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectTypeCard(this.getAttribute('data-type'));
+        }
+      });
+    });
+
+    /* Project select */
+    var projectSelect = document.getElementById('project-select');
+    projectSelect.addEventListener('change', function() {
+      onProjectChange();
+      updateCommandPreview();
+    });
+
+    /* New project name changes update preview */
+    document.getElementById('np-name').addEventListener('input', updateCommandPreview);
+    document.getElementById('np-path').addEventListener('input', updateCommandPreview);
+
+    /* Round input */
+    document.getElementById('round-input').addEventListener('input', updateCommandPreview);
+
+    /* Form submit */
+    document.getElementById('new-run-form').addEventListener('submit', function(e) {
+      e.preventDefault();
+      handleFormSubmit();
+    });
+
+    /* Reset form */
+    document.getElementById('reset-form-btn').addEventListener('click', resetForm);
+
+    /* Copy command */
+    document.getElementById('copy-cmd-btn').addEventListener('click', copyCommand);
+
+    /* Stop confirm */
+    document.getElementById('confirm-stop-btn').addEventListener('click', confirmStop);
+
+    /* Table sorting */
+    document.querySelectorAll('.data-table th.sortable').forEach(function(th) {
+      th.addEventListener('click', function() {
+        handleSort(this.getAttribute('data-sort'));
+      });
+    });
+
+    /* Session filter chips */
+    document.querySelectorAll('.filter-chip').forEach(function(chip) {
+      chip.addEventListener('click', function() {
+        sessionFilter = this.getAttribute('data-filter');
+        document.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.remove('active'); });
+        this.classList.add('active');
+        renderActiveSessions();
+      });
+    });
+
+    /* Refresh sessions button */
+    document.getElementById('refresh-sessions-btn').addEventListener('click', function() {
+      renderActiveSessions();
+      showToast('info', '새로고침', '세션 목록이 갱신되었습니다.');
+    });
+
+    /* Table search */
+    document.getElementById('table-search-input').addEventListener('input', function() {
+      searchQuery = this.value.trim().toLowerCase();
+      currentPage = 1;
+      renderCompletedTable();
+    });
+
+    /* Page size select */
+    document.getElementById('page-size-select').addEventListener('change', function() {
+      PAGE_SIZE = parseInt(this.value) || 20;
+      currentPage = 1;
+      renderCompletedTable();
+    });
+
+    /* Log auto-scroll toggle */
+    document.getElementById('log-auto-scroll-btn').addEventListener('click', function() {
+      logAutoScroll = !logAutoScroll;
+      this.textContent = '자동 스크롤: ' + (logAutoScroll ? '켜짐' : '꺼짐');
+    });
+  }
+
+  /* ===========================================================
+     TAB SWITCHING
+     =========================================================== */
+  function switchTab(panelId) {
+    document.querySelectorAll('.section-tab').forEach(function(t) {
+      t.classList.remove('active');
+      t.setAttribute('aria-selected', 'false');
+    });
+    document.querySelectorAll('.section-panel').forEach(function(p) {
+      p.classList.remove('active');
+    });
+    var tab = document.querySelector('[data-panel="' + panelId + '"]');
+    if (tab) {
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+    }
+    var panel = document.getElementById(panelId);
+    if (panel) panel.classList.add('active');
+  }
+
+  /* ===========================================================
+     MODAL HELPERS
+     =========================================================== */
+  function openModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) {
+      modal.classList.add('active');
+      /* Focus first close button */
+      var closeBtn = modal.querySelector('.modal-close');
+      if (closeBtn) {
+        setTimeout(function() { closeBtn.focus(); }, 50);
+      }
+    }
+  }
+
+  function closeModal(modalId) {
+    var modal = document.getElementById(modalId);
+    if (modal) modal.classList.remove('active');
+  }
+
+  /* ===========================================================
+     CLOCK
+     =========================================================== */
+  function startClock() {
+    function updateClock() {
+      var now = new Date();
+      var str = String(now.getFullYear()) + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0') + ' ' +
+        String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0') + ':' +
+        String(now.getSeconds()).padStart(2, '0');
+      document.getElementById('header-clock').textContent = str;
+    }
+    updateClock();
+    clockInterval = setInterval(updateClock, 1000);
+  }
+
+  /* ===========================================================
+     ACTIVE SESSIONS RENDERING
+     =========================================================== */
+  function renderActiveSessions() {
+    var grid = document.getElementById('sessions-grid');
+    var countEl = document.getElementById('active-count');
+
+    var filtered = activeSessions;
+    if (sessionFilter !== 'all') {
+      filtered = activeSessions.filter(function(s) { return s.status === sessionFilter; });
+    }
+
+    countEl.textContent = activeSessions.length;
+    document.getElementById('tab-count-active').textContent = activeSessions.length;
+    document.getElementById('stat-active').textContent = activeSessions.length;
+
+    if (filtered.length === 0) {
+      var msg = sessionFilter === 'all'
+        ? '현재 활성 세션이 없습니다.'
+        : '"' + getStatusLabel(sessionFilter) + '" 상태의 세션이 없습니다.';
+      grid.innerHTML = '<div class="empty-state">' +
+        '<div class="empty-icon" aria-hidden="true">&#128196;</div>' +
+        '<p>' + msg + '</p>' +
+        '<div class="empty-action"><button class="btn btn-primary btn-sm" onclick="document.querySelector(\'[data-panel=panel-new]\').click()">&#10010; 새 실행 시작</button></div>' +
+      '</div>';
+      return;
+    }
+
+    var html = '';
+    filtered.forEach(function(s) {
+      html += buildSessionCard(s);
+    });
+    grid.innerHTML = html;
+
+    /* Bind session action buttons */
+    grid.querySelectorAll('[data-action]').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var action = this.getAttribute('data-action');
+        var sessId = this.getAttribute('data-session');
+        handleSessionAction(action, sessId);
+      });
+    });
+  }
+
+  function buildSessionCard(s) {
+    var elapsed = formatElapsed(Date.now() - s.startedAt);
+    var statusLabel = getStatusLabel(s.status);
+    var typeLabel = getTypeShortLabel(s.type);
+    var progress = s.progress || 0;
+
+    /* Simulate progress increase for running sessions */
+    if (s.status === 'running' && progress < 95) {
+      var elapsed_sec = (Date.now() - s.startedAt) / 1000;
+      progress = Math.min(95, Math.floor(elapsed_sec / 60));
+    }
+
+    var progressClass = s.status;
+
+    return '<div class="session-card" data-status="' + s.status + '" data-session-id="' + s.id + '">' +
+      '<div class="session-card-header">' +
+        '<div>' +
+          '<div class="session-name">' + escHtml(s.name) + '</div>' +
+          '<div class="session-project">' + escHtml(s.project) + '</div>' +
+        '</div>' +
+        '<span class="session-status" data-status="' + s.status + '">' +
+          '<span class="status-dot" data-status="' + s.status + '" aria-hidden="true"></span>' +
+          statusLabel +
+        '</span>' +
+      '</div>' +
+      '<div class="session-progress">' +
+        '<div class="session-progress-bar">' +
+          '<div class="session-progress-fill ' + progressClass + '" style="width:' + progress + '%;"></div>' +
+        '</div>' +
+        '<div class="session-progress-text">' +
+          '<span>진행률 ' + progress + '%</span>' +
+          '<span>' + (s.status === 'running' ? '예상 완료: 약 ' + estimateRemaining(s) : '') + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="session-meta">' +
+        '<div class="session-meta-item"><span class="session-meta-label">타입:</span> <span class="session-meta-value">' + typeLabel + '</span></div>' +
+        '<div class="session-meta-item"><span class="session-meta-label">PID:</span> <span class="session-meta-value" style="font-family:monospace;">' + s.pid + '</span></div>' +
+        '<div class="session-meta-item"><span class="session-meta-label">경과:</span> <span class="session-meta-value timer" data-timer="' + s.startedAt + '">' + elapsed + '</span></div>' +
+        '<div class="session-meta-item"><span class="session-meta-label">상태:</span> <span class="session-meta-value">' + statusLabel + '</span></div>' +
+      '</div>' +
+      '<div class="session-actions">' +
+        '<button class="btn btn-sm" data-action="log" data-session="' + s.id + '" aria-label="' + escHtml(s.name) + ' 로그 보기">&#128220; 로그 보기</button>' +
+        (s.status === 'running' || s.status === 'pending' ?
+          '<button class="btn btn-danger btn-sm" data-action="stop" data-session="' + s.id + '" aria-label="' + escHtml(s.name) + ' 중지">&#9632; 중지</button>' : '') +
+        '<button class="btn btn-success btn-sm" data-action="validate" data-session="' + s.id + '" aria-label="' + escHtml(s.name) + ' 검증">&#10003; 검증</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function estimateRemaining(s) {
+    var typeEstimates = {
+      'ralphton': 3600000,
+      'iterative-ralphton': 21600000,
+      'team-ralphton': 9000000,
+      'team-ralphton-evolve': 10800000
+    };
+    var total = typeEstimates[s.type] || 7200000;
+    var elapsed = Date.now() - s.startedAt;
+    var remaining = Math.max(0, total - elapsed);
+    if (remaining === 0) return '곧 완료';
+    var hours = Math.floor(remaining / 3600000);
+    var mins = Math.floor((remaining % 3600000) / 60000);
+    if (hours > 0) return hours + '시간 ' + mins + '분';
+    return mins + '분';
+  }
+
+  function handleSessionAction(action, sessId) {
+    if (action === 'log') {
+      showLogModal(sessId);
+    } else if (action === 'stop') {
+      showStopConfirm(sessId);
+    } else if (action === 'validate') {
+      showValidation(sessId);
+    }
+  }
+
+  /* ===========================================================
+     LOG VIEWER
+     =========================================================== */
+  function showLogModal(sessId) {
+    var session = activeSessions.find(function(s) { return s.id === sessId; });
+    if (!session) return;
+
+    document.getElementById('log-modal-title').textContent = session.name + ' - 로그';
+    var viewer = document.getElementById('log-viewer-content');
+
+    var lines = generateSimulatedLogs(session);
+    viewer.innerHTML = lines.join('\n');
+
+    if (logAutoScroll) {
+      viewer.scrollTop = viewer.scrollHeight;
+    }
+
+    openModal('log-modal');
+  }
+
+  function generateSimulatedLogs(session) {
+    var logs = [];
+    var bt = new Date(session.startedAt);
+    var t = session.type;
+
+    logs.push(logLine(bt, 'info', '========================================'));
+    logs.push(logLine(bt, 'info', 'Ralphton 세션 시작'));
+    logs.push(logLine(bt, 'info', '========================================'));
+    logs.push(logLine(addMs(bt, 200), 'debug', '환경 변수 로딩...'));
+    logs.push(logLine(addMs(bt, 400), 'debug', 'NODE_ENV=production'));
+    logs.push(logLine(addMs(bt, 500), 'info', '세션 ID: ' + session.id));
+    logs.push(logLine(addMs(bt, 700), 'info', '프로젝트: ' + session.project));
+    logs.push(logLine(addMs(bt, 900), 'info', '타입: ' + t));
+    logs.push(logLine(addMs(bt, 1100), 'info', 'PID: ' + session.pid));
+    logs.push(logLine(addMs(bt, 2000), 'info', '워크스페이스 준비 중...'));
+    logs.push(logLine(addMs(bt, 2500), 'debug', '디렉토리 확인: /workspace/' + session.project));
+    logs.push(logLine(addMs(bt, 3000), 'debug', 'git status 확인...'));
+    logs.push(logLine(addMs(bt, 3500), 'success', '워크스페이스 준비 완료'));
+    logs.push(logLine(addMs(bt, 4000), 'info', 'PRD.md 로딩...'));
+    logs.push(logLine(addMs(bt, 5000), 'debug', 'PRD 파싱 중... (requirements 추출)'));
+    logs.push(logLine(addMs(bt, 6000), 'success', 'PRD.md 파싱 완료 (requirements: 14개)'));
+    logs.push(logLine(addMs(bt, 7000), 'info', 'Claude 세션 초기화...'));
+    logs.push(logLine(addMs(bt, 8000), 'debug', 'API 키 검증...'));
+    logs.push(logLine(addMs(bt, 10000), 'debug', '모델: claude-opus-4-6'));
+    logs.push(logLine(addMs(bt, 12000), 'success', 'Claude 연결 확인'));
+    logs.push(logLine(addMs(bt, 13000), 'info', '코드 생성 시작...'));
+
+    if (t.indexOf('team') >= 0) {
+      logs.push(logLine(addMs(bt, 14000), 'info', '--- 팀 할당 ---'));
+      logs.push(logLine(addMs(bt, 14500), 'info', '팀 A: 프론트엔드 UI (HTML/CSS/JS)'));
+      logs.push(logLine(addMs(bt, 15000), 'info', '팀 B: 백엔드 로직 (API/데이터)'));
+      logs.push(logLine(addMs(bt, 15500), 'info', '팀 C: 테스트/검증/통합'));
+      logs.push(logLine(addMs(bt, 16000), 'debug', '팀 A 워커 시작 (PID: ' + (session.pid + 1) + ')'));
+      logs.push(logLine(addMs(bt, 16200), 'debug', '팀 B 워커 시작 (PID: ' + (session.pid + 2) + ')'));
+      logs.push(logLine(addMs(bt, 16400), 'debug', '팀 C 워커 시작 (PID: ' + (session.pid + 3) + ')'));
+    }
+
+    if (t === 'iterative-ralphton') {
+      logs.push(logLine(addMs(bt, 14000), 'info', '반복 모드 활성화'));
+      logs.push(logLine(addMs(bt, 14500), 'info', '라운드 1/3 시작...'));
+    }
+
+    logs.push(logLine(addMs(bt, 18000), 'info', '파일 생성: index.html (0줄)'));
+    logs.push(logLine(addMs(bt, 25000), 'debug', '코드 블록 수신 중... (chunk 1)'));
+    logs.push(logLine(addMs(bt, 35000), 'debug', '코드 블록 수신 중... (chunk 2)'));
+    logs.push(logLine(addMs(bt, 45000), 'info', '진행률: 15% (약 450줄 생성)'));
+    logs.push(logLine(addMs(bt, 60000), 'debug', '코드 블록 수신 중... (chunk 5)'));
+    logs.push(logLine(addMs(bt, 75000), 'info', '진행률: 25% (약 800줄 생성)'));
+    logs.push(logLine(addMs(bt, 90000), 'info', '진행률: 35% (약 1,200줄 생성)'));
+    logs.push(logLine(addMs(bt, 120000), 'debug', 'CSS 스타일 생성 중...'));
+    logs.push(logLine(addMs(bt, 150000), 'info', '진행률: 48% (약 1,650줄 생성)'));
+    logs.push(logLine(addMs(bt, 180000), 'warn', '응답 지연 감지 (대기 시간: 15초)'));
+    logs.push(logLine(addMs(bt, 182000), 'warn', '재시도 중 (retry 1/3)...'));
+    logs.push(logLine(addMs(bt, 185000), 'success', '재연결 성공'));
+    logs.push(logLine(addMs(bt, 200000), 'debug', 'JavaScript 로직 생성 중...'));
+    logs.push(logLine(addMs(bt, 250000), 'info', '진행률: 55% (약 1,900줄 생성)'));
+    logs.push(logLine(addMs(bt, 300000), 'info', '진행률: 62% (약 2,100줄 생성)'));
+
+    if (session.status === 'running') {
+      logs.push(logLine(addMs(bt, 350000), 'debug', '이벤트 핸들러 생성 중...'));
+      logs.push(logLine(addMs(bt, 400000), 'info', '진행률: 70% (약 2,400줄 생성)'));
+      logs.push(logLine(new Date(), 'info', '--- 실행 중 (실시간 업데이트) ---'));
+    }
+
+    return logs;
+  }
+
+  function logLine(d, level, text) {
+    if (typeof d === 'number') d = new Date(d);
+    var levelClass = {
+      info: 'log-info',
+      success: 'log-success',
+      warn: 'log-warn',
+      error: 'log-error',
+      debug: 'log-debug'
+    };
+    var levelLabel = {
+      info: 'INFO ',
+      success: 'OK   ',
+      warn: 'WARN ',
+      error: 'ERROR',
+      debug: 'DEBUG'
+    };
+    return '<div class="log-line"><span class="log-time">[' + fmtTime(d) + ']</span> <span class="' + (levelClass[level] || 'log-info') + '">' + (levelLabel[level] || 'INFO ') + '</span>  ' + escHtml(text) + '</div>';
+  }
+
+  function fmtTime(d) {
+    if (typeof d === 'number') d = new Date(d);
+    return String(d.getHours()).padStart(2, '0') + ':' +
+           String(d.getMinutes()).padStart(2, '0') + ':' +
+           String(d.getSeconds()).padStart(2, '0');
+  }
+
+  function addMs(d, ms) {
+    return new Date(d.getTime() + ms);
+  }
+
+  /* ===========================================================
+     STOP CONFIRMATION
+     =========================================================== */
+  function showStopConfirm(sessId) {
+    stopTargetSessionId = sessId;
+    var session = activeSessions.find(function(s) { return s.id === sessId; });
+    if (!session) return;
+
+    document.getElementById('stop-confirm-text').innerHTML =
+      '<strong>' + escHtml(session.name) + '</strong> 세션을 중지하시겠습니까?<br>' +
+      '프로젝트: ' + escHtml(session.project) + '<br>' +
+      '<span style="color:var(--accent-red);font-size:0.85rem;margin-top:0.5rem;display:inline-block;">진행 중인 작업이 취소되며 복구할 수 없습니다.</span>';
+    openModal('stop-modal');
+  }
+
+  function confirmStop() {
+    if (!stopTargetSessionId) return;
+    var idx = activeSessions.findIndex(function(s) { return s.id === stopTargetSessionId; });
+    if (idx >= 0) {
+      var stoppedName = activeSessions[idx].name;
+      activeSessions[idx].status = 'failed';
+      showToast('info', '세션 중지됨', stoppedName + ' 세션이 중지되었습니다.');
+
+      /* Remove after brief visual delay */
+      var targetId = stopTargetSessionId;
+      setTimeout(function() {
+        activeSessions = activeSessions.filter(function(s) { return s.id !== targetId; });
+        renderActiveSessions();
+        updateStats();
+        saveToStorage();
+      }, 1500);
+    }
+    stopTargetSessionId = null;
+    closeModal('stop-modal');
+    renderActiveSessions();
+  }
+
+  /* ===========================================================
+     VALIDATION
+     =========================================================== */
+  function showValidation(sessId) {
+    var session = activeSessions.find(function(s) { return s.id === sessId; });
+    if (!session) return;
+
+    document.getElementById('validation-modal-title').textContent = session.name + ' - 검증 결과';
+
+    var checks = [
+      { label: '파일 구조 검증', status: 'pass', detail: '모든 필수 파일이 존재합니다.' },
+      { label: 'HTML 유효성 검사', status: 'pass', detail: '구문 오류 없음 (W3C 표준 준수).' },
+      { label: 'CSS 유효성 검사', status: randomCheck(0.8) ? 'pass' : 'warn', detail: randomCheck(0.8) ? '모든 스타일 규칙 유효.' : '미사용 규칙 2개 발견 (경고).' },
+      { label: 'JavaScript 린트', status: randomCheck(0.7) ? 'pass' : 'warn', detail: randomCheck(0.7) ? 'ESLint 오류 없음.' : '경고 3건 발견 (미사용 변수).' },
+      { label: '접근성 (ARIA) 검사', status: 'pass', detail: 'ARIA 속성 적용 확인. role, aria-label 적용됨.' },
+      { label: '반응형 레이아웃 검증', status: 'pass', detail: '768px, 480px 브레이크포인트 확인.' },
+      { label: '코드 줄수 목표 달성', status: session.status === 'running' ? 'warn' : 'pass', detail: session.status === 'running' ? '실행 중 - 아직 목표 미달성 (현재 약 2,400줄).' : '목표 줄수 달성.' },
+      { label: '외부 의존성 검사', status: 'pass', detail: '외부 라이브러리 사용 없음 (순수 HTML/CSS/JS).' },
+      { label: '보안 취약점 스캔', status: 'pass', detail: '알려진 취약점 없음.' },
+      { label: '성능 분석', status: randomCheck(0.6) ? 'pass' : 'warn', detail: randomCheck(0.6) ? '초기 로딩 시간 양호 (<1초).' : 'DOM 노드 수가 많습니다 (경고).' },
+      { label: '한국어 UI 검증', status: 'pass', detail: '모든 사용자 대면 텍스트 한국어 확인.' },
+      { label: '크로스 브라우저 호환성', status: 'pass', detail: 'Chrome, Firefox, Safari 호환 확인.' }
+    ];
+
+    /* Summary counts */
+    var passCount = 0, warnCount = 0, failCount = 0;
+    checks.forEach(function(c) {
+      if (c.status === 'pass') passCount++;
+      else if (c.status === 'warn') warnCount++;
+      else failCount++;
+    });
+
+    var summaryHtml = '<div class="validation-summary-item pass">&#10003; 통과: ' + passCount + '</div>';
+    if (warnCount > 0) summaryHtml += '<div class="validation-summary-item warn">&#9888; 경고: ' + warnCount + '</div>';
+    if (failCount > 0) summaryHtml += '<div class="validation-summary-item fail">&#10007; 실패: ' + failCount + '</div>';
+    document.getElementById('validation-summary').innerHTML = summaryHtml;
+
+    var html = '';
+    checks.forEach(function(c) {
+      var iconMap = { pass: '&#10003;', fail: '&#10007;', warn: '&#9888;' };
+      var classMap = { pass: 'validation-pass', fail: 'validation-fail', warn: 'validation-warn' };
+      html += '<div class="validation-item ' + classMap[c.status] + '">' +
+        '<div class="validation-icon" aria-hidden="true">' + iconMap[c.status] + '</div>' +
+        '<div><div style="font-weight:600;color:var(--text-primary);">' + c.label + '</div>' +
+        '<div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.1rem;">' + c.detail + '</div></div>' +
+      '</div>';
+    });
+
+    document.getElementById('validation-results').innerHTML = html;
+    openModal('validation-modal');
+  }
+
+  function randomCheck(threshold) {
+    return Math.random() < threshold;
+  }
+
+  /* ===========================================================
+     COMPLETED RUNS TABLE
+     =========================================================== */
+  function renderCompletedTable() {
+    var filtered = getFilteredRuns();
+    var sorted = sortRuns(filtered);
+    var totalItems = sorted.length;
+    var totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+
+    var start = (currentPage - 1) * PAGE_SIZE;
+    var end = Math.min(start + PAGE_SIZE, totalItems);
+    var pageItems = sorted.slice(start, end);
+
+    document.getElementById('completed-count').textContent = completedRuns.length;
+    document.getElementById('tab-count-completed').textContent = completedRuns.length;
+
+    var tbody = document.getElementById('completed-tbody');
+    if (pageItems.length === 0) {
+      var emptyMsg = searchQuery ? '검색 결과가 없습니다.' : '완료된 실행 기록이 없습니다.';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--text-muted);">' + emptyMsg + '</td></tr>';
+    } else {
+      var html = '';
+      pageItems.forEach(function(run) {
+        var typeClass = getTypeBadgeClass(run.type);
+        var scoreClass = run.score >= 90 ? 'score-high' : (run.score >= 80 ? 'score-medium' : 'score-low');
+        html += '<tr data-run-id="' + run.id + '" tabindex="0" role="row" aria-label="' + run.project + ' ' + run.phase + ' 실행 상세">' +
+          '<td>' + run.date + '</td>' +
+          '<td style="font-weight:500;">' + escHtml(run.project) + '</td>' +
+          '<td><span class="type-badge ' + typeClass + '">' + getTypeShortLabel(run.type) + '</span></td>' +
+          '<td>' + escHtml(run.phase) + '</td>' +
+          '<td style="text-align:right;">' + run.lines.toLocaleString() + '</td>' +
+          '<td style="text-align:right;">' + run.sizeKB.toFixed(1) + '</td>' +
+          '<td><span class="score-badge ' + scoreClass + '">' + run.score + '</span></td>' +
+          '<td>' + run.duration + '</td>' +
+        '</tr>';
+      });
+      tbody.innerHTML = html;
+
+      /* Bind row click for detail */
+      tbody.querySelectorAll('tr[data-run-id]').forEach(function(tr) {
+        tr.addEventListener('click', function() {
+          showRunDetail(this.getAttribute('data-run-id'));
+        });
+        tr.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') showRunDetail(this.getAttribute('data-run-id'));
+        });
+      });
+    }
+
+    renderPagination(totalItems, totalPages);
+    updateSortIndicators();
+  }
+
+  function getFilteredRuns() {
+    if (!searchQuery) return completedRuns.slice();
+    return completedRuns.filter(function(r) {
+      return r.project.toLowerCase().indexOf(searchQuery) >= 0;
+    });
+  }
+
+  function sortRuns(arr) {
+    arr.sort(function(a, b) {
+      var va, vb;
+      if (sortColumn === 'date') {
+        va = a.date; vb = b.date;
+      } else if (sortColumn === 'project') {
+        va = a.project.toLowerCase(); vb = b.project.toLowerCase();
+      } else if (sortColumn === 'type') {
+        va = a.type; vb = b.type;
+      } else {
+        va = a.date; vb = b.date;
+      }
+      var cmp = va < vb ? -1 : (va > vb ? 1 : 0);
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+    return arr;
+  }
+
+  function handleSort(col) {
+    if (sortColumn === col) {
+      sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortColumn = col;
+      sortDirection = 'asc';
+    }
+    currentPage = 1;
+    renderCompletedTable();
+  }
+
+  function updateSortIndicators() {
+    document.querySelectorAll('.data-table th.sortable').forEach(function(th) {
+      th.classList.remove('sort-asc', 'sort-desc');
+      th.setAttribute('aria-sort', 'none');
+      var col = th.getAttribute('data-sort');
+      if (col === sortColumn) {
+        th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
+        th.setAttribute('aria-sort', sortDirection === 'asc' ? 'ascending' : 'descending');
+        th.querySelector('.sort-indicator').innerHTML = sortDirection === 'asc' ? '&#9650;' : '&#9660;';
+      } else {
+        th.querySelector('.sort-indicator').innerHTML = '&#9650;&#9660;';
+      }
+    });
+  }
+
+  function renderPagination(total, totalPages) {
+    var info = document.getElementById('pagination-info');
+    if (total === 0) {
+      info.textContent = '0건';
+    } else {
+      var start = (currentPage - 1) * PAGE_SIZE + 1;
+      var end = Math.min(currentPage * PAGE_SIZE, total);
+      info.textContent = start + ' - ' + end + ' / 총 ' + total + '건';
+    }
+
+    var ctrl = document.getElementById('pagination-controls');
+    if (totalPages <= 1) {
+      ctrl.innerHTML = '';
+      return;
+    }
+
+    var html = '';
+
+    /* First */
+    html += pageButton('&#171;', 1, currentPage === 1, '처음 페이지');
+    /* Prev */
+    html += pageButton('&#8249;', currentPage - 1, currentPage === 1, '이전 페이지');
+
+    /* Page numbers with ellipsis */
+    var startPage = Math.max(1, currentPage - 2);
+    var endPage = Math.min(totalPages, currentPage + 2);
+
+    if (startPage > 1) {
+      html += pageButton('1', 1, false, '1페이지');
+      if (startPage > 2) {
+        html += '<span class="page-btn ellipsis" aria-hidden="true">...</span>';
+      }
+    }
+
+    for (var i = startPage; i <= endPage; i++) {
+      html += '<button class="page-btn' + (i === currentPage ? ' active' : '') + '" data-page="' + i + '" aria-label="' + i + '페이지"' + (i === currentPage ? ' aria-current="page"' : '') + '>' + i + '</button>';
+    }
+
+    if (endPage < totalPages) {
+      if (endPage < totalPages - 1) {
+        html += '<span class="page-btn ellipsis" aria-hidden="true">...</span>';
+      }
+      html += pageButton(totalPages, totalPages, false, totalPages + '페이지');
+    }
+
+    /* Next */
+    html += pageButton('&#8250;', currentPage + 1, currentPage === totalPages, '다음 페이지');
+    /* Last */
+    html += pageButton('&#187;', totalPages, currentPage === totalPages, '마지막 페이지');
+
+    ctrl.innerHTML = html;
+
+    ctrl.querySelectorAll('.page-btn:not(.ellipsis)').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var page = parseInt(this.getAttribute('data-page'));
+        if (!isNaN(page) && page >= 1 && page <= totalPages) {
+          currentPage = page;
+          renderCompletedTable();
+        }
+      });
+    });
+  }
+
+  function pageButton(label, page, disabled, ariaLabel) {
+    return '<button class="page-btn" data-page="' + page + '"' +
+      (disabled ? ' disabled' : '') +
+      ' aria-label="' + (ariaLabel || '') + '">' + label + '</button>';
+  }
+
+  /* ===========================================================
+     RUN DETAIL MODAL
+     =========================================================== */
+  function showRunDetail(runId) {
+    var run = completedRuns.find(function(r) { return r.id === runId; });
+    if (!run) return;
+
+    document.getElementById('detail-modal-title').textContent = run.project + ' - ' + run.phase;
+
+    var html = '<div class="detail-grid">' +
+      detailItem('프로젝트', run.project) +
+      detailItem('실행 날짜', run.date) +
+      detailItem('실행 타입', getTypeFullLabel(run.type)) +
+      detailItem('Phase', run.phase) +
+      detailItem('생성 줄수', run.lines.toLocaleString() + '줄') +
+      detailItem('파일 크기', run.sizeKB.toFixed(1) + ' KB') +
+      detailItem('품질 점수', run.score + '점') +
+      detailItem('소요 시간', run.duration) +
+    '</div>';
+
+    /* Score visual bar */
+    var scoreColor = run.score >= 90 ? 'var(--accent-green)' : (run.score >= 80 ? 'var(--accent-orange)' : 'var(--accent-red)');
+    var scoreLabel = run.score >= 90 ? '우수' : (run.score >= 80 ? '양호' : '개선 필요');
+    html += '<div class="detail-score-bar">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.35rem;">' +
+        '<span style="font-size:0.82rem;color:var(--text-muted);">품질 점수</span>' +
+        '<span style="font-size:0.82rem;font-weight:600;color:' + scoreColor + ';">' + scoreLabel + '</span>' +
+      '</div>' +
+      '<div class="detail-score-track">' +
+        '<div class="detail-score-fill" style="width:' + run.score + '%;background:' + scoreColor + ';"></div>' +
+      '</div>' +
+      '<div style="text-align:right;font-size:0.78rem;color:var(--text-secondary);margin-top:0.2rem;">' + run.score + ' / 100</div>' +
+    '</div>';
+
+    document.getElementById('detail-modal-body').innerHTML = html;
+    openModal('detail-modal');
+  }
+
+  function detailItem(label, value) {
+    return '<div class="detail-item">' +
+      '<div class="detail-item-label">' + label + '</div>' +
+      '<div class="detail-item-value">' + escHtml(String(value)) + '</div>' +
+    '</div>';
+  }
+
+  /* ===========================================================
+     NEW RUN FORM
+     =========================================================== */
+  function populateProjectDropdown() {
+    var select = document.getElementById('project-select');
+    while (select.options.length > 1) select.remove(1);
+
+    projects.forEach(function(p) {
+      var opt = document.createElement('option');
+      opt.value = p.id;
+      opt.textContent = p.name + ' (' + p.description + ')';
+      select.appendChild(opt);
+    });
+
+    var newOpt = document.createElement('option');
+    newOpt.value = '__new__';
+    newOpt.textContent = '+ 새 프로젝트 추가';
+    select.appendChild(newOpt);
+  }
+
+  function onProjectChange() {
+    var val = document.getElementById('project-select').value;
+    var fields = document.getElementById('new-project-fields');
+    if (val === '__new__') {
+      fields.classList.add('visible');
+      fields.setAttribute('aria-hidden', 'false');
+    } else {
+      fields.classList.remove('visible');
+      fields.setAttribute('aria-hidden', 'true');
+    }
+    clearError('fg-project', 'err-project');
+  }
+
+  function selectTypeCard(type) {
+    selectedType = type;
+    document.querySelectorAll('.type-card').forEach(function(card) {
+      var isSelected = card.getAttribute('data-type') === type;
+      card.classList.toggle('selected', isSelected);
+      card.setAttribute('aria-checked', isSelected ? 'true' : 'false');
+    });
+    clearError('fg-type', 'err-type');
+    updateCommandPreview();
+
+    /* Auto-set rounds based on type */
+    var roundInput = document.getElementById('round-input');
+    if (type === 'ralphton') roundInput.value = '1';
+    else if (type === 'iterative-ralphton') roundInput.value = '3';
+    else if (type === 'team-ralphton') roundInput.value = '2';
+    else if (type === 'team-ralphton-evolve') roundInput.value = '1';
+  }
+
+  function setPrdTemplate() {
+    document.getElementById('prd-textarea').value =
+      '# Project PRD\n\n' +
+      '## 개요\n프로젝트에 대한 간단한 설명을 작성하세요.\n\n' +
+      '## 기능 요구사항\n- [ ] 핵심 기능 1\n- [ ] 핵심 기능 2\n- [ ] 핵심 기능 3\n\n' +
+      '## 비기능 요구사항\n- 반응형 디자인 (768px 지원)\n- 접근성 (ARIA 적용)\n- 다크 테마 UI\n\n' +
+      '## 기술 스택\n- 프론트엔드: HTML, CSS, JavaScript\n- 백엔드: (해당 시 작성)\n- 데이터: localStorage\n\n' +
+      '## 품질 기준\n- 줄수: 목표 줄수 이상\n- 점수: 80점 이상\n- 외부 라이브러리: 사용 금지\n';
+  }
+
+  function updateCommandPreview() {
+    var body = document.getElementById('command-preview-body');
+    var projectVal = document.getElementById('project-select').value;
+    var rounds = parseInt(document.getElementById('round-input').value) || 1;
+
+    if (!projectVal || !selectedType) {
+      body.innerHTML = '<span class="cmd-comment"># 프로젝트와 타입을 선택하면 명령어가 자동 생성됩니다.</span>';
+      return;
+    }
+
+    var projectName = '';
+    var projectPath = '';
+    if (projectVal === '__new__') {
+      projectName = document.getElementById('np-name').value || 'new-project';
+      projectPath = document.getElementById('np-path').value || '/path/to/project';
+    } else {
+      var proj = projects.find(function(p) { return p.id === projectVal; });
+      if (proj) {
+        projectName = proj.name;
+        projectPath = proj.path;
+      }
+    }
+
+    var lines = [];
+    lines.push('<span class="cmd-comment"># Ralphton 실행 명령어 (' + selectedType + ')</span>');
+    lines.push('<span class="cmd-comment"># 프로젝트: ' + escHtml(projectName) + '</span>');
+    lines.push('');
+    lines.push('<span class="cmd-prompt">$</span> <span class="cmd-keyword">claude</span> <span class="cmd-flag">--dangerously-skip-permissions</span> <span class="cmd-operator">\\</span>');
+    lines.push('    <span class="cmd-flag">-p</span> <span class="cmd-string">"' + escHtml(buildPromptString(selectedType, projectName, rounds)) + '"</span> <span class="cmd-operator">\\</span>');
+    lines.push('    <span class="cmd-flag">--output-dir</span> <span class="cmd-string">"' + escHtml(projectPath) + '"</span>');
+
+    if (selectedType.indexOf('team') >= 0) {
+      lines.push('');
+      lines.push('<span class="cmd-comment"># 팀 모드: 병렬 워커 활성화</span>');
+      lines.push('<span class="cmd-prompt">$</span> <span class="cmd-keyword">openclaw</span> <span class="cmd-flag">run</span> <span class="cmd-operator">\\</span>');
+      lines.push('    <span class="cmd-flag">--type</span> <span class="cmd-string">"' + selectedType + '"</span> <span class="cmd-operator">\\</span>');
+      lines.push('    <span class="cmd-flag">--project</span> <span class="cmd-string">"' + escHtml(projectName) + '"</span> <span class="cmd-operator">\\</span>');
+      lines.push('    <span class="cmd-flag">--rounds</span> <span class="cmd-string">"' + rounds + '"</span> <span class="cmd-operator">\\</span>');
+      lines.push('    <span class="cmd-flag">--parallel</span> <span class="cmd-string">"3"</span>');
+    }
+
+    if (selectedType === 'iterative-ralphton') {
+      lines.push('');
+      lines.push('<span class="cmd-comment"># 반복 모드: ' + rounds + '라운드 실행</span>');
+      lines.push('<span class="cmd-prompt">$</span> <span class="cmd-keyword">openclaw</span> <span class="cmd-flag">iterate</span> <span class="cmd-operator">\\</span>');
+      lines.push('    <span class="cmd-flag">--rounds</span> <span class="cmd-string">"' + rounds + '"</span> <span class="cmd-operator">\\</span>');
+      lines.push('    <span class="cmd-flag">--project</span> <span class="cmd-string">"' + escHtml(projectName) + '"</span> <span class="cmd-operator">\\</span>');
+      lines.push('    <span class="cmd-flag">--improve-threshold</span> <span class="cmd-string">"80"</span>');
+    }
+
+    body.innerHTML = lines.join('\n');
+  }
+
+  function buildPromptString(type, name, rounds) {
+    if (type === 'ralphton') return 'Generate complete code for ' + name;
+    if (type === 'iterative-ralphton') return 'Iteratively build ' + name + ' over ' + rounds + ' rounds';
+    if (type === 'team-ralphton') return 'Team-based generation for ' + name + ', ' + rounds + ' rounds';
+    if (type === 'team-ralphton-evolve') return 'Evolve and improve existing project ' + name;
+    return '';
+  }
+
+  function copyCommand() {
+    var body = document.getElementById('command-preview-body');
+    var text = body.textContent || body.innerText;
+    text = text.replace(/^#.*$/gm, '').replace(/^\$\s*/gm, '').trim();
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function() {
+        showToast('success', '복사 완료', '명령어가 클립보드에 복사되었습니다.');
+      }).catch(function() {
+        fallbackCopy(text);
+      });
+    } else {
+      fallbackCopy(text);
+    }
+  }
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      showToast('success', '복사 완료', '명령어가 클립보드에 복사되었습니다.');
+    } catch (e) {
+      showToast('error', '복사 실패', '클립보드 복사에 실패했습니다.');
+    }
+    document.body.removeChild(ta);
+  }
+
+  function handleFormSubmit() {
+    clearAllErrors();
+
+    var projectVal = document.getElementById('project-select').value;
+    var rounds = parseInt(document.getElementById('round-input').value) || 1;
+    var prd = document.getElementById('prd-textarea').value;
+    var hasError = false;
+
+    /* Validate project */
+    if (!projectVal) {
+      showError('fg-project', 'err-project');
+      hasError = true;
+    }
+
+    /* If new project, validate name/path */
+    if (projectVal === '__new__') {
+      var npName = document.getElementById('np-name').value.trim();
+      var npPath = document.getElementById('np-path').value.trim();
+      if (!npName) {
+        showError('fg-project', 'err-np-name');
+        document.getElementById('np-name').parentElement.classList.add('has-error');
+        hasError = true;
+      }
+      if (!npPath) {
+        showError('fg-project', 'err-np-path');
+        document.getElementById('np-path').parentElement.classList.add('has-error');
+        hasError = true;
+      }
+    }
+
+    /* Validate type */
+    if (!selectedType) {
+      showError('fg-type', 'err-type');
+      hasError = true;
+    }
+
+    if (hasError) {
+      showToast('error', '입력 오류', '필수 항목을 확인해주세요.');
+      /* Scroll to first error */
+      var firstError = document.querySelector('.form-error.visible');
+      if (firstError) {
+        firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      return;
+    }
+
+    /* Create new project if needed */
+    var projectId = projectVal;
+    var projectName = '';
+    if (projectVal === '__new__') {
+      var newProj = {
+        id: 'proj-' + String(Date.now()).slice(-6),
+        name: document.getElementById('np-name').value.trim(),
+        description: document.getElementById('np-desc').value.trim() || '새 프로젝트',
+        path: document.getElementById('np-path').value.trim(),
+        targetLines: parseInt(document.getElementById('np-lines').value) || 3000,
+        createdAt: new Date().toISOString(),
+        runs: []
+      };
+      projects.push(newProj);
+      projectId = newProj.id;
+      projectName = newProj.name;
+      populateProjectDropdown();
+      showToast('success', '프로젝트 생성', newProj.name + ' 프로젝트가 추가되었습니다.');
+    } else {
+      var proj = projects.find(function(p) { return p.id === projectVal; });
+      if (proj) projectName = proj.name;
+    }
+
+    /* Create session */
+    var sessionId = 'sess-' + String(Date.now()).slice(-6);
+    var typeLabels = {
+      'ralphton': 'ralphton',
+      'iterative-ralphton': 'iterative-ralphton R' + rounds,
+      'team-ralphton': 'team-ralphton Phase',
+      'team-ralphton-evolve': 'team-ralphton-evolve'
+    };
+    var newSession = {
+      id: sessionId,
+      name: (typeLabels[selectedType] || selectedType) + ' #' + (activeSessions.length + 1),
+      project: projectName,
+      type: selectedType,
+      pid: 30000 + Math.floor(Math.random() * 10000),
+      status: 'pending',
+      startedAt: Date.now(),
+      rounds: rounds,
+      prd: prd,
+      progress: 0
+    };
+
+    activeSessions.push(newSession);
+    saveToStorage();
+    updateStats();
+    renderActiveSessions();
+
+    /* Transition to running after 2 seconds */
+    setTimeout(function() {
+      var s = activeSessions.find(function(x) { return x.id === sessionId; });
+      if (s && s.status === 'pending') {
+        s.status = 'running';
+        renderActiveSessions();
+        saveToStorage();
+      }
+    }, 2000);
+
+    showToast('success', '실행 시작', projectName + ' (' + selectedType + ') 실행이 시작되었습니다.');
+
+    /* Switch to active sessions tab */
+    switchTab('panel-active');
+    resetForm();
+  }
+
+  function resetForm() {
+    document.getElementById('project-select').value = '';
+    document.getElementById('new-project-fields').classList.remove('visible');
+    document.getElementById('new-project-fields').setAttribute('aria-hidden', 'true');
+    document.getElementById('np-name').value = '';
+    document.getElementById('np-desc').value = '';
+    document.getElementById('np-path').value = '';
+    document.getElementById('np-lines').value = '';
+    selectedType = null;
+    document.querySelectorAll('.type-card').forEach(function(c) {
+      c.classList.remove('selected');
+      c.setAttribute('aria-checked', 'false');
+    });
+    document.getElementById('round-input').value = '1';
+    setPrdTemplate();
+    updateCommandPreview();
+    clearAllErrors();
+  }
+
+  function showError(groupId, errorId) {
+    var grp = document.getElementById(groupId);
+    if (grp) grp.classList.add('has-error');
+    var err = document.getElementById(errorId);
+    if (err) err.classList.add('visible');
+  }
+
+  function clearError(groupId, errorId) {
+    var grp = document.getElementById(groupId);
+    if (grp) grp.classList.remove('has-error');
+    var err = document.getElementById(errorId);
+    if (err) err.classList.remove('visible');
+  }
+
+  function clearAllErrors() {
+    document.querySelectorAll('.form-group').forEach(function(g) { g.classList.remove('has-error'); });
+    document.querySelectorAll('.form-error').forEach(function(e) { e.classList.remove('visible'); });
+  }
+
+  /* ===========================================================
+     TIMERS (elapsed time updates)
+     =========================================================== */
+  function startTimers() {
+    timerInterval = setInterval(function() {
+      document.querySelectorAll('[data-timer]').forEach(function(el) {
+        var startedAt = parseInt(el.getAttribute('data-timer'));
+        if (!isNaN(startedAt)) {
+          el.textContent = formatElapsed(Date.now() - startedAt);
+        }
+      });
+
+      /* Slowly increment progress for running sessions */
+      activeSessions.forEach(function(s) {
+        if (s.status === 'running' && s.progress < 95) {
+          s.progress = Math.min(95, (s.progress || 0) + 0.05);
+        }
+      });
+    }, 1000);
+  }
+
+  function formatElapsed(ms) {
+    var totalSec = Math.floor(Math.max(0, ms) / 1000);
+    var h = Math.floor(totalSec / 3600);
+    var m = Math.floor((totalSec % 3600) / 60);
+    var s = totalSec % 60;
+    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  /* ===========================================================
+     TOAST NOTIFICATION SYSTEM
+     =========================================================== */
+  function showToast(type, title, message) {
+    var container = document.getElementById('toast-container');
+    var toast = document.createElement('div');
+    toast.className = 'toast toast-' + type;
+    toast.setAttribute('role', 'alert');
+
+    var iconMap = {
+      success: '&#10003;',
+      error: '&#10007;',
+      info: '&#8505;',
+      warning: '&#9888;'
+    };
+
+    toast.innerHTML =
+      '<div class="toast-icon" aria-hidden="true">' + (iconMap[type] || iconMap.info) + '</div>' +
+      '<div class="toast-content">' +
+        '<div class="toast-title">' + escHtml(title) + '</div>' +
+        (message ? '<div class="toast-message">' + escHtml(message) + '</div>' : '') +
+      '</div>' +
+      '<button class="toast-close" aria-label="알림 닫기">&times;</button>';
+
+    container.appendChild(toast);
+
+    var closeBtn = toast.querySelector('.toast-close');
+    closeBtn.addEventListener('click', function() {
+      removeToast(toast);
+    });
+
+    /* Auto-remove after 4 seconds */
+    setTimeout(function() {
+      removeToast(toast);
+    }, 4000);
+  }
+
+  function removeToast(toast) {
+    if (!toast || toast.classList.contains('removing')) return;
+    toast.classList.add('removing');
+    setTimeout(function() {
+      if (toast.parentNode) toast.parentNode.removeChild(toast);
+    }, 300);
+  }
+
+  /* ===========================================================
+     UTILITY FUNCTIONS
+     =========================================================== */
+  function escHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function getStatusLabel(status) {
+    var map = {
+      pending: '대기 중',
+      running: '실행 중',
+      completed: '완료',
+      failed: '실패'
+    };
+    return map[status] || status;
+  }
+
+  function getTypeShortLabel(type) {
+    var map = {
+      'ralphton': 'ralphton',
+      'iterative-ralphton': 'iterative',
+      'team-ralphton': 'team',
+      'team-ralphton-evolve': 'evolve'
+    };
+    return map[type] || type;
+  }
+
+  function getTypeFullLabel(type) {
+    var map = {
+      'ralphton': 'ralphton (단일 1회)',
+      'iterative-ralphton': 'iterative-ralphton (반복)',
+      'team-ralphton': 'team-ralphton (팀 협업)',
+      'team-ralphton-evolve': 'team-ralphton-evolve (진화)'
+    };
+    return map[type] || type;
+  }
+
+  function getTypeBadgeClass(type) {
+    var map = {
+      'ralphton': 'type-ralphton',
+      'iterative-ralphton': 'type-iterative',
+      'team-ralphton': 'type-team',
+      'team-ralphton-evolve': 'type-evolve'
+    };
+    return map[type] || '';
+  }
+
+  /* ===========================================================
+     BOOTSTRAP
+     =========================================================== */
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
+})();
+</script>
+</body>
+</html>

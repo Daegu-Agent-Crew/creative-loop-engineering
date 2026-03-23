@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OpenClaw Agent Core - 공장 컨베이어 벨트</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1a1a2e;--bg2:#16213e;--accent:#0f3460;--highlight:#e94560;
+  --belt:#3a3a5c;--belt2:#2a2a4c;--text:#e0e0e0;--text2:#a0a0c0;
+  --green:#00e676;--orange:#ff9100;--red:#ff1744;--blue:#448aff;
+  --station-bg:#1e2a4a;--station-border:#3a5a8a;
+}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',sans-serif;overflow-x:hidden;min-height:100vh}
+h1,h2,h3{font-weight:600}
+
+/* 대시보드 */
+.dashboard{
+  background:linear-gradient(135deg,var(--bg2),var(--accent));
+  padding:16px 24px;border-bottom:2px solid var(--station-border);
+  position:sticky;top:0;z-index:100;
+}
+.dash-title{font-size:18px;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.dash-title span{color:var(--highlight)}
+.dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.dash-card{
+  background:rgba(0,0,0,0.3);border-radius:8px;padding:12px;
+  border:1px solid rgba(255,255,255,0.08);
+}
+.dash-card .label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+.dash-card .value{font-size:22px;font-weight:700;margin-top:4px}
+.dash-card .value.green{color:var(--green)}
+.dash-card .value.orange{color:var(--orange)}
+.dash-card .value.blue{color:var(--blue)}
+.gauge-bar{height:8px;background:rgba(255,255,255,0.1);border-radius:4px;margin-top:8px;overflow:hidden}
+.gauge-fill{height:100%;border-radius:4px;transition:width 0.5s}
+
+/* 시나리오 선택 */
+.scenario-bar{
+  display:flex;gap:10px;padding:16px 24px;background:rgba(0,0,0,0.2);
+  flex-wrap:wrap;align-items:center;
+}
+.scenario-bar .label{font-size:13px;color:var(--text2);margin-right:8px}
+.btn{
+  padding:8px 18px;border-radius:6px;border:1px solid var(--station-border);
+  background:var(--station-bg);color:var(--text);cursor:pointer;font-size:13px;
+  transition:all 0.2s;
+}
+.btn:hover{border-color:var(--highlight);background:rgba(233,69,96,0.15)}
+.btn.active{border-color:var(--highlight);background:rgba(233,69,96,0.25);color:#fff}
+.btn:disabled{opacity:0.4;cursor:not-allowed}
+
+/* 공장 영역 */
+.factory-wrap{
+  padding:24px;overflow-x:auto;overflow-y:visible;
+  min-height:420px;position:relative;
+}
+.factory{
+  display:flex;align-items:center;gap:0;
+  min-width:1200px;position:relative;padding:40px 0;
+}
+
+/* 컨베이어 벨트 */
+.belt-section{
+  display:flex;align-items:center;position:relative;
+}
+.belt{
+  height:18px;width:80px;position:relative;
+  background:repeating-linear-gradient(90deg,var(--belt) 0px,var(--belt) 12px,var(--belt2) 12px,var(--belt2) 24px);
+  background-size:24px 18px;border-radius:3px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.4);
+}
+.belt.animate{animation:beltMove 0.8s linear infinite}
+@keyframes beltMove{0%{background-position:0 0}100%{background-position:24px 0}}
+.belt-arrow{
+  position:absolute;top:50%;right:-6px;transform:translateY(-50%);
+  width:0;height:0;border-left:8px solid var(--belt);border-top:6px solid transparent;border-bottom:6px solid transparent;
+}
+
+/* Station */
+.station{
+  position:relative;flex-shrink:0;cursor:pointer;
+  transition:transform 0.2s;
+}
+.station:hover{transform:scale(1.03)}
+.station-body{
+  width:160px;min-height:140px;
+  background:linear-gradient(180deg,var(--station-bg),#141e3a);
+  border:2px solid var(--station-border);border-radius:10px;
+  padding:14px;position:relative;overflow:hidden;
+  box-shadow:0 4px 20px rgba(0,0,0,0.5);
+}
+.station-body::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,var(--highlight),var(--blue));
+}
+.station.active .station-body{
+  border-color:var(--highlight);
+  box-shadow:0 0 20px rgba(233,69,96,0.3);
+}
+.station-num{
+  font-size:10px;color:var(--text2);text-transform:uppercase;letter-spacing:2px;
+}
+.station-icon{font-size:28px;margin:8px 0}
+.station-name{font-size:14px;font-weight:600;color:#fff}
+.station-desc{font-size:11px;color:var(--text2);margin-top:4px;line-height:1.4}
+
+/* 기어 */
+.gear{
+  position:absolute;top:8px;right:8px;font-size:16px;opacity:0.3;
+}
+.station.active .gear{opacity:1;animation:spin 1s linear infinite}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+
+/* 입구/출구 */
+.gate{
+  flex-shrink:0;width:90px;min-height:100px;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,rgba(0,0,0,0.4),rgba(0,0,0,0.2));
+  border:2px dashed var(--station-border);border-radius:10px;
+  padding:12px;
+}
+.gate-icon{font-size:32px;margin-bottom:6px}
+.gate-label{font-size:12px;color:var(--text2);text-align:center}
+
+/* 패키지 (메시지) */
+.package{
+  position:absolute;font-size:28px;z-index:50;
+  transition:none;pointer-events:none;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+}
+.package.processing{animation:bounce 0.4s ease infinite alternate}
+@keyframes bounce{0%{transform:translateY(0)}100%{transform:translateY(-8px)}}
+
+/* 상세 패널 */
+.detail-overlay{
+  display:none;position:fixed;top:0;left:0;right:0;bottom:0;
+  background:rgba(0,0,0,0.7);z-index:200;
+  justify-content:center;align-items:center;padding:20px;
+}
+.detail-overlay.show{display:flex}
+.detail-panel{
+  background:var(--bg2);border:1px solid var(--station-border);
+  border-radius:12px;max-width:520px;width:100%;max-height:80vh;
+  overflow-y:auto;padding:24px;position:relative;
+}
+.detail-panel h2{font-size:18px;margin-bottom:4px}
+.detail-panel .subtitle{font-size:12px;color:var(--text2);margin-bottom:16px}
+.detail-section{margin-bottom:16px}
+.detail-section h3{font-size:13px;color:var(--highlight);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+.detail-section p,.detail-section li{font-size:13px;color:var(--text);line-height:1.6}
+.detail-section ul{padding-left:18px}
+.detail-section li{margin-bottom:4px}
+.close-btn{
+  position:absolute;top:12px;right:16px;background:none;border:none;
+  color:var(--text2);font-size:20px;cursor:pointer;
+}
+.close-btn:hover{color:#fff}
+.tag{
+  display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;
+  background:rgba(233,69,96,0.2);color:var(--highlight);margin:2px;
+}
+.tag.blue{background:rgba(68,138,255,0.2);color:var(--blue)}
+.tag.green{background:rgba(0,230,118,0.2);color:var(--green)}
+
+/* 로그 */
+.log-bar{
+  background:rgba(0,0,0,0.3);padding:12px 24px;
+  border-top:1px solid rgba(255,255,255,0.05);
+  max-height:120px;overflow-y:auto;
+}
+.log-bar .title{font-size:12px;color:var(--text2);margin-bottom:6px}
+.log-line{font-size:12px;font-family:monospace;color:var(--text2);line-height:1.6}
+.log-line .time{color:var(--blue)}
+.log-line .event{color:var(--green)}
+.log-line .warn{color:var(--orange)}
+.log-line .err{color:var(--red)}
+
+/* 압축 애니메이션 */
+.compaction-fx{
+  display:none;position:absolute;top:-30px;left:50%;transform:translateX(-50%);
+  font-size:11px;color:var(--orange);white-space:nowrap;
+  animation:floatUp 1.5s ease forwards;
+}
+@keyframes floatUp{
+  0%{opacity:1;transform:translateX(-50%) translateY(0)}
+  100%{opacity:0;transform:translateX(-50%) translateY(-20px)}
+}
+
+/* 반응형 */
+@media(max-width:768px){
+  .dash-grid{grid-template-columns:repeat(2,1fr)}
+  .factory-wrap{padding:12px}
+  .station-body{width:130px;min-height:120px;padding:10px}
+  .belt{width:50px}
+  .gate{width:70px;min-height:80px}
+  .scenario-bar{padding:12px}
+}
+@media(max-width:480px){
+  .dash-grid{grid-template-columns:1fr 1fr}
+  .dash-card .value{font-size:18px}
+  .station-body{width:110px;min-height:100px}
+  .belt{width:36px}
+}
+</style>
+</head>
+<body>
+
+<!-- 대시보드 -->
+<div class="dashboard">
+  <div class="dash-title">🏭 <span>OpenClaw Agent Core</span> — 공장 모니터링</div>
+  <div class="dash-grid">
+    <div class="dash-card">
+      <div class="label">처리량</div>
+      <div class="value green" id="throughput">0</div>
+      <div class="label">메시지/분</div>
+    </div>
+    <div class="dash-card">
+      <div class="label">평균 대기시간</div>
+      <div class="value orange" id="latency">0ms</div>
+    </div>
+    <div class="dash-card">
+      <div class="label">Tool Policy</div>
+      <div class="value blue" id="policy-stat">✅ 0 / ❌ 0</div>
+    </div>
+    <div class="dash-card">
+      <div class="label">Context Window 사용률</div>
+      <div class="value" id="ctx-pct" style="color:var(--green)">0%</div>
+      <div class="gauge-bar"><div class="gauge-fill" id="ctx-gauge" style="width:0%;background:var(--green)"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- 시나리오 선택 -->
+<div class="scenario-bar">
+  <span class="label">시뮬레이션:</span>
+  <button class="btn" onclick="runScenario(0)" id="btn0">📦 단순 질문 (5초)</button>
+  <button class="btn" onclick="runScenario(1)" id="btn1">🔧 툴호출 (7초)</button>
+  <button class="btn" onclick="runScenario(2)" id="btn2">🗜️ 압축 발생 (10초)</button>
+</div>
+
+<!-- 공장 -->
+<div class="factory-wrap">
+  <div class="factory" id="factory">
+    <!-- 입구 -->
+    <div class="gate" id="gate-in">
+      <div class="gate-icon">🚪</div>
+      <div class="gate-label">입구<br>메시지 수신</div>
+    </div>
+
+    <div class="belt-section"><div class="belt" id="belt0"><div class="belt-arrow"></div></div></div>
+
+    <!-- Station 1: Channel -->
+    <div class="station" id="st0" onclick="showDetail(0)">
+      <div class="station-body">
+        <div class="gear">⚙️</div>
+        <div class="station-num">Station 01</div>
+        <div class="station-icon">📡</div>
+        <div class="station-name">Channel Adapter</div>
+        <div class="station-desc">TG/DC/WA/Slack 메시지 변환</div>
+      </div>
+    </div>
+
+    <div class="belt-section"><div class="belt" id="belt1"><div class="belt-arrow"></div></div></div>
+
+    <!-- Station 2: Queue -->
+    <div class="station" id="st1" onclick="showDetail(1)">
+      <div class="station-body">
+        <div class="gear">⚙️</div>
+        <div class="station-num">Station 02</div>
+        <div class="station-icon">📋</div>
+        <div class="station-name">Queue</div>
+        <div class="station-desc">순서보장 / Exactly-once</div>
+      </div>
+    </div>
+
+    <div class="belt-section"><div class="belt" id="belt2"><div class="belt-arrow"></div></div></div>
+
+    <!-- Station 3: Session -->
+    <div class="station" id="st2" onclick="showDetail(2)">
+      <div class="station-body">
+        <div class="gear">⚙️</div>
+        <div class="station-num">Station 03</div>
+        <div class="station-icon">🧠</div>
+        <div class="station-name">Session Manager</div>
+        <div class="station-desc">Context 조립 / 압축</div>
+      </div>
+      <div class="compaction-fx" id="compaction-fx">🗜️ 압축 중...</div>
+    </div>
+
+    <div class="belt-section"><div class="belt" id="belt3"><div class="belt-arrow"></div></div></div>
+
+    <!-- Station 4: Agent Runtime -->
+    <div class="station" id="st3" onclick="showDetail(3)">
+      <div class="station-body">
+        <div class="gear">⚙️</div>
+        <div class="station-num">Station 04</div>
+        <div class="station-icon">🤖</div>
+        <div class="station-name">Agent Runtime</div>
+        <div class="station-desc">LLM 추론 + 툴호출 루프</div>
+      </div>
+    </div>
+
+    <div class="belt-section"><div class="belt" id="belt4"><div class="belt-arrow"></div></div></div>
+
+    <!-- Station 5: Tool Policy -->
+    <div class="station" id="st4" onclick="showDetail(4)">
+      <div class="station-body">
+        <div class="gear">⚙️</div>
+        <div class="station-num">Station 05</div>
+        <div class="station-icon">🛡️</div>
+        <div class="station-name">Tool Policy</div>
+        <div class="station-desc">허가/거부/샌드박스 검사</div>
+      </div>
+    </div>
+
+    <div class="belt-section"><div class="belt" id="belt5"><div class="belt-arrow"></div></div></div>
+
+    <!-- 출구 -->
+    <div class="gate" id="gate-out">
+      <div class="gate-icon">📤</div>
+      <div class="gate-label">출구<br>응답 전송</div>
+    </div>
+  </div>
+</div>
+
+<!-- 로그 -->
+<div class="log-bar" id="logbar">
+  <div class="title">📜 공장 로그</div>
+  <div id="log"></div>
+</div>
+
+<!-- 상세 패널 -->
+<div class="detail-overlay" id="detail-overlay" onclick="closeDetail(event)">
+  <div class="detail-panel" id="detail-panel">
+    <button class="close-btn" onclick="closeDetail()">&times;</button>
+    <div id="detail-content"></div>
+  </div>
+</div>
+
+<script>
+// Station 상세 데이터
+const stationDetails = [
+  {
+    name: 'Channel Adapter',
+    icon: '📡',
+    role: '외부 메시징 플랫폼(Telegram, Discord, WhatsApp, Slack, Email, Webhook)에서 들어오는 메시지를 내부 표준 포맷으로 변환합니다.',
+    hooks: ['gateway_start', 'message_received'],
+    flow: ['원본 메시지 수신', '플랫폼별 파서로 변환', '표준 메시지 객체 생성', '첨부파일 처리', 'Queue로 전달'],
+    extra: '<h3>지원 채널</h3><div><span class="tag">Telegram</span><span class="tag">Discord</span><span class="tag">WhatsApp</span><span class="tag">Slack</span><span class="tag">Email</span><span class="tag">Webhook</span></div>'
+  },
+  {
+    name: 'Queue',
+    icon: '📋',
+    role: '수신과 실행을 분리하여 순서를 보장하고, Exactly-once 실행을 보장합니다. 세션 레인 직렬화로 한 세션에 하나의 턴만 실행됩니다.',
+    hooks: ['session_start'],
+    flow: ['메시지 수신', '세션 레인 잠금', '큐에 삽입', '순서 보장 확인', 'Session Manager로 디큐'],
+    extra: '<h3>특징</h3><ul><li>세션 레인 직렬화: 레이스 컨디션 방지</li><li>Exactly-once 실행 보장</li><li>agent.wait 타임아웃: 30초</li></ul>'
+  },
+  {
+    name: 'Session Manager',
+    icon: '🧠',
+    role: 'Context Window를 관리합니다. System Prompt, Bootstrap Files, 대화 기록 등을 조립하고, 윈도우가 꽉 차면 자동 압축(Compaction)을 수행합니다.',
+    hooks: ['before_prompt_build', 'before_model_resolve'],
+    flow: ['System Prompt 로드 (~9,600토큰)', 'Bootstrap Files 로드', 'Tool Schemas 추가 (~8,000토큰+)', '대화 기록 추가', 'Context Window 초과 시 → 압축'],
+    extra: '<h3>Bootstrap Files</h3><div><span class="tag blue">SOUL.md</span><span class="tag blue">AGENTS.md</span><span class="tag blue">IDENTITY.md</span><span class="tag blue">USER.md</span><span class="tag blue">TOOLS.md</span><span class="tag blue">HEARTBEAT.md</span><span class="tag blue">BOOTSTRAP.md</span></div><br><h3>Compaction (압축)</h3><ul><li>오래된 대화 → 요약 하나로 압축</li><li>최근 대화 유지</li><li>압축 전 메모리 플러시 (MEMORY.md 기록)</li><li>bootstrapMaxChars: 20,000자</li></ul>'
+  },
+  {
+    name: 'Agent Runtime (pi-mono)',
+    icon: '🤖',
+    role: '핵심 엔진. LLM 추론과 툴호출 루프를 실행합니다. Tool Call이 있으면 실행 후 다시 추론을 반복합니다.',
+    hooks: ['before_agent_start', 'agent_end', 'before_tool_call', 'after_tool_call'],
+    flow: ['Context 수신', 'Model Inference (LLM 추론)', 'Tool Call 판단', '→ YES: 툴 실행 → 결과 추가 → 재추론', '→ NO: Final Reply 생성', 'Streaming 응답'],
+    extra: '<h3>Agent Loop</h3><p>메시지 수신 → Context Assembly → Model Inference → Tool Call? → (루프) → Final Reply</p><h3>타임아웃</h3><ul><li>Agent Runtime: 600초</li><li>agent.wait: 30초</li></ul>'
+  },
+  {
+    name: 'Tool Policy Pipeline',
+    icon: '🛡️',
+    role: 'LLM이 호출하려는 도구가 허용된 것인지 검사합니다. 허가/거부/샌드박스 레벨로 나뉩니다.',
+    hooks: ['before_tool_call', 'after_tool_call', 'tool_result_persist'],
+    flow: ['Tool Call JSON 수신', '허가 목록 확인', '샌드박스 레벨 검사', '→ 허가: 실행 진행', '→ 거부: 에러 반환', '결과 → Agent Runtime으로'],
+    extra: '<h3>검사 결과</h3><div><span class="tag green">✅ 허가</span><span class="tag">🔒 샌드박스</span><span class="tag" style="background:rgba(255,23,68,0.2);color:var(--red)">❌ 거부</span></div>'
+  }
+];
+
+// 상태
+let running = false;
+let throughputCount = 0;
+let policyPass = 0;
+let policyDeny = 0;
+let logs = [];
+
+// 요소 위치 계산
+function getPositions() {
+  const factory = document.getElementById('factory');
+  const fRect = factory.getBoundingClientRect();
+  const scrollLeft = factory.parentElement.scrollLeft;
+  const positions = [];
+
+  // 입구
+  const gateIn = document.getElementById('gate-in');
+  const giR = gateIn.getBoundingClientRect();
+  positions.push({ x: giR.left - fRect.left + giR.width / 2 + scrollLeft, y: giR.top - fRect.top + giR.height / 2 });
+
+  // Stations
+  for (let i = 0; i < 5; i++) {
+    const st = document.getElementById('st' + i);
+    const r = st.getBoundingClientRect();
+    positions.push({ x: r.left - fRect.left + r.width / 2 + scrollLeft, y: r.top - fRect.top + r.height / 2 });
+  }
+
+  // 출구
+  const gateOut = document.getElementById('gate-out');
+  const goR = gateOut.getBoundingClientRect();
+  positions.push({ x: goR.left - fRect.left + goR.width / 2 + scrollLeft, y: goR.top - fRect.top + goR.height / 2 });
+
+  return positions;
+}
+
+// 패키지 생성
+function createPackage() {
+  const pkg = document.createElement('div');
+  pkg.className = 'package';
+  pkg.textContent = '📦';
+  document.getElementById('factory').appendChild(pkg);
+  return pkg;
+}
+
+// 패키지 이동 애니메이션
+function movePackage(pkg, fromPos, toPos, duration) {
+  return new Promise(resolve => {
+    const startTime = performance.now();
+    pkg.style.left = fromPos.x - 14 + 'px';
+    pkg.style.top = fromPos.y - 14 + 'px';
+
+    function animate(now) {
+      const elapsed = now - startTime;
+      const t = Math.min(elapsed / duration, 1);
+      const eased = t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      pkg.style.left = (fromPos.x + (toPos.x - fromPos.x) * eased - 14) + 'px';
+      pkg.style.top = (fromPos.y + (toPos.y - fromPos.y) * eased - 14) + 'px';
+      if (t < 1) requestAnimationFrame(animate);
+      else resolve();
+    }
+    requestAnimationFrame(animate);
+  });
+}
+
+// Station 활성화
+function activateStation(idx) {
+  document.querySelectorAll('.station').forEach(s => s.classList.remove('active'));
+  if (idx >= 0 && idx < 5) document.getElementById('st' + idx).classList.add('active');
+}
+
+// 벨트 애니메이션
+function animateBelts(on) {
+  for (let i = 0; i <= 5; i++) {
+    const b = document.getElementById('belt' + i);
+    if (on) b.classList.add('animate');
+    else b.classList.remove('animate');
+  }
+}
+
+// 로그 추가
+function addLog(msg, type) {
+  const now = new Date();
+  const time = now.toLocaleTimeString('ko-KR');
+  const cls = type === 'warn' ? 'warn' : type === 'err' ? 'err' : 'event';
+  const div = document.getElementById('log');
+  const line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = `<span class="time">[${time}]</span> <span class="${cls}">${msg}</span>`;
+  div.appendChild(line);
+  document.getElementById('logbar').scrollTop = 99999;
+}
+
+// 대시보드 업데이트
+function updateDash(ctxPct, latencyMs) {
+  document.getElementById('throughput').textContent = throughputCount;
+  document.getElementById('latency').textContent = latencyMs + 'ms';
+  document.getElementById('policy-stat').textContent = `✅ ${policyPass} / ❌ ${policyDeny}`;
+  document.getElementById('ctx-pct').textContent = ctxPct + '%';
+  const gauge = document.getElementById('ctx-gauge');
+  gauge.style.width = ctxPct + '%';
+  const pctEl = document.getElementById('ctx-pct');
+  if (ctxPct > 80) { gauge.style.background = 'var(--red)'; pctEl.style.color = 'var(--red)'; }
+  else if (ctxPct > 50) { gauge.style.background = 'var(--orange)'; pctEl.style.color = 'var(--orange)'; }
+  else { gauge.style.background = 'var(--green)'; pctEl.style.color = 'var(--green)'; }
+}
+
+// 시나리오 실행
+async function runScenario(idx) {
+  if (running) return;
+  running = true;
+  document.querySelectorAll('.btn').forEach(b => b.disabled = true);
+  document.getElementById('btn' + idx).classList.add('active');
+
+  const positions = getPositions();
+  const pkg = createPackage();
+  animateBelts(true);
+
+  if (idx === 0) await scenarioSimple(pkg, positions);
+  else if (idx === 1) await scenarioToolCall(pkg, positions);
+  else await scenarioCompaction(pkg, positions);
+
+  pkg.remove();
+  animateBelts(false);
+  activateStation(-1);
+  throughputCount++;
+  updateDash(idx === 2 ? 35 : (idx === 1 ? 55 : 42), idx === 2 ? 2800 : (idx === 1 ? 1500 : 850));
+
+  running = false;
+  document.querySelectorAll('.btn').forEach(b => b.disabled = false);
+  document.getElementById('btn' + idx).classList.remove('active');
+}
+
+// 대기 + Station 처리 표시
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+async function processAtStation(pkg, idx, ms, label) {
+  activateStation(idx);
+  pkg.classList.add('processing');
+  addLog(`⚙️ ${label} 처리 중...`, 'event');
+  await wait(ms);
+  pkg.classList.remove('processing');
+  addLog(`✅ ${label} 완료`, 'event');
+}
+
+// 시나리오 1: 단순 질문
+async function scenarioSimple(pkg, pos) {
+  addLog('📦 새 메시지 수신 — 단순 질문', 'event');
+  updateDash(30, 0);
+
+  // 입구 → Channel
+  await movePackage(pkg, pos[0], pos[1], 400);
+  await processAtStation(pkg, 0, 600, 'Channel Adapter');
+  updateDash(32, 120);
+
+  // Channel → Queue
+  await movePackage(pkg, pos[1], pos[2], 400);
+  await processAtStation(pkg, 1, 400, 'Queue');
+  updateDash(34, 200);
+
+  // Queue → Session
+  await movePackage(pkg, pos[2], pos[3], 400);
+  await processAtStation(pkg, 2, 600, 'Session Manager (Context 조립)');
+  updateDash(42, 450);
+
+  // Session → Agent Runtime
+  await movePackage(pkg, pos[3], pos[4], 400);
+  await processAtStation(pkg, 3, 1200, 'Agent Runtime (LLM 추론)');
+  addLog('💬 Tool Call 없음 → Final Reply 생성', 'event');
+  updateDash(42, 780);
+
+  // Agent Runtime → 출구 (Tool Policy 스킵)
+  await movePackage(pkg, pos[4], pos[6], 600);
+  addLog('📤 응답 전송 완료', 'event');
+  policyPass++;
+}
+
+// 시나리오 2: 툴호출
+async function scenarioToolCall(pkg, pos) {
+  addLog('📦 새 메시지 수신 — 툴호출 포함', 'event');
+  updateDash(40, 0);
+
+  await movePackage(pkg, pos[0], pos[1], 350);
+  await processAtStation(pkg, 0, 500, 'Channel Adapter');
+  updateDash(42, 100);
+
+  await movePackage(pkg, pos[1], pos[2], 350);
+  await processAtStation(pkg, 1, 300, 'Queue');
+  updateDash(44, 180);
+
+  await movePackage(pkg, pos[2], pos[3], 350);
+  await processAtStation(pkg, 2, 500, 'Session Manager');
+  updateDash(50, 350);
+
+  // 1차 추론
+  await movePackage(pkg, pos[3], pos[4], 350);
+  await processAtStation(pkg, 3, 800, 'Agent Runtime (1차 추론)');
+  addLog('🔧 Tool Call 감지! → Tool Policy 검사', 'warn');
+  updateDash(52, 600);
+
+  // Tool Policy 검사
+  await movePackage(pkg, pos[4], pos[5], 350);
+  await processAtStation(pkg, 4, 400, 'Tool Policy (허가 검사)');
+  addLog('✅ 도구 실행 허가', 'event');
+  policyPass++;
+  updateDash(53, 750);
+
+  // 되돌아가기: Tool Policy → Agent Runtime
+  addLog('🔄 툴 결과 → Agent Runtime으로 반환', 'warn');
+  pkg.textContent = '🔧';
+  await movePackage(pkg, pos[5], pos[4], 400);
+  await processAtStation(pkg, 3, 1000, 'Agent Runtime (2차 추론 — 툴 결과 반영)');
+  addLog('💬 Final Reply 생성', 'event');
+  pkg.textContent = '📦';
+  updateDash(55, 1400);
+
+  await movePackage(pkg, pos[4], pos[6], 500);
+  addLog('📤 응답 전송 완료', 'event');
+}
+
+// 시나리오 3: 압축 발생
+async function scenarioCompaction(pkg, pos) {
+  addLog('📦 새 메시지 수신 — 긴 대화 (Context Window 부족)', 'warn');
+  updateDash(85, 0);
+
+  await movePackage(pkg, pos[0], pos[1], 400);
+  await processAtStation(pkg, 0, 500, 'Channel Adapter');
+  updateDash(86, 100);
+
+  await movePackage(pkg, pos[1], pos[2], 400);
+  await processAtStation(pkg, 1, 400, 'Queue');
+  updateDash(87, 200);
+
+  // Session에서 압축 발생
+  await movePackage(pkg, pos[2], pos[3], 400);
+  activateStation(2);
+  pkg.classList.add('processing');
+  addLog('⚠️ Context Window 초과 감지! (85%+)', 'warn');
+  updateDash(92, 400);
+  await wait(500);
+
+  // 압축 시각 효과
+  addLog('🗜️ Compaction 시작 — 오래된 대화 압축 중...', 'warn');
+  const cfx = document.getElementById('compaction-fx');
+  cfx.style.display = 'block';
+  cfx.style.animation = 'none';
+  cfx.offsetHeight;
+  cfx.style.animation = 'floatUp 1.5s ease forwards';
+
+  // 메모리 플러시
+  addLog('💾 압축 전 메모리 플러시 → MEMORY.md 기록', 'event');
+  updateDash(90, 800);
+  await wait(1000);
+
+  addLog('📝 오래된 대화 → 요약으로 압축 완료', 'event');
+  updateDash(45, 1500);
+  await wait(500);
+  cfx.style.display = 'none';
+
+  addLog('✅ Session Manager — Context 재조립 완료', 'event');
+  pkg.classList.remove('processing');
+  updateDash(48, 1800);
+
+  // Agent Runtime
+  await movePackage(pkg, pos[3], pos[4], 400);
+  await processAtStation(pkg, 3, 1000, 'Agent Runtime (LLM 추론)');
+  addLog('🔧 Tool Call 감지!', 'warn');
+  updateDash(50, 2200);
+
+  // Tool Policy
+  await movePackage(pkg, pos[4], pos[5], 350);
+  await processAtStation(pkg, 4, 400, 'Tool Policy');
+  addLog('✅ 도구 허가', 'event');
+  policyPass++;
+  updateDash(51, 2400);
+
+  // 되돌아가기
+  addLog('🔄 툴 결과 반환', 'warn');
+  pkg.textContent = '🔧';
+  await movePackage(pkg, pos[5], pos[4], 400);
+  await processAtStation(pkg, 3, 800, 'Agent Runtime (재추론)');
+  pkg.textContent = '📦';
+  addLog('💬 Final Reply', 'event');
+  updateDash(52, 2700);
+
+  // 출구
+  await movePackage(pkg, pos[4], pos[6], 500);
+  addLog('📤 응답 전송 완료 (압축 후 정상 처리)', 'event');
+}
+
+// 상세 패널
+function showDetail(idx) {
+  const d = stationDetails[idx];
+  let html = `<h2>${d.icon} ${d.name}</h2>`;
+  html += `<div class="subtitle">Station ${String(idx + 1).padStart(2, '0')}</div>`;
+  html += `<div class="detail-section"><h3>역할</h3><p>${d.role}</p></div>`;
+  html += `<div class="detail-section"><h3>Hook 포인트</h3><div>${d.hooks.map(h => `<span class="tag">${h}</span>`).join(' ')}</div></div>`;
+  html += `<div class="detail-section"><h3>데이터 흐름</h3><ul>${d.flow.map(f => `<li>${f}</li>`).join('')}</ul></div>`;
+  html += `<div class="detail-section">${d.extra}</div>`;
+  document.getElementById('detail-content').innerHTML = html;
+  document.getElementById('detail-overlay').classList.add('show');
+}
+
+function closeDetail(e) {
+  if (!e || e.target === document.getElementById('detail-overlay') || e.target.classList.contains('close-btn')) {
+    document.getElementById('detail-overlay').classList.remove('show');
+  }
+}
+
+// 초기
+addLog('🏭 공장 시스템 초기화 완료', 'event');
+addLog('ℹ️ 시나리오를 선택하여 시뮬레이션을 시작하세요', 'event');
+updateDash(25, 0);
+</script>
+</body>
+</html>
