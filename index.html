@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>창의적 루프 엔지니어링 시스템 — Creative Loop</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;800&display=swap');
+
+  :root {
+    --bg: #0a0e17;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --accent: #6366f1;
+    --accent2: #818cf8;
+    --green: #22c55e;
+    --green2: #16a34a;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --purple: #a855f7;
+    --orange: #f97316;
+    --glow: rgba(99,102,241,0.15);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
+    top: -100px; left: 50%; transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent2), var(--cyan), var(--green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+  }
+  .hero .subtitle {
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    color: var(--text2);
+    max-width: 700px;
+    margin-bottom: 2rem;
+  }
+  .hero .quote {
+    font-style: italic;
+    color: var(--amber);
+    font-size: 1.1rem;
+    max-width: 600px;
+    border-left: 3px solid var(--amber);
+    padding-left: 1.2rem;
+    text-align: left;
+  }
+
+  /* ===== NAV ===== */
+  .nav {
+    position: fixed; top:0; left:0; right:0;
+    background: rgba(10,14,23,0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.8rem 2rem;
+    display: flex;
+    gap: 1.5rem;
+    z-index: 100;
+    overflow-x: auto;
+  }
+  .nav a {
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 0.2s;
+  }
+  .nav a:hover, .nav a.active { color: var(--accent2); }
+
+  /* ===== SECTION ===== */
+  section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+  }
+  section h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--accent2);
+  }
+  section h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--text);
+    margin: 2rem 0 1rem;
+  }
+  .desc {
+    color: var(--text2);
+    margin-bottom: 2rem;
+    max-width: 800px;
+  }
+
+  /* ===== DIAGRAM CONTAINER ===== */
+  .diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2rem 0;
+    overflow-x: auto;
+  }
+  .diagram-title {
+    font-size: 0.8rem;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ===== SVG DIAGRAMS ===== */
+  svg text {
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  }
+
+  /* ===== ARCHITECTURE ===== */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  .arch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: border-color 0.3s, transform 0.2s;
+  }
+  .arch-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .arch-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .arch-card h4 { font-size: 1rem; color: var(--accent2); margin-bottom: 0.3rem; }
+  .arch-card p { font-size: 0.85rem; color: var(--text2); }
+  .arch-card .tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    font-weight: 600;
+  }
+  .tag-automation { background: rgba(99,102,241,0.15); color: var(--accent2); }
+  .tag-memory { background: rgba(34,197,94,0.15); color: var(--green); }
+  .tag-skill { background: rgba(6,182,212,0.15); color: var(--cyan); }
+  .tag-eval { background: rgba(239,68,68,0.15); color: var(--red); }
+  .tag-agent { background: rgba(168,85,247,0.15); color: var(--purple); }
+
+  /* ===== LOOP VISUAL ===== */
+  .loop-steps {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .loop-step {
+    flex: 1;
+    min-width: 140px;
+    max-width: 200px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 1.2rem 1rem;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s;
+  }
+  .loop-step:first-child { border-radius: 12px 0 0 12px; }
+  .loop-step:last-child { border-radius: 0 12px 12px 0; }
+  .loop-step:hover { border-color: var(--accent); background: var(--surface2); }
+  .loop-step .step-num {
+    display: inline-block;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 28px;
+    margin-bottom: 0.5rem;
+  }
+  .loop-step h4 { font-size: 0.9rem; margin-bottom: 0.3rem; }
+  .loop-step p { font-size: 0.75rem; color: var(--text2); }
+  .loop-arrow {
+    display: flex;
+    align-items: center;
+    color: var(--accent);
+    font-size: 1.2rem;
+    padding: 0 0.2rem;
+  }
+
+  /* ===== PHASE DETAIL ===== */
+  .phases {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  .phase {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .phase-badge {
+    width: 100px; height: 100px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: 700;
+    position: sticky;
+    top: 80px;
+  }
+  .phase-badge .num { font-size: 2rem; }
+  .phase-badge .name { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+  .phase-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .phase-content h4 { font-size: 1.1rem; margin-bottom: 0.8rem; }
+  .phase-content p { font-size: 0.9rem; color: var(--text2); margin-bottom: 0.8rem; }
+  .phase-content ul {
+    list-style: none;
+    padding: 0;
+  }
+  .phase-content li {
+    font-size: 0.85rem;
+    color: var(--text2);
+    padding: 0.4rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+  }
+  .phase-content li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+  }
+  .gate {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: rgba(245,158,11,0.08);
+    border: 1px dashed var(--amber);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    margin-top: 1rem;
+  }
+  .gate-icon { font-size: 1.3rem; }
+  .gate-text { font-size: 0.85rem; color: var(--amber); }
+  .gate-action { font-size: 0.75rem; color: var(--text2); }
+
+  /* ===== EVOLUTION ===== */
+  .evo-timeline {
+    position: relative;
+    padding-left: 2rem;
+    margin-top: 2rem;
+  }
+  .evo-timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--green), var(--cyan));
+  }
+  .evo-item {
+    position: relative;
+    margin-bottom: 2rem;
+    padding-left: 1.5rem;
+  }
+  .evo-item::before {
+    content: '';
+    position: absolute;
+    left: -2rem; top: 6px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 3px solid var(--bg);
+  }
+  .evo-item h4 { font-size: 1rem; color: var(--accent2); }
+  .evo-item p { font-size: 0.85rem; color: var(--text2); }
+  .evo-item .meta { font-size: 0.75rem; color: var(--text2); margin-top: 0.3rem; }
+
+  /* ===== FEEDBACK LOOP DIAGRAM ===== */
+  .fb-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+  .fb-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .fb-box {
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    text-align: center;
+    min-width: 130px;
+  }
+  .fb-box h5 { font-size: 0.85rem; margin-bottom: 0.3rem; }
+  .fb-box p { font-size: 0.75rem; color: var(--text2); }
+  .fb-arrow-h { color: var(--accent); font-size: 1.5rem; }
+  .fb-arrow-v { color: var(--accent); font-size: 1.5rem; }
+  .fb-loop-back {
+    color: var(--red);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border: 1px dashed var(--red);
+    border-radius: 8px;
+    background: rgba(239,68,68,0.05);
+  }
+
+  /* ===== COMPARISON TABLE ===== */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    font-size: 0.85rem;
+  }
+  .compare-table th {
+    text-align: left;
+    padding: 0.8rem 1rem;
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent2);
+    font-weight: 600;
+  }
+  .compare-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .compare-table tr:hover td { background: var(--surface2); }
+
+  /* ===== DIVIDER ===== */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--border), transparent);
+    margin: 3rem 0;
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(--text2);
+    font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .phase { grid-template-columns: 1fr; }
+    .phase-badge { position: static; width: 100%; height: auto; flex-direction: row; gap: 0.5rem; padding: 1rem; }
+    .loop-steps { flex-direction: column; }
+    .loop-step { max-width: 100%; border-radius: 12px !important; }
+    .loop-arrow { transform: rotate(90deg); }
+  }
+
+  /* ===== CODE BLOCK ===== */
+  .code {
+    background: #0d1117;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
+    color: #c9d1d9;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+  .code .comment { color: #8b949e; }
+  .code .key { color: #79c0ff; }
+  .code .val { color: #a5d6ff; }
+
+  /* ===== HIGHLIGHT BOX ===== */
+  .highlight {
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(34,197,94,0.08));
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+  }
+  .highlight h4 { color: var(--accent2); margin-bottom: 0.5rem; }
+  .highlight p { font-size: 0.9rem; color: var(--text2); }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav" id="nav">
+  <a href="#overview">개요</a>
+  <a href="#architecture">6가지 부품</a>
+  <a href="#loop">루프 구조</a>
+  <a href="#phases">5-Phase 파이프라인</a>
+  <a href="#feedback">피드백 루프</a>
+  <a href="#evolution">진화 구조</a>
+  <a href="#example">삼체 만화 적용</a>
+  <a href="#comparison">루프 vs 기존</a>
+  <a href="#implementation">구현 계획</a>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <h1> 창의적 루프 엔지니어링 시스템</h1>
+  <p class="subtitle">프롬프트를 짜는 게 아니라 시스템을 짜는 시대.<br>선택 몇 개로 창의적 결과물이 자동으로 만들어지는 진화형 파이프라인.</p>
+  <p class="quote">
+    "루프 엔지니어링이란, 에이전트에게 프롬프트를 쓰는 사람 자리에서 당신을 빼내는 것이다.<br>대신 그 일을 해줄 시스템을 당신이 설계한다."<br>— Addy Osmani
+  </p>
+</header>
+
+<!-- 1. OVERVIEW -->
+<section id="overview">
+  <h2>📋 시스템 개요</h2>
+  <p class="desc">
+    이 문서는 "주제·화풍·분위기를 선택하면 중간 피드백 게이트를 거치며 점진적으로 완성되는 창의적 산출물 파이프라인"의 전체 설계도입니다.
+    기반은 Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계의 Phase Split 구조를 통합합니다.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">SYSTEM ARCHITECTURE — 전체 시스템 구조도</div>
+    <svg viewBox="0 0 1000 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <!-- Background -->
+      <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style="stop-color:#111827"/>
+          <stop offset="100%" style="stop-color:#1a2235"/>
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="3" result="blur"/>
+          <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+        </filter>
+      </defs>
+
+      <!-- Human Input Box -->
+      <rect x="30" y="30" width="200" height="120" rx="12" fill="#1e293b" stroke="#6366f1" stroke-width="2"/>
+      <text x="130" y="60" text-anchor="middle" fill="#818cf8" font-size="14" font-weight="700">👤 주인님 (감독관)</text>
+      <text x="130" y="82" text-anchor="middle" fill="#94a3b8" font-size="11">주제 · 화풍 · 분위기</text>
+      <text x="130" y="100" text-anchor="middle" fill="#94a3b8" font-size="11">포맷 · 해상도 · 타겟</text>
+      <text x="130" y="118" text-anchor="middle" fill="#94a3b8" font-size="11">참고 이미지</text>
+
+      <!-- Arrow from Human -->
+      <line x1="230" y1="90" x2="290" y2="90" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/>
+      <text x="260" y="80" text-anchor="middle" fill="#6366f1" font-size="9">설정</text>
+
+      <!-- Main Pipeline -->
+      <rect x="290" y="20" width="420" height="480" rx="16" fill="url(#bgGrad)" stroke="#334155" stroke-width="1" stroke-dasharray="5,5"/>
+      <text x="500" y="45" text-anchor="middle" fill="#6366f1" font-size="13" font-weight="700">Creative Loop Engine</text>
+
+      <!-- Phase 1: Define -->
+      <rect x="310" y="60" width="380" height="55" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="1.5"/>
+      <text x="325" y="83" fill="#818cf8" font-size="11" font-weight="600">① DEFINE</text>
+      <text x="325" y="100" fill="#94a3b8" font-size="10">PRD 자동 생성 · 캐릭터 설정 · 스타일 가이드</text>
+
+      <!-- Gate 1 -->
+      <rect x="335" y="120" width="80" height="22" rx="4" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" stroke-width="1"/>
+      <text x="375" y="135" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="600">GATE ✋</text>
+
+      <!-- Phase 2: Sample -->
+      <rect x="310" y="150" width="380" height="55" rx="8" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/>
+      <text x="325" y="173" fill="#06b6d4" font-size="11" font-weight="600">② SAMPLE</text>
+      <text x="325" y="190" fill="#94a3b8" font-size="10">대표 캐릭터/장면 샘플 3종 생성 · 화풍 확정</text>
+
+      <!-- Gate 2 -->
+      <rect x="335" y="210" width="80" height="22" rx="4" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" stroke-width="1"/>
+      <text x="375" y="225" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="600">GATE ✋</text>
+
+      <!-- Phase 3: Produce -->
+      <rect x="310" y="240" width="380" height="55" rx="8" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="325" y="263" fill="#22c55e" font-size="11" font-weight="600">③ PRODUCE</text>
+      <text x="325" y="280" fill="#94a3b8" font-size="10">전체 컷 생성 (서브에이전트 병렬) · 중간 체크포인트</text>
+
+      <!-- Gate 3 -->
+      <rect x="335" y="300" width="80" height="22" rx="4" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" stroke-width="1"/>
+      <text x="375" y="315" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="600">GATE ✋</text>
+
+      <!-- Phase 4: Refine -->
+      <rect x="310" y="330" width="380" height="55" rx="8" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+      <text x="325" y="353" fill="#a855f7" font-size="11" font-weight="600">④ REFINE</text>
+      <text x="325" y="370" fill="#94a3b8" font-size="10">피드백 반영 수정 · Critic 평가 · v(N+1) 생성</text>
+
+      <!-- Gate 4 -->
+      <rect x="335" y="390" width="80" height="22" rx="4" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" stroke-width="1"/>
+      <text x="375" y="405" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="600">GATE ✋</text>
+
+      <!-- Phase 5: Deliver -->
+      <rect x="310" y="420" width="380" height="55" rx="8" fill="#1e293b" stroke="#ec4899" stroke-width="1.5"/>
+      <text x="325" y="443" fill="#ec4899" font-size="11" font-weight="600">⑤ DELIVER</text>
+      <text x="325" y="460" fill="#94a3b8" font-size="10">최종 산출물 + 메타데이터 + 진화 기록</text>
+
+      <!-- Refinement Loop Arrow -->
+      <path d="M 690 355 Q 720 355 720 300 L 720 175 Q 720 150 695 150" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowRed)"/>
+      <text x="735" y="260" fill="#ef4444" font-size="9" transform="rotate(-90, 735, 260)">재시도 루프</text>
+
+      <!-- Sub-Agent Box -->
+      <rect x="750" y="140" width="220" height="180" rx="12" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/>
+      <text x="860" y="165" text-anchor="middle" fill="#a855f7" font-size="12" font-weight="700">🤖 서브에이전트</text>
+
+      <rect x="765" y="180" width="90" height="35" rx="6" fill="#334155"/>
+      <text x="810" y="195" text-anchor="middle" fill="#22c55e" font-size="10">Writer</text>
+      <text x="810" y="208" text-anchor="middle" fill="#94a3b8" font-size="8">생성</text>
+
+      <rect x="865" y="180" width="90" height="35" rx="6" fill="#334155"/>
+      <text x="910" y="195" text-anchor="middle" fill="#ef4444" font-size="10">Evaluator</text>
+      <text x="910" y="208" text-anchor="middle" fill="#94a3b8" font-size="8">평가</text>
+
+      <rect x="765" y="225" width="90" height="35" rx="6" fill="#334155"/>
+      <text x="810" y="240" text-anchor="middle" fill="#f59e0b" font-size="10">Critic</text>
+      <text x="810" y="253" text-anchor="middle" fill="#94a3b8" font-size="8">비판</text>
+
+      <rect x="865" y="225" width="90" height="35" rx="6" fill="#334155"/>
+      <text x="910" y="240" text-anchor="middle" fill="#06b6d4" font-size="10">Researcher</text>
+      <text x="910" y="253" text-anchor="middle" fill="#94a3b8" font-size="8">조사</text>
+
+      <rect x="765" y="270" width="190" height="30" rx="6" fill="#334155"/>
+      <text x="860" y="289" text-anchor="middle" fill="#94a3b8" font-size="9">Planner (설계 + 오케스트레이션)</text>
+
+      <!-- Output Box -->
+      <rect x="750" y="380" width="220" height="100" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="860" y="405" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="700">📦 산출물</text>
+      <text x="770" y="430" fill="#94a3b8" font-size="10">• 이미지/만화/디자인</text>
+      <text x="770" y="448" fill="#94a3b8" font-size="10">• 메타데이터 (어떤 선택이 왜 좋았는지)</text>
+      <text x="770" y="466" fill="#94a3b8" font-size="10">• 진화 로그 (v1→v2→... 변경 이력)</text>
+
+      <!-- State File Box -->
+      <rect x="30" y="200" width="200" height="140" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/>
+      <text x="130" y="225" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="700">💾 상태 파일</text>
+      <text x="50" y="250" fill="#94a3b8" font-size="10">config.json — 설정</text>
+      <text x="50" y="268" fill="#94a3b8" font-size="10">progress.md — 진행 상태</text>
+      <text x="50" y="286" fill="#94a3b8" font-size="10">feedback.md — 피드백 기록</text>
+      <text x="50" y="304" fill="#94a3b8" font-size="10">evolution.md — 진화 로그</text>
+      <text x="50" y="322" fill="#94a3b8" font-size="10">scores.json — 평가 점수</text>
+
+      <!-- Arrow from State -->
+      <line x1="230" y1="270" x2="290" y2="270" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowGreen)"/>
+
+      <!-- Skill File Box -->
+      <rect x="30" y="380" width="200" height="100" rx="12" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/>
+      <text x="130" y="405" text-anchor="middle" fill="#06b6d4" font-size="12" font-weight="700">📜 SKILL.md</text>
+      <text x="50" y="430" fill="#94a3b8" font-size="10">• 프로젝트 인수인계 노트</text>
+      <text x="50" y="448" fill="#94a3b8" font-size="10">• 화풍 가이드 · 프롬프트 템플릿</text>
+      <text x="50" y="466" fill="#94a3b8" font-size="10">• 평가 기준 · 품질 체크리스트</text>
+
+      <!-- Arrow from Skill -->
+      <line x1="230" y1="430" x2="290" y2="430" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowCyan)"/>
+
+      <!-- Arrow markers -->
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#6366f1"/>
+        </marker>
+        <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/>
+        </marker>
+        <marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#22c55e"/>
+        </marker>
+        <marker id="arrowCyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#06b6d4"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 2. ARCHITECTURE — 6 PARTS -->
+<section id="architecture">
+  <h2>🧩 루프의 6가지 부품</h2>
+  <p class="desc">
+    Addy Osmani가 정의한 루프 엔지니어링의 핵심 부품 5개 + 기억장치 1개를 창의적 파이프라인에 맞게 적용합니다.
+  </p>
+
+  <div class="arch-grid">
+    <div class="arch-card">
+      <div class="icon">⏰</div>
+      <h4>① 오토메이션</h4>
+      <p>정해진 조건에서 루프를 자동 시작. 주기 반복(cron), 조건 만족까지(goal), 이벤트 트리거(hooks)</p>
+      <span class="tag tag-automation">자동 시작</span>
+    </div>
+    <div class="arch-card">
+      <div class="icon">🌳</div>
+      <h4>② 워크트리</h4>
+      <p>버전별로 독립 작업 폴더 생성. v1/v2/v3가 충돌 없이 병렬 작업 가능</p>
+      <span class="tag tag-automation">격리</span>
+    </div>
+    <div class="arch-card">
+      <div class="icon">📜</div>
+      <h4>③ 스킬 (SKILL.md)</h4>
+      <p>프로젝트 지식을 파일에 적어두고 AI가 매 작업마다 읽고 시작. 인수인계 노트</p>
+      <span class="tag tag-skill">재사용</span>
+    </div>
+    <div class="arch-card">
+      <div class="icon">🔌</div>
+      <h4>④ 커넥터</h4>
+      <p>외부 도구 연결. GitHub, 이미지 API, 프롬프트 모델, 배포 파이프라인</p>
+      <span class="tag tag-skill">손발</span>
+    </div>
+    <div class="arch-card">
+      <div class="icon">🤖</div>
+      <h4>⑤ 서브에이전트</h4>
+      <p>만드는 AI와 검사하는 AI를 분리. 자기 채점 후한 편향을 독립 평가로 보정</p>
+      <span class="tag tag-eval">검증</span>
+    </div>
+    <div class="arch-card">
+      <div class="icon">💾</div>
+      <h4>⑥ 상태 파일 (기억)</h4>
+      <p>에이전트는 잊어도 저장소는 잊지 않는다. 진행/피드백/평가/진화를 디스크에 기록</p>
+      <span class="tag tag-memory">기억</span>
+    </div>
+  </div>
+
+  <div class="highlight">
+    <h4>💡 창의적 파이프라인에의 적용</h4>
+    <p>이 6가지 부품을 창의적 작업(만화, 일러스트, 디자인 등)에 맞게 재조합합니다. 코드가 아니라 콘텐츠를 만들지만, "발견→분류→수정→검증"의 루프 구조는 동일합니다.</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 3. LOOP STRUCTURE -->
+<section id="loop">
+  <h2>🔄 루프 구조 — 한 바퀴의 4단계</h2>
+  <p class="desc">
+    하나의 루프는 발견→분류→수정→검증 네 동작으로 압축됩니다. 각 단계 끝에 자동/수동 피드백 게이트가 있습니다.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">LOOP CYCLE — 루프 한 바퀴</div>
+    <svg viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <!-- Central Loop -->
+      <circle cx="400" cy="160" r="120" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8,4"/>
+
+      <!-- Discover -->
+      <circle cx="400" cy="40" r="40" fill="#1e293b" stroke="#6366f1" stroke-width="2"/>
+      <text x="400" y="37" text-anchor="middle" fill="#818cf8" font-size="11" font-weight="700">🔍</text>
+      <text x="400" y="52" text-anchor="middle" fill="#818cf8" font-size="9">발견</text>
+
+      <!-- Triage -->
+      <circle cx="520" cy="160" r="40" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
+      <text x="520" y="157" text-anchor="middle" fill="#06b6d4" font-size="11" font-weight="700">📋</text>
+      <text x="520" y="172" text-anchor="middle" fill="#06b6d4" font-size="9">분류</text>
+
+      <!-- Modify -->
+      <circle cx="400" cy="280" r="40" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+      <text x="400" y="277" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="700">✏️</text>
+      <text x="400" y="292" text-anchor="middle" fill="#22c55e" font-size="9">수정</text>
+
+      <!-- Verify -->
+      <circle cx="280" cy="160" r="40" fill="#1e293b" stroke="#ef4444" stroke-width="2"/>
+      <text x="280" y="157" text-anchor="middle" fill="#ef4444" font-size="11" font-weight="700">✅</text>
+      <text x="280" y="172" text-anchor="middle" fill="#ef4444" font-size="9">검증</text>
+
+      <!-- Arrows -->
+      <path d="M 435 55 Q 490 90 505 125" fill="none" stroke="#6366f1" stroke-width="1.5" marker-end="url(#loopArrow)"/>
+      <path d="M 510 200 Q 490 250 435 265" fill="none" stroke="#06b6d4" stroke-width="1.5" marker-end="url(#loopArrow)"/>
+      <path d="M 365 265 Q 310 250 290 200" fill="none" stroke="#22c55e" stroke-width="1.5" marker-end="url(#loopArrow)"/>
+      <path d="M 295 125 Q 310 90 365 55" fill="none" stroke="#ef4444" stroke-width="1.5" marker-end="url(#loopArrow)"/>
+
+      <!-- Rejection Loop -->
+      <path d="M 340 280 Q 200 280 180 200 Q 160 130 200 70 Q 240 30 360 35" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowRed)"/>
+      <text x="170" y="170" fill="#ef4444" font-size="9" transform="rotate(-90,170,170)">불통과 → 재시도</text>
+
+      <!-- Center Text -->
+      <text x="400" y="155" text-anchor="middle" fill="#94a3b8" font-size="10">진화 카운터</text>
+      <text x="400" y="175" text-anchor="middle" fill="#818cf8" font-size="16" font-weight="700">vN</text>
+
+      <!-- Side Labels -->
+      <text x="600" y="60" fill="#94a3b8" font-size="10">① 발견</text>
+      <text x="600" y="75" fill="#64748b" font-size="9">주제 분석 · 참고 수집 · 스타일 리서치</text>
+
+      <text x="600" y="120" fill="#94a3b8" font-size="10">② 분류</text>
+      <text x="600" y="135" fill="#64748b" font-size="9">프롬프트 설계 · 생성 계획 · 우선순위</text>
+
+      <text x="600" y="200" fill="#94a3b8" font-size="10">③ 수정</text>
+      <text x="600" y="215" fill="#64748b" font-size="9">이미지/콘텐츠 생성 · 피드백 반영</text>
+
+      <text x="600" y="270" fill="#94a3b8" font-size="10">④ 검증</text>
+      <text x="600" y="285" fill="#64748b" font-size="9">Critic 평가 · 품질 점수 · 승인/거부</text>
+
+      <defs>
+        <marker id="loopArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 4. 5-PHASE PIPELINE -->
+<section id="phases">
+  <h2>📊 5-Phase 창의적 파이프라인</h2>
+  <p class="desc">
+    루프의 4단계를 실제 창의적 작업에 맞게 5개 Phase로 확장합니다. 각 Phase 끝에 피드백 게이트(✋)가 있어 주인님이 검토할 수 있습니다.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">PHASE DETAIL — 각 Phase의 입력/출력/게이트</div>
+
+    <div class="loop-steps">
+      <div class="loop-step" style="border-color: var(--accent);">
+        <div class="step-num">1</div>
+        <h4 style="color:var(--accent2)">DEFINE</h4>
+        <p>설계 단계</p>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step" style="border-color: var(--cyan);">
+        <div class="step-num" style="background:var(--cyan)">2</div>
+        <h4 style="color:var(--cyan)">SAMPLE</h4>
+        <p>샘플 생성</p>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step" style="border-color: var(--green);">
+        <div class="step-num" style="background:var(--green)">3</div>
+        <h4 style="color:var(--green)">PRODUCE</h4>
+        <p>전체 생성</p>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step" style="border-color: var(--purple);">
+        <div class="step-num" style="background:var(--purple)">4</div>
+        <h4 style="color:var(--purple)">REFINE</h4>
+        <p>수정·진화</p>
+      </div>
+      <div class="loop-arrow">→</div>
+      <div class="loop-step" style="border-color: var(--pink);">
+        <div class="step-num" style="background:var(--pink)">5</div>
+        <h4 style="color:var(--pink)">DELIVER</h4>
+        <p>최종 산출</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="phases">
+    <!-- Phase 1 -->
+    <div class="phase">
+      <div class="phase-badge" style="background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(99,102,241,0.05)); border:2px solid var(--accent);">
+        <span class="num" style="color:var(--accent2)">1</span>
+        <span class="name" style="color:var(--accent2)">DEFINE</span>
+      </div>
+      <div class="phase-content" style="border-color: var(--accent);">
+        <h4>📋 기획 & 설계</h4>
+        <p>주인님이 선택한 주제/화풍/분위기를 바탕으로 PRD를 자동 생성합니다.</p>
+        <ul>
+          <li>주인님 입력: 주제, 소제목, 화풍, 분위기, 포맷, 해상도</li>
+          <li>Planner 서브에이전트가 PRD 자동 생성</li>
+          <li>Researcher가 참고 자료·스타일 리서치</li>
+          <li>캐릭터 설정 시트, 화풍 가이드, 프롬프트 템플릿 생성</li>
+          <li>출력: <code>config.json</code> + <code>PRD.md</code></li>
+        </ul>
+        <div class="gate">
+          <span class="gate-icon">✋</span>
+          <div>
+            <div class="gate-text">게이트 1: 기획 승인</div>
+            <div class="gate-action">주인님이 PRD 확인 → 수정/승인</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 2 -->
+    <div class="phase">
+      <div class="phase-badge" style="background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(6,182,212,0.05)); border:2px solid var(--cyan);">
+        <span class="num" style="color:var(--cyan)">2</span>
+        <span class="name" style="color:var(--cyan)">SAMPLE</span>
+      </div>
+      <div class="phase-content" style="border-color: var(--cyan);">
+        <h4>🎨 샘플 생성 & 화풍 확정</h4>
+        <p>대표 장면 3~5종을 샘플로 생성합니다. 화풀이 확정되는 단계입니다.</p>
+        <ul>
+          <li>Writer가 프롬프트 생성 → 이미지 API로 샘플 생성</li>
+          <li>서로 다른 화풍/구도/빛 조건으로 A/B/C 버전 생성</li>
+          <li>캐릭터 시트 기반으로 주요 캐릭터 샘플</li>
+          <li>배경, 분위기, 컬러 팔레트 테스트</li>
+          <li>출력: <code>samples/v1/</code> (3~5장)</li>
+        </ul>
+        <div class="gate">
+          <span class="gate-icon">✋</span>
+          <div>
+            <div class="gate-text">게이트 2: 화풍 & 방향 승인</div>
+            <div class="gate-action">"A 버전 좋아" / "B에 C의 색감 섞어" / "다시" → 피드백이 Phase 3 입력으로</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 3 -->
+    <div class="phase">
+      <div class="phase-badge" style="background:linear-gradient(135deg,rgba(34,197,94,0.2),rgba(34,197,94,0.05)); border:2px solid var(--green);">
+        <span class="num" style="color:var(--green)">3</span>
+        <span class="name" style="color:var(--green)">PRODUCE</span>
+      </div>
+      <div class="phase-content" style="border-color: var(--green);">
+        <h4>🏭 전체 컷 생성 (본제작)</h4>
+        <p>승인된 샘플의 스타일로 전체 컷을 생성합니다. 서브에이전트가 병렬로 작업합니다.</p>
+        <ul>
+          <li>전체 컷 목록(auto-generated from PRD)을 배치</li>
+          <li>Writer 서브에이전트: 컷별 프롬프트 생성</li>
+          <li>이미지 API 병렬 호출 (timeout 관리)</li>
+          <li>중간 체크포인트: 10컷마다 Evaluator 자동 검토</li>
+          <li>컷 간 일관성 검사 (캐릭터 얼굴, 색감, 배경)</li>
+          <li>출력: <code>output/v1/pages/</code></li>
+        </ul>
+        <div class="gate">
+          <span class="gate-icon">✋</span>
+          <div>
+            <div class="gate-text">게이트 3: 중간 검토</div>
+            <div class="gate-action">진행 상황 확인 + 방향 수정 가능 / "이거 계속 해" / "방향 바꿔"</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 4 -->
+    <div class="phase">
+      <div class="phase-badge" style="background:linear-gradient(135deg,rgba(168,85,247,0.2),rgba(168,85,247,0.05)); border:2px solid var(--purple);">
+        <span class="num" style="color:var(--purple)">4</span>
+        <span class="name" style="color:var(--purple)">REFINE</span>
+      </div>
+      <div class="phase-content" style="border-color: var(--purple);">
+        <h4>🔧 수정 & 진화</h4>
+        <p>피드백을 반영하여 v(N+1)을 생성합니다. 이 단계가 루프의 핵심입니다.</p>
+        <ul>
+          <li>주인님 피드백을 <code>feedback.md</code>에 기록</li>
+          <li>Critic 서브에이전트: 현재 버전 비판적 평가</li>
+          <li>Writer: 피드백 + Critic 분석 → 수정 프롬프트 생성</li>
+          <li>Evaluator: v(N) vs v(N+1) 비교 평가 → 점수 산출</li>
+          <li>점수가 기준 미달이면 자동으로 Phase 4 반복 (최대 N회)</li>
+          <li>출력: <code>output/v2/</code>, <code>scores.json</code></li>
+        </ul>
+        <div class="gate">
+          <span class="gate-icon">✋</span>
+          <div>
+            <div class="gate-text">게이트 4: 최종 승인</div>
+            <div class="gate-action">"이걸로 간다" (DELIVER) / "아직 부족해" (REFINE 루프)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phase 5 -->
+    <div class="phase">
+      <div class="phase-badge" style="background:linear-gradient(135deg,rgba(236,72,153,0.2),rgba(236,72,153,0.05)); border:2px solid var(--pink);">
+        <span class="num" style="color:var(--pink)">5</span>
+        <span class="name" style="color:var(--pink)">DELIVER</span>
+      </div>
+      <div class="phase-content" style="border-color: var(--pink);">
+        <h4>📦 최종 산출 & 메타데이터</h4>
+        <p>최종 산출물과 함께 "무엇이 좋았는지"를 기록합니다. 다음 프로젝트의 진화 재료가 됩니다.</p>
+        <ul>
+          <li>최종 이미지/콘텐츠 정리 및 저장</li>
+          <li>메타데이터 생성: 어떤 선택이 왜 좋았는지</li>
+          <li>진화 로그: v1→v2→v3 변경 이력 + 이유</li>
+          <li>평가 요약: Critic/Evaluator 점수 추이</li>
+          <li>SKILL.md 자동 업데이트 (학습된 패턴 반영)</li>
+          <li>GitHub 배포 / 웹 게시</li>
+          <li>출력: <code>output/final/</code>, <code>evolution.md</code></li>
+        </ul>
+        <div class="gate" style="border-color:var(--green); background:rgba(34,197,94,0.08);">
+          <span class="gate-icon">✅</span>
+          <div>
+            <div class="gate-text" style="color:var(--green)">완료 — 진화 데이터가 다음 루프의 입력으로</div>
+            <div class="gate-action">이번 프로젝트에서 학습한 패턴이 SKILL.md에 누적 → 다음 프로젝트의 품질 기준 상향</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 5. FEEDBACK LOOP -->
+<section id="feedback">
+  <h2>🔁 피드백 루프 상세</h2>
+  <p class="desc">
+    루프의 핵심은 "만드는 AI와 검사하는 AI를 분리"하는 것입니다. Claude가 자기 결과를 후하게 평가하는 경향(self-bias)을 독립 평가자로 보정합니다.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">FEEDBACK LOOP DETAIL — 피드백 게이트 & 재시도 구조</div>
+
+    <div class="fb-diagram">
+      <!-- Top: Write -->
+      <div class="fb-row">
+        <div class="fb-box" style="border-color:var(--green);">
+          <h5 style="color:var(--green)">Writer</h5>
+          <p>프롬프트 생성 → 이미지/콘텐츠 생성</p>
+        </div>
+        <span class="fb-arrow-h">→</span>
+        <div class="fb-box" style="border-color:var(--red);">
+          <h5 style="color:var(--red)">Evaluator</h5>
+          <p>일관성·품질·스타일 준수도 평가</p>
+        </div>
+        <span class="fb-arrow-h">→</span>
+        <div class="fb-box" style="border-color:var(--amber);">
+          <h5 style="color:var(--amber)">Critic</h5>
+          <p>비판적 분석 · 개선점 도출</p>
+        </div>
+      </div>
+
+      <span class="fb-arrow-v">↓</span>
+
+      <!-- Middle: Decision -->
+      <div class="fb-row">
+        <div class="fb-box" style="border-color:var(--amber); width:300px;">
+          <h5 style="color:var(--amber)">✋ 피드백 게이트</h5>
+          <p>점수 ≥ 기준 → 통과 | 점수 &lt; 기준 → 수정 루프</p>
+        </div>
+      </div>
+
+      <span class="fb-arrow-v">↓</span>
+
+      <!-- Bottom: Two Paths -->
+      <div class="fb-row" style="gap:3rem;">
+        <div style="text-align:center;">
+          <div class="fb-box" style="border-color:var(--green); min-width:180px;">
+            <h5 style="color:var(--green)">✅ 통과</h5>
+            <p>다음 Phase로 진행</p>
+          </div>
+        </div>
+        <div style="text-align:center;">
+          <div class="fb-box" style="border-color:var(--red); min-width:180px;">
+            <h5 style="color:var(--red)">❌ 불통과</h5>
+            <p>피드백 + 수정 → 재생성</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Loop Back -->
+      <div class="fb-loop-back" style="margin-top:1rem;">
+        🔁 불통과 시: feedback.md에 기록 → Writer가 피드백 기반으로 프롬프트 수정 → 재생성 → 다시 Evaluator
+      </div>
+    </div>
+
+    <div class="highlight" style="margin-top:2rem;">
+      <h4>⚠️ self-bias 보정 데이터 (Addy Osmani 하네스)</h4>
+      <p>Claude 자기 채점: 9.04 / 독립 평가: 7.43 → 1.6점 차이. 같은 글을 자기가 쓰면 후하게 봅니다. 그래서 <strong>반드시 독립 Evaluator/Critic를 분리</strong>합니다.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 6. EVOLUTION -->
+<section id="evolution">
+  <h2>📈 진화 구조 — 버전이 누적되면서 학습</h2>
+  <p class="desc">
+    매 루프마다 생성된 산출물, 피드백, 평가 점수가 상태 파일에 누적됩니다. 프로젝트가 끝나면 이 진화 기록이 SKILL.md에 반영되어 다음 프로젝트의 기준이 됩니다.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">EVOLUTION TIMELINE — 진화가 누적되는 구조</div>
+    <svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;">
+      <!-- Timeline Base -->
+      <line x1="50" y1="150" x2="850" y2="150" stroke="#334155" stroke-width="2"/>
+
+      <!-- v1 -->
+      <circle cx="150" cy="150" r="25" fill="#1e293b" stroke="#6366f1" stroke-width="2"/>
+      <text x="150" y="155" text-anchor="middle" fill="#818cf8" font-size="11" font-weight="700">v1</text>
+      <text x="150" y="195" text-anchor="middle" fill="#94a3b8" font-size="9">초안 생성</text>
+      <text x="150" y="210" text-anchor="middle" fill="#64748b" font-size="8">Evaluator: 6.5</text>
+      <!-- v1 output -->
+      <rect x="115" y="80" width="70" height="35" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+      <text x="150" y="100" text-anchor="middle" fill="#64748b" font-size="8">28컷</text>
+
+      <!-- Arrow -->
+      <line x1="175" y1="150" x2="275" y2="150" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrowRed2)"/>
+      <text x="225" y="140" text-anchor="middle" fill="#ef4444" font-size="8">feedback.md</text>
+
+      <!-- v2 -->
+      <circle cx="300" cy="150" r="25" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/>
+      <text x="300" y="155" text-anchor="middle" fill="#06b6d4" font-size="11" font-weight="700">v2</text>
+      <text x="300" y="195" text-anchor="middle" fill="#94a3b8" font-size="9">색감 수정</text>
+      <text x="300" y="210" text-anchor="middle" fill="#64748b" font-size="8">Evaluator: 7.8</text>
+      <rect x="265" y="80" width="70" height="35" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+      <text x="300" y="100" text-anchor="middle" fill="#64748b" font-size="8">28컷</text>
+
+      <!-- Arrow -->
+      <line x1="325" y1="150" x2="425" y2="150" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrowRed2)"/>
+      <text x="375" y="140" text-anchor="middle" fill="#ef4444" font-size="8">feedback.md</text>
+
+      <!-- v3 -->
+      <circle cx="450" cy="150" r="25" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+      <text x="450" y="155" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="700">v3</text>
+      <text x="450" y="195" text-anchor="middle" fill="#94a3b8" font-size="9">일관성 보정</text>
+      <text x="450" y="210" text-anchor="middle" fill="#64748b" font-size="8">Evaluator: 8.5</text>
+      <rect x="415" y="80" width="70" height="35" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/>
+      <text x="450" y="100" text-anchor="middle" fill="#64748b" font-size="8">28컷</text>
+
+      <!-- Approved -->
+      <line x1="475" y1="150" x2="575" y2="150" stroke="#22c55e" stroke-width="2" marker-end="url(#arrowGreen2)"/>
+      <text x="525" y="135" text-anchor="middle" fill="#22c55e" font-size="9" font-weight="600">✅ 승인</text>
+
+      <!-- Final -->
+      <rect x="575" y="120" width="120" height="60" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="2"/>
+      <text x="635" y="148" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="700">📦 final</text>
+      <text x="635" y="166" text-anchor="middle" fill="#94a3b8" font-size="9">28컷 완성</text>
+
+      <!-- Evolution Log -->
+      <rect x="575" y="200" width="250" height="80" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/>
+      <text x="700" y="220" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="600">evolution.md</text>
+      <text x="590" y="240" fill="#94a3b8" font-size="8">• v1→v2: 색감 feedback 반영 (+1.3점)</text>
+      <text x="590" y="255" fill="#94a3b8" font-size="8">• v2→v3: 캐릭터 일관성 보정 (+0.7점)</text>
+      <text x="590" y="270" fill="#94a3b8" font-size="8">• 학습 패턴 → SKILL.md 업데이트</text>
+
+      <!-- Next Project -->
+      <line x1="695" y1="280" x2="695" y2="250" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrowAmber)"/>
+      <text x="810" y="220" fill="#f59e0b" font-size="9" font-weight="600">→ 다음 프로젝트에 적용</text>
+
+      <defs>
+        <marker id="arrowRed2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/>
+        </marker>
+        <marker id="arrowGreen2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#22c55e"/>
+        </marker>
+        <marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b"/>
+        </marker>
+      </defs>
+    </svg>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 7. EXAMPLE: Three Body -->
+<section id="example">
+  <h2>🌌 삼체 만화 EP001에 적용</h2>
+  <p class="desc">
+    기존에 수동으로 진행된 삼체 만화 제작 과정을 이 Creative Loop에 맞춰 재구조화합니다.
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-title">THREE BODY COMIC — 적용 예시</div>
+
+    <div class="code">
+<span class="comment">// Phase 1: DEFINE — 주인님 입력 → PRD 자동 생성</span>
+{
+  <span class="key">"project"</span>: <span class="val">"삼체 만화 EP001"</span>,
+  <span class="key">"theme"</span>: <span class="val">"문화대혁명 시절의 밤, 과학자들의 선택"</span>,
+  <span class="key">"style"</span>: <span class="val">"수채화풍, 웹툰 컷 구성"</span>,
+  <span class="key">"mood"</span>: <span class="val">"긴장감, 미스터리, 클리프행거"</span>,
+  <span class="key">"format"</span>: <span class="val">"28페이지, 81패널"</span>,
+  <span class="key">"characters"</span>: [<span class="val">"장베이하이"</span>, <span class="val">"왕먀오"</span>, <span class="val">"스치친"</span>],
+  <span class="key">"reference"</span>: <span class="val">"wiki/characters/, PRD v2.1"</span>
+}
+    </div>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Phase</th>
+          <th>기존 (수동)</th>
+          <th>루프 적용 (자동)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong style="color:var(--accent2)">Define</strong></td>
+          <td>주인님이 PRD 직접 작성</td>
+          <td>주제 선택 → Planner가 PRD 자동 생성 → ✋ 승인</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--cyan)">Sample</strong></td>
+          <td>화풍 4종 수동 비교</td>
+          <td>Writer가 3화풍 샘플 자동 생성 → ✋ 주인님이 선택</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--green)">Produce</strong></td>
+          <td>16/28장 수동 생성 후 멈춤</td>
+          <td>전체 28컷 자동 생성 + 중간 체크포인트</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--purple)">Refine</strong></td>
+          <td>없음 (수정 루프 없었음)</td>
+          <td>Critic 평가 → 피드백 → v2/v3 자동 수정</td>
+        </tr>
+        <tr>
+          <td><strong style="color:var(--pink)">Deliver</strong></td>
+          <td>미완성 상태로 GitHub Pages</td>
+          <td>최종 산출 + 메타데이터 + 진화 로그</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="highlight" style="margin-top:1.5rem;">
+      <h4>🎯 핵심 차이</h4>
+      <p>기존: 주인님이 매 단계 직접 지시 → "근데 8장만 생성된거니?" "나머지는?" → 멈춤<br>
+      루프 적용: 한 번 설정하면 전체 28컷 자동 생성 + 중간에만 주인님이 확인 → 완성</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 8. COMPARISON -->
+<section id="comparison">
+  <h2>⚖️ 루프 엔지니어링 vs 기존 방식</h2>
+  <p class="desc">"매번 프롬프트"와 "루프를 설계"의 차이를 구체적으로 비교합니다.</p>
+
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>관점</th>
+        <th>기존 (프롬프트 엔지니어링)</th>
+        <th>루프 엔지니어링</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>역할</strong></td>
+        <td>실행자 (매 줄 지시)</td>
+        <td>감독관 (시스템 설계)</td>
+      </tr>
+      <tr>
+        <td><strong>재사용</strong></td>
+        <td>프롬프트 복붙</td>
+        <td>SKILL.md + 상태 파일 (프로젝트 간)</td>
+      </tr>
+      <tr>
+        <td><strong>품질 검증</strong></td>
+        <td>주인님 눈으로만</td>
+        <td>서브에이전트 독립 평가 + 주인님 최종 승인</td>
+      </tr>
+      <tr>
+        <td><strong>피드백</strong></td>
+        <td>대화 중 구두로</td>
+        <td>게이트에서 구조화된 피드백 (기록됨)</td>
+      </tr>
+      <tr>
+        <td><strong>진화</strong></td>
+        <td>사람 머릿속에만</td>
+        <td>evolution.md에 기록 → 다음 프로젝트에 적용</td>
+      </tr>
+      <tr>
+        <td><strong>한계</strong></td>
+        <td>세션 바뀌면 컨텍스트 리셋</td>
+        <td>상태 파일로 컨텍스트 유지</td>
+      </tr>
+      <tr>
+        <td><strong>주의점</strong></td>
+        <td>AI 의존도 과대평가</td>
+        <td>인지적 항복 주의 — 검토는 사람 몫</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<div class="divider"></div>
+
+<!-- 9. IMPLEMENTATION -->
+<section id="implementation">
+  <h2>🚀 구현 계획</h2>
+  <p class="desc">
+    OpenClaw의 기존 스킬 생태계 + 루프 엔지니어링을 통합하여 구현합니다.
+  </p>
+
+  <div class="phases">
+    <div class="phase">
+      <div class="phase-badge" style="background:rgba(99,102,241,0.1); border:1px solid var(--accent);">
+        <span class="num" style="color:var(--accent2);font-size:1.5rem;">S1</span>
+        <span class="name" style="color:var(--accent2);font-size:0.6rem;">스킬</span>
+      </div>
+      <div class="phase-content">
+        <h4>SKILL.md 작성</h4>
+        <p>Creative Loop SKILL.md에 프로젝트 인수인계 노트를 작성합니다.</p>
+        <ul>
+          <li>Phase별 입력/출력 스펙 정의</li>
+          <li>프롬프트 템플릿 라이브러리</li>
+          <li>품질 평가 체크리스트</li>
+          <li>진화 메타데이터 스키마</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-badge" style="background:rgba(6,182,212,0.1); border:1px solid var(--cyan);">
+        <span class="num" style="color:var(--cyan);font-size:1.5rem;">S2</span>
+        <span class="name" style="color:var(--cyan);font-size:0.6rem;">에이전트</span>
+      </div>
+      <div class="phase-content">
+        <h4>서브에이전트 구성</h4>
+        <p>Writer/Evaluator/Critic/Planner를 서브에이전트로 분리합니다.</p>
+        <ul>
+          <li>Writer: 프롬프트 생성 + 이미지 API 호출</li>
+          <li>Evaluator: 일관성/품질 자동 평가 (별도 세션)</li>
+          <li>Critic: 비판적 분석 + 개선 제안 (별도 세션)</li>
+          <li>Planner: Phase 오케스트레이션 + 게이트 관리</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-badge" style="background:rgba(34,197,94,0.1); border:1px solid var(--green);">
+        <span class="num" style="color:var(--green);font-size:1.5rem;">S3</span>
+        <span class="name" style="color:var(--green);font-size:0.6rem;">상태</span>
+      </div>
+      <div class="phase-content">
+        <h4>상태 파일 시스템</h4>
+        <p>프로젝트 진행 상태를 디스크에 지속적으로 기록합니다.</p>
+        <ul>
+          <li>config.json: 주인님 설정</li>
+          <li>progress.md: 현재 Phase + 완료된 컷</li>
+          <li>feedback.md: 피드백 기록</li>
+          <li>evolution.md: 버전별 변경 이력</li>
+          <li>scores.json: Evaluator/Critic 점수 추이</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="phase">
+      <div class="phase-badge" style="background:rgba(236,72,153,0.1); border:1px solid var(--pink);">
+        <span class="num" style="color:var(--pink);font-size:1.5rem;">S4</span>
+        <span class="name" style="color:var(--pink);font-size:0.6rem;">검증</span>
+      </div>
+      <div class="phase-content">
+        <h4>삼체 EP001로 검증</h4>
+        <p>실제 프로젝트에 적용하여 시스템을 검증합니다.</p>
+        <ul>
+          <li>EP001 나머지 12컷을 루프로 자동 생성</li>
+          <li>중간 피드백 게이트 실제 테스트</li>
+          <li>v1→v2 진화 루프 실증</li>
+          <li>학습 패턴이 SKILL.md에 자동 누적되는지 확인</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="highlight" style="margin-top:2rem;">
+    <h4>📝 최종 목표</h4>
+    <p>"주제: 해적, 화풍: 3D 애니, 분위기: 모험" 한 줄이면 → 샘플 확인 → 자동 전체 생성 → 피드백 루프 → 완성 산출물. 주인님은 감독관 역할만 하시면 됩니다.</p>
+  </div>
+</section>
+
+<footer>
+  <p>창의적 루프 엔지니어링 시스템 설계 문서 — 2026.06.16</p>
+  <p>기반: Addy Osmani "Loop Engineering" + OpenClaw Skill Ecosystem + 랄프톤 Phase Split</p>
+  <p style="margin-top:0.5rem; color:#64748b;">"Build the loop. But build it like someone who intends to stay the engineer."</p>
+</footer>
+
+<script>
+// Smooth scroll
+document.querySelectorAll('.nav a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+// Active nav highlight
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav a');
+
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(section => {
+    const top = section.offsetTop - 100;
+    if (pageYOffset >= top) current = section.getAttribute('id');
+  });
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === `#${current}`) link.classList.add('active');
+  });
+});
+</script>
+
+</body>
+</html>
