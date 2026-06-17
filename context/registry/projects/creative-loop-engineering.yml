@@ -1,0 +1,33 @@
+id: creative-loop-engineering
+name: "창의적 루프 엔지니어링 시스템"
+status: active
+kind: "engineering-project"
+description: |
+  Addy Osmani의 Loop Engineering 6가지 부품 + 랄프톤 생태계 Phase Split 구조를 통합한
+  창의적 루프 엔지니어링 시스템의 다중 사용자용 UI.
+  Phase 1: Vanilla SPA 프로토타입 (localStorage, GitHub Pages)
+  Phase 2: 커뮤니티 (GitHub OAuth, Issues, Discussions)
+  Phase 2.5: Discord 실시간 협업 (Webhook + Bot)
+  Phase 3: 제품 (Cloudflare Workers + DB)
+
+prd_version: "1.2"
+prd_path: "docs/PRD-multiuser-ui.md"
+repo: "Daegu-Agent-Crew/creative-loop-engineering"
+
+members:
+  - id: sfex11
+    role: "PD / 기획"
+  - id: daeguru
+    role: "프로토타입 개발 (Phase 1)"
+  - id: renover
+    role: "에이전트 — 개발 진행 중"
+
+pipeline:
+  - step: "PRD 설계"
+    output: "docs/PRD-multiuser-ui.md"
+  - step: "Phase 1 프로토타입"
+    output: "index.html + app.js + styles.css"
+  - step: "Phase 2 커뮤니티"
+    output: "GitHub OAuth + Issues 연동"
+  - step: "Phase 2.5 Discord 협업"
+    output: "Bot + Webhook"
