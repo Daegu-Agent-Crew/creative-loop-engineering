@@ -1,7 +1,7 @@
 # PRD: 창의적 루프 엔지니어링 시스템 — 다중 사용자 UI
 
-> 버전: 1.1 | 작성: 2026-06-17 | 상태: Draft
-> 변경: Codex(gpt-5.4) 리뷰 반영 (선택적 채택, GitHub 활용 중심 유지)
+> 버전: 1.2 | 작성: 2026-06-17 | 상태: Draft
+> 변경: v1.1 Codex 리뷰 반영 → v1.2 Discord 실시간 협업/알림 추가
 
 ---
 
@@ -16,9 +16,10 @@ Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계 Phas
 |------|------|------|
 | **Phase 1: 프로토타입** | 정적 데모, 개인 localStorage 기반, GitHub Pages 배포 | Vanilla SPA |
 | **Phase 2: 커뮤니티** | GitHub 로그인, 갤러리/템플릿 공유, Issues 기반 저장 | GitHub API |
-| **Phase 3: 제품** | 서버 API, 작업 큐, 실시간 알림, 팀 협업 | Cloudflare Workers + DB |
+| **Phase 2.5: 실시간 협업** (v1.2) | Discord 연동: 알림, 반응형 승인, 스레드 토론 | Discord Webhook + Bot |
+| **Phase 3: 제품** | 서버 API, 작업 큐, 네이티브 알림 | Cloudflare Workers + DB |
 
-> 본 PRD는 **Phase 1~2**를 중심으로 작성. Phase 3은 별도 PRD로 분리.
+> 본 PRD는 **Phase 1~2.5**를 중심으로 작성. Phase 3은 별도 PRD로 분리.
 
 ### 1.3 목표
 - **"프롬프트를 잘 쓰는 도구가 아니라, 좋은 결과를 고르는 도구"** (v1.1 차별화 메시지)
@@ -52,6 +53,7 @@ Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계 Phas
 | **소셜 구성** | 다른 사람 작업 구경, 템플릿 복제, 피드백 공유 |
 | **비공개 기본** (v1.1 변경) | 결과물 기본 비공개, 명시적으로 공개 게시 시에만 갤러리 공개 |
 | **모바일 동등** | 카드 선택 + 승인만 되면 모바일에서도 충분 |
+| **Discord 거점** (v1.2) | 협업은 이미 쓰는 Discord에서, 웹은 생성/관리에 집중 |
 
 ---
 
@@ -70,7 +72,10 @@ Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계 Phas
 ├── /gallery             → 공개 갤러리 (GitHub Issues 기반)
 ├── /templates           → 템플릿 마켓 (GitHub Discussions 기반)
 ├── /resume/:token       → 게스트 세션 복구 (v1.1)
-└── /settings            → 계정/환경설정
+├── /settings            → 계정/환경설정
+│   ├── Discord 연동 설정 (v1.2)
+│   └── 알림 채널/DM 설정 (v1.2)
+└── /connect/discord     → Discord OAuth 연동 콜백 (v1.2)
 ```
 
 ---
@@ -258,6 +263,114 @@ Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계 Phas
 └──────────────────────────────────────────────┘
 ```
 
+### 4.8 Discord 실시간 협업 (v1.2 신규)
+
+**핵심 아이디어:** 별도 협업 플랫폼을 만들지 말고, 이미 팀이 활용 중인 Discord를 생성 파이프라인의 협업 레이어로 활용합니다.
+
+```
+┌─────────────────────────────────────────────────────────┐
+│  Discord 협업 아키텍처                                   │
+│                                                         │
+│  ┌──────────┐     Webhook      ┌──────────────┐        │
+│  │  웹 UI   │ ──────────────→ │ Discord 채널  │        │
+│  │ (생성/   │                  │ (알림/토론/   │        │
+│  │  관리)   │ ←────────────── │  승인)        │        │
+│  └──────────┘     Bot Events   └──────────────┘        │
+│       ↕                               ↕                │
+│  ┌──────────┐                  ┌──────────────┐        │
+│  │ GitHub   │ ←─ Issue sync ─→ │ Bot (Python/  │        │
+│  │ Issues   │                  │  Cloudflare) │        │
+│  └──────────┘                  └──────────────┘        │
+└─────────────────────────────────────────────────────────┘
+```
+
+**구성 요소:**
+
+1. **Discord Bot**
+   - GitHub Actions / Cloudflare Worker에서 호출
+   - 웹훅 + Bot API 조합 (단순 알림은 웹훅, 반응 수집은 Bot)
+
+2. **채널 구조**
+   ```
+   📁 Creative Loop Engine
+   ├── # announcements     → Phase 완료, 새 템플릿 소식
+   ├── # projects           → 프로젝트별 스레드 자동 생성
+   │   ├── 🧵 SF 수채화 만화 (@user1)
+   │   ├── 🧵 현대 팝아트 일러스트 (@user2)
+   │   └── ...
+   ├── # gallery-feed      → 갤러리 공개 시 자동 포스팅
+   ├── # reviews            → 피드백 요청 (결과물 + 반응형 투표)
+   └── # general            → 자유 토론
+   ```
+
+3. **자동 알림 (Webhook → Discord)**
+
+   | 이벤트 | Discord 전송 내용 | 형태 |
+   |--------|-------------------|------|
+   | 프로젝트 생성 | 주제+화풍+분위기 카드 요약 + 웹 링크 | Embed |
+   | Phase 진행 완료 | 완성된 후보 이미지 2~3장 + "승인?" 버튼 | Embed + Components |
+   | Phase 실패 | 에러 내용 + "재시도" 버튼 | Embed + Components |
+   | 프로젝트 완성 | 최종 결과물 + 갤러리 링크 | Embed (풀사이즈 이미지) |
+   | 갤러리 공개 | 썸네일 + 작성자 + 갤러리 링크 | Embed |
+   | 템플릿 등록 | 템플릿 카드 설정 요약 + 복제 링크 | Embed |
+
+4. **반응형 승인 (Discord → 웹)**
+
+   - Phase 완료 알림 메시지에 **Interactive Components** (버튼) 첨부
+   - Discord에서 **[ ✅ 승인 ] [ 🔄 재생성 ] [ 💬 코멘트 ]** 버튼 클릭
+   - Bot이 이벤트를 수신 → GitHub Issue 업데이트 → 웹 UI 상태 동기화
+   - 이미지에 직접 **👍👎** 반응을 달면 자동 집계 (다수결)
+
+   ```
+   🎨 Phase 2 완성 — SF 수채화 만화
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━
+   [🖼️ 후보 #1] [🖼️ 후보 #2]
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+   👍 3  👎 1  💬 2
+
+   [ ✅ 승인 ]  [ 🔄 재생성 ]  [ 📋 상세보기 ]
+   ```
+
+5. **프로젝트 스레드**
+   - 프로젝트 생성 시 Discord에 자동 스레드 생성
+   - 스레드 이름: 프로젝트명 + 작성자
+   - 생성 과정 전체가 스레드에 자동 로깅 (Phase별 요약)
+   - 팀원이 스레드에서 실시간 토론 가능
+   - 웹 UI의 코멘트와 Discord 스레드 댓글 양방향 동기화 (Best-effort)
+
+6. **피드백 수집 (#reviews 채널)**
+   - 게이트 도달 시 #reviews 채널에 결과물 이미지 자동 포스팅
+   - 팀원들이 이미지에 반응(👍👎) 또는 댓글로 피드백
+   - Bot이 반응 집계 → 다음 Phase 프롬프트에 반영
+   - "30분 내 반응 없으면 자동 승인" 옵션
+
+7. **DM 알림 (v1.2)**
+   - 설정에서 DM 알림 켜면 개인별 DM으로도 알림 전송
+   - "내 프로젝트의 Phase가 완성됐어요" — DM으로 바로 확인
+   - DM에서도 버튼 승인 가능
+
+### 4.9 Discord ↔ 웹 UI 연동 설정 (v1.2 신규)
+
+**연동 흐름:**
+```
+웹 /settings → "Discord 연동" 버튼
+  → Discord OAuth (bot redirect)
+  → 사용자 권한: 메시지 읽기/쓰기, 반응 추가
+  → 연동 완료: 사용자 ID + Discord 채널 매핑 저장
+  → GitHub Issue에 discord_user_id 태그
+```
+
+**권한 모델 (GitHub 기반, Discord에서는 읽기 전용 표시):**
+
+| GitHub Role | Discord 권한 | 웹 권한 |
+|-------------|-------------|---------|
+| Repo Admin | Bot 관리, 채널 설정 | 전체 관리 |
+| Repo Member | 반응, 댓글, 버튼 승인 | 프로젝트 CRUD |
+| Guest (OAuth) | #gallery-feed, #announcements 읽기 | 체험 모드 |
+
+**주의:** Discord는 알림/토론 계층이고, 실제 데이터 소유권은 GitHub Issues에 있습니다. Discord 메시지는 GitHub Issue ID를 참조하는 뷰입니다.
+
 ---
 
 ## 5. 사용자 플로우
@@ -293,6 +406,22 @@ Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계 Phas
   → 갤러리에서 영감 수집
 ```
 
+### 5.3 팀 협업 플로우 (v1.2 신규)
+
+```
+Discord #projects에서 새 프로젝트 스레드 자동 생성
+  → 웹 UI에서 3단계 카드 선택
+  → Discord 스레드에 진행 상태 자동 업데이트
+  → Phase 2 완성 시 #reviews 채널에 결과물 포스팅
+  → 팀원들이 Discord에서 👍👎 반응 또는 댓글 피드백
+  → 반응 집계 완료 → Bot이 웹 UI 상태 업데이트
+  → 또는 웹 UI의 [승인] 버튼으로 진행
+  → Phase 자동 전이 → Discord에 완료 알림
+  → 프로젝트 완성 → #gallery-feed에 최종 결과물 포스팅
+```
+
+**핵심:** 사용자는 웹에서 생성, Discord에서 피드백/승인. 자연스럽게 분업.
+
 ---
 
 ## 6. 기술 아키텍처
@@ -320,10 +449,40 @@ Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계 Phas
 | 이미지 | GitHub Releases assets | Phase 2 (1GB 제약 인지) |
 | CI/CD | GitHub Actions (정적 빌드) | Phase 1 |
 
-### 6.3 배포
+### 6.3 Discord 연동 아키텍처 (v1.2 신규)
+
+| 항목 | 선택 | 이유 |
+|------|------|------|
+| **알림 발송** | Discord Webhook | 서버 없이 POST 한 번으로 전송 |
+| **반응 수집** | Discord Bot + Gateway | Button Interaction, Reaction Event 수신 |
+| **Bot 호스팅** | Cloudflare Worker | 무서버, GitHub Actions와 통합 용이 |
+| **OAuth 연동** | Discord OAuth2 | 사용자 ID ↔ GitHub 계정 매핑 |
+| **상태 동기화** | GitHub Issues (DB) | Discord → Issue 업데이트 → 웹 UI fetch |
+
+**데이터 흐름:**
+```
+웹 UI ─(생성 완료)→ GitHub Issue 업데이트
+                        ↓
+              GitHub Actions webhook trigger
+                        ↓
+              Cloudflare Worker (Bot)
+                        ↓
+              Discord API (메시지 전송)
+                        ↓
+              사용자 반응/버튼
+                        ↓
+              Bot Interaction webhook
+                        ↓
+              GitHub Issue 업데이트
+                        ↓
+              웹 UI (상태 동기화)
+```
+
+### 6.4 배포
 
 - Phase 1: 정적 GitHub Pages (클라이언트 전용, localStorage)
 - Phase 2: GitHub Pages + GitHub API (OAuth, Issues, Discussions)
+- Phase 2.5: Discord Bot (Cloudflare Worker) + Webhook (v1.2)
 - Phase 3: Cloudflare Workers API + 외부 DB (별도 PRD)
 
 ---
@@ -351,13 +510,24 @@ Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계 Phas
 - [ ] 좋아요 (reactions)
 - [ ] 게스트→계정 마이그레이션 ← (v1.1)
 
+### P1.5 — Discord 협업 (v1.2, 3주차)
+
+- [ ] Discord Bot 배포 (Cloudflare Worker)
+- [ ] Phase 완료/실패 알림 → Discord Embed
+- [ ] Interactive Components (승인/재생성 버튼)
+- [ ] 반응(👍👎) 자동 집계
+- [ ] 프로젝트 스레드 자동 생성
+- [ ] #reviews 피드백 수집
+- [ ] DM 알림 옵션
+- [ ] Discord OAuth 연동 (/connect/discord)
+- [ ] GitHub Issue ↔ Discord 스레드 동기화
+
 ### P2 — 제품 (Phase 3, 별도 PRD)
 
 - [ ] 서버 API + DB
 - [ ] 비동기 작업 큐
 - [ ] 권한 모델 (게스트/회원/팀/관리자)
 - [ ] 팀 워크스페이스
-- [ ] 실시간 알림/멘션
 - [ ] 모바일 PWA
 - [ ] 비교 뷰 (이전 vs 재생성)
 - [ ] 제작 과정 타임라인
@@ -428,6 +598,33 @@ Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계 Phas
 - 피드백: 풀스크린 모달 (칩은 2열 그리드)
 - 상태 표시: 하단 고정 바
 
+### 8.6 Discord Embed 디자인 (v1.2 추가)
+
+Discord 알림 메시지의 통일된 Embed 형식:
+
+```
+🎨 Creative Loop Engine — Phase 완성
+━━━━━━━━━━━━━━━━━━━━━━━━━
+프로젝트: SF 수채화 만화
+작성자: @username
+Phase: ② Generate (후보 4/4)
+
+🖼️ 결과물 미리보기
+  [썸네일 이미지 1-2장]
+
+📋 구성: SF + 역사 / 수채화 / 어두운
+⏱️ 소요: 1분 23초
+
+🔗 [웹에서 보기](https://...)
+
+[ ✅ 승인 ] [ 🔄 재생성 ] [ 📋 상세 ]
+```
+
+- 색상: Phase별 구분 (Define=blue, Generate=purple, Evaluate=amber, Refine=green, Deliver=teal)
+- 이미지: 800x600 max, JPEG 압축
+- 버튼: Custom ID에 issue_number 포함 → Bot이 역추적 가능
+- Footer: Creative Loop Engine v1.2
+
 ---
 
 ## 9. 성공 지표
@@ -440,6 +637,8 @@ Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계 Phas
 | 템플릿 복제 수 | > 10/주 | 클릭 추적 |
 | 이탈률 (게이트에서) | < 20% | Phase 진행 추적 |
 | 세션 복구율 (v1.1) | > 40% | /resume 방문 추적 |
+| Discord 승인 응답률 (v1.2) | > 70% | 버튼 클릭 / 반응 추적 |
+| Discord→웬 이동 전환 (v1.2) | > 25% | 링크 클릭 추적 |
 
 ---
 
@@ -449,6 +648,8 @@ Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계 Phas
 2. **결과물 저장소:** GitHub Releases 용량 한계 (1GB/repo) → Phase 1은 local/base64, Phase 2에서 imgur/외부 스토리지 검토
 3. **오프라인:** PWA로 오프라인에서 카드 선택까지만? → Phase 2에서 Service Worker 적용 검토
 4. **피드백 칩 → 프롬프트 변환:** 칩 선택을 어떻게 생성 프롬프트에 반영할지? → Phase별 칩-프롬프트 매핑 테이블 필요
+5. **Discord Bot 호스팅 (v1.2):** Cloudflare Worker 무료 요금(10만 req/일)으로 충분한지? → 초기 10명 규모면 충분, 확장 시 유료 검토
+6. **Discord ↔ GitHub 동기화 지연 (v1.2):** Webhook는 최대 5초 지연 가능. 실시간성 요구에 부합? → 푸시 알림 용도로는 충분, 편집 충돌은 Issue timestamp 기반 해결
 
 ---
 
@@ -458,17 +659,18 @@ Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계 Phas
 |------|------|-----------|
 | 1.0 | 2026-06-17 | 초안 작성 |
 | 1.1 | 2026-06-17 | Codex 리뷰 반영 (선택적 채택) |
+| 1.2 | 2026-06-17 | Discord 실시간 협업/알림 추가 |
 
-### v1.0 → v1.1 변경 요약
-- **스코프 분리:** 프로토타입/커뮤니티/제품 3단계로 명확화
-- **차별화 메시지 추가:** "프롬프트를 쓰지 마세요. 고르세요."
-- **비공개 기본값:** 자동 공개 → 명시적 공개 선택으로 변경
-- **구조화 피드백 칩:** 게이트에 프리셋 수정 옵션 추가
-- **상태 전이 UI:** 대기/생성/실패/지연/오류 표시 추가
-- **게스트 세션 복구:** /resume/:token 복구 URL 추가
-- **템플릿 복제 흐름 명확화:** 카드 미리 선택 → 덮어쓰기
-- **GitHub 활용 전략 구체화:** Issues/Discussions/Reactions 매핑
+### v1.1 → v1.2 변경 요약
+- **Discord 협업 레이어 추가:** 별도 협업 플랫폼 없이 Discord 활용
+- **자동 알림:** Phase 완성/실패/프로젝트 완성 → Discord Embed
+- **반응형 승인:** Discord에서 👍👎 + 버튼으로 승인/재생성
+- **프로젝트 스레드:** 프로젝트별 자동 스레드 생성 + 실시간 로깅
+- **#reviews 피드백 수집:** 결과물 포스팅 → 팀원 반응 집계
+- **DM 알림:** 개인별 DM으로 Phase 완료 알림
+- **Discord OAuth 연동:** 사용자 ID ↔ GitHub 매핑
+- **Phase 2.5 신규:** 커뮤니티(Phase 2)와 제품(Phase 3) 사이 중간 단계
 
 ---
 
-*이 PRD는 Creative Loop Engine 설계 문서(index.html)의 UI 확장으로, Phase 1~2(프로토타입+커뮤니티)를 GitHub 중심으로 구현하는 다중 사용자 인터페이스를 정의합니다.*
+*이 PRD는 Creative Loop Engine 설계 문서(index.html)의 UI 확장으로, Phase 1~2.5(프로토타입+커뮤니티+Discord 협업)를 GitHub+Discord 중심으로 구현하는 다중 사용자 인터페이스를 정의합니다.*
