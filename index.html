@@ -1893,8 +1893,9 @@ sendToDiscord(){
 const p=this.getProject();if(!p){toast('프로젝트를 찾을 수 없습니다','error');return}
 this._copyRequest(p).then(()=>toast('📋 요청 데이터 복사됨! 디스코드 #레노버-free에 붙여넣어주세요','success')).catch(()=>toast('복사 실패 — 콘솔에서 확인하세요','error'))
 },
-createGitHubIssue(){
+async createGitHubIssue(){
 const p=this.getProject();if(!p){toast('프로젝트를 찾을 수 없습니다','error');return}
+const s=STORAGE.settings;const pat=s.github_pat;
 const req={type:'CLE-REQUEST',id:p.id,title:p.title,
 topics:p.topic_cards.map(id=>{const c=TOPICS.find(x=>x.id===id);return c?c.title:id}),
 styles:p.style_cards.map(id=>{const c=STYLES.find(x=>x.id===id);return c?c.title:id}),
@@ -1903,7 +1904,9 @@ prompt:p.final_prompt||p.prompt_text,
 refs:{images:p.reference_images.map(i=>i.name),urls:p.reference_urls.map(u=>u.url)},
 feedback:p.feedback,chips:p.feedback.chips,
 timestamp:p.modified};
-const body='## 요청 내용\n'+JSON.stringify(req,null,2)+'\n\n---\nCLE-REQUEST 자동 생성';
+const body='## 🎨 CLE 요청\n\n'+JSON.stringify(req,null,2)+'\n\n---\n_CLE-REQUEST 자동 생성_';
+if(pat){try{toast('⏳ GitHub Issue 생성 중...','info');const r=await fetch('https://api.github.com/repos/Daegu-Agent-Crew/creative-loop-engineering/issues',{method:'POST',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({title:'🎨 '+p.title.slice(0,60),body,labels:['CLE-PENDING']})});if(r.ok){const d=await r.json();toast('✅ Issue #'+d.number+' 생성됨!','success');this._copyRequest(p);return}else{const e=await r.json();toast('❌ '+e.message,'error');}}catch(e){toast('❌ 네트워크 오류','error')}
+}
 const url='https://github.com/Daegu-Agent-Crew/creative-loop-engineering/issues/new?labels=CLE-PENDING&title='+encodeURIComponent('🎨 '+p.title.slice(0,60))+'&body='+encodeURIComponent(body);
 this._copyRequest(p).then(()=>{toast('📋 클립보드에 복사 + Issue 페이지 열림','success');window.open(url,'_blank')}).catch(()=>{window.open(url,'_blank')})
 },
@@ -2073,11 +2076,21 @@ closeModal(){$('#modalOverlay').classList.remove('show')},
 
 /* ===== SETTINGS ===== */
 renderSettings(){
+const s=STORAGE.settings;const pat=s.github_pat||'';
+const patOk=pat?"<span style=\"color:var(--green)\">✅ 연결됨</span>":"<span style=\"color:var(--text2)\">미설정</span>";
 return`<div class="page"><div class="panel"><div class="panel-title">⚙️ 설정</div>
 <div class="settings-section"><div class="settings-row"><span class="settings-label">🎨 테마</span><span class="settings-value">다크 (Phase 1 고정)</span></div><div class="settings-row"><span class="settings-label">🌐 언어</span><span class="settings-value">한국어 (Phase 1 고정)</span></div></div>
-<div class="settings-section"><div class="settings-row"><span class="settings-label">GitHub 연동</span><span class="placeholder-link">🔗 Phase 2에서 지원</span></div><div class="settings-row"><span class="settings-label">Discord 연동</span><span class="placeholder-link">🔗 Phase 2.5에서 지원</span></div></div>
+<div class="settings-section"><div class="settings-row"><span class="settings-label">GitHub PAT</span>${patOk}</div>
+<div style="padding:8px 0"><input id="patInput" type="password" placeholder="ghp_xxxxxxxxxxxx" value="${pat}" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text1);font-size:.85rem;box-sizing:border-box" onfocus="this.select()"></div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="App.saveGitHubPat()">💾 저장</button><button class="btn btn-secondary btn-sm" onclick="App.testGitHubPat()">🧪 테스트</button>${pat?'<button class="btn btn-danger btn-sm" onclick="App.removeGitHubPat()">🗑️ 제거</button>':''}<span id="patStatus" style="font-size:.8rem;color:var(--text2)"></span></div></div>
+<div class="settings-section"><div class="settings-row"><span class="settings-label">Discord 연동</span><span class="placeholder-link">🔗 Phase 2.5에서 지원</span></div></div>
 <div class="settings-section"><div class="settings-row"><span class="settings-label">🗑️ 모든 데이터 삭제</span><button class="btn btn-danger btn-sm" onclick="App.clearAllData()">삭제</button></div></div>
 </div></div>`},
+
+saveGitHubPat(){const inp=document.getElementById('patInput');if(!inp)return;const v=inp.value.trim();if(!v){toast('PAT를 입력하세요','error');return}if(!v.startsWith('ghp_')&&!v.startsWith('github_pat_')&&!v.startsWith('gho_')&&!v.startsWith('ghs_')&&!v.startsWith('ghu_')){toast('올바른 GitHub PAT 형식이 아닙니다','error');return}const s=STORAGE.settings;s.github_pat=v;STORAGE.settings=s;toast('GitHub PAT 저장됨','success');this.route()},
+removeGitHubPat(){const s=STORAGE.settings;delete s.github_pat;STORAGE.settings=s;toast('GitHub PAT 제거됨','success');this.route()},
+async testGitHubPat(){const inp=document.getElementById('patInput');const status=document.getElementById('patStatus');if(!inp||!status)return;const v=inp.value.trim();if(!v){status.textContent='PAT를 먼저 입력하세요';status.style.color='var(--red)';return}status.textContent='테스트 중...';status.style.color='var(--text2)';try{const r=await fetch('https://api.github.com/user',{headers:{'Authorization':'Bearer '+v,'Accept':'application/vnd.github.v3+json'}});if(r.ok){const d=await r.json();status.textContent='✅ '+d.login;status.style.color='var(--green)'}else{const e=await r.json();status.textContent='❌ '+(e.message||'인증 실패').slice(0,40);status.style.color='var(--red)'}}catch(e){status.textContent='❌ 네트워크 오류';status.style.color='var(--red)'}},
+
 
 clearAllData(){
 $('#modalContent').innerHTML=`<div class="modal-close" onclick="App.closeModal()">✕</div><div class="confirm-msg">정말 모든 프로젝트와 설정을 삭제하시겠습니까?<br><small style="color:var(--text2)">이 작업은 되돌릴 수 없습니다.</small></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-secondary" onclick="App.closeModal()">취소</button><button class="btn btn-danger" onclick="localStorage.removeItem('cle_projects');localStorage.removeItem('cle_settings');App.closeModal();toast('데이터 삭제 완료','success');App.route()">삭제</button></div>`;
