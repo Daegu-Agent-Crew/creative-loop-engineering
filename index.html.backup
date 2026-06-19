@@ -1,0 +1,2194 @@
+<!--
+&lt;!DOCTYPE html&gt;
+&lt;html lang="ko"&gt;
+&lt;head&gt;
+&lt;meta charset="UTF-8"&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;title&gt;창의적 루프 엔지니어링 시스템 — Creative Loop&lt;/title&gt;
+&lt;style&gt;
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Noto+Sans+KR:wght@300;400;500;700;800&amp;display=swap');
+
+  :root {
+    — —bg: #0a0e17;
+    — —surface: #111827;
+    — —surface2: #1a2235;
+    — —border: #1e293b;
+    — —text: #e2e8f0;
+    — —text2: #94a3b8;
+    — —accent: #6366f1;
+    — —accent2: #818cf8;
+    — —green: #22c55e;
+    — —green2: #16a34a;
+    — —amber: #f59e0b;
+    — —red: #ef4444;
+    — —blue: #3b82f6;
+    — —cyan: #06b6d4;
+    — —pink: #ec4899;
+    — —purple: #a855f7;
+    — —orange: #f97316;
+    — —glow: rgba(99,102,241,0.15);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+    background: var(— —bg);
+    color: var(— —text);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, var(— —glow) 0%, transparent 70%);
+    top: -100px; left: 50%; transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .hero h1 {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    background: linear-gradient(135deg, var(— —accent2), var(— —cyan), var(— —green));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 1rem;
+  }
+  .hero .subtitle {
+    font-size: clamp(1rem, 2.5vw, 1.3rem);
+    color: var(— —text2);
+    max-width: 700px;
+    margin-bottom: 2rem;
+  }
+  .hero .quote {
+    font-style: italic;
+    color: var(— —amber);
+    font-size: 1.1rem;
+    max-width: 600px;
+    border-left: 3px solid var(— —amber);
+    padding-left: 1.2rem;
+    text-align: left;
+  }
+
+  /* ===== NAV ===== */
+  .nav {
+    position: fixed; top:0; left:0; right:0;
+    background: rgba(10,14,23,0.9);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(— —border);
+    padding: 0.8rem 2rem;
+    display: flex;
+    gap: 1.5rem;
+    z-index: 100;
+    overflow-x: auto;
+  }
+  .nav a {
+    color: var(— —text2);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: color 0.2s;
+  }
+  .nav a:hover, .nav a.active { color: var(— —accent2); }
+
+  /* ===== SECTION ===== */
+  section {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+  }
+  section h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(— —accent2);
+  }
+  section h3 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(— —text);
+    margin: 2rem 0 1rem;
+  }
+  .desc {
+    color: var(— —text2);
+    margin-bottom: 2rem;
+    max-width: 800px;
+  }
+
+  /* ===== DIAGRAM CONTAINER ===== */
+  .diagram {
+    background: var(— —surface);
+    border: 1px solid var(— —border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 2rem 0;
+    overflow-x: auto;
+  }
+  .diagram-title {
+    font-size: 0.8rem;
+    color: var(— —text2);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ===== SVG DIAGRAMS ===== */
+  svg text {
+    font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  }
+
+  /* ===== ARCHITECTURE ===== */
+  .arch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  .arch-card {
+    background: var(— —surface);
+    border: 1px solid var(— —border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: border-color 0.3s, transform 0.2s;
+  }
+  .arch-card:hover {
+    border-color: var(— —accent);
+    transform: translateY(-2px);
+  }
+  .arch-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
+  .arch-card h4 { font-size: 1rem; color: var(— —accent2); margin-bottom: 0.3rem; }
+  .arch-card p { font-size: 0.85rem; color: var(— —text2); }
+  .arch-card .tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+    font-weight: 600;
+  }
+  .tag-automation { background: rgba(99,102,241,0.15); color: var(— —accent2); }
+  .tag-memory { background: rgba(34,197,94,0.15); color: var(— —green); }
+  .tag-skill { background: rgba(6,182,212,0.15); color: var(— —cyan); }
+  .tag-eval { background: rgba(239,68,68,0.15); color: var(— —red); }
+  .tag-agent { background: rgba(168,85,247,0.15); color: var(— —purple); }
+
+  /* ===== LOOP VISUAL ===== */
+  .loop-steps {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 2rem 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .loop-step {
+    flex: 1;
+    min-width: 140px;
+    max-width: 200px;
+    background: var(— —surface);
+    border: 1px solid var(— —border);
+    padding: 1.2rem 1rem;
+    text-align: center;
+    position: relative;
+    transition: all 0.3s;
+  }
+  .loop-step:first-child { border-radius: 12px 0 0 12px; }
+  .loop-step:last-child { border-radius: 0 12px 12px 0; }
+  .loop-step:hover { border-color: var(— —accent); background: var(— —surface2); }
+  .loop-step .step-num {
+    display: inline-block;
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: var(— —accent);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    line-height: 28px;
+    margin-bottom: 0.5rem;
+  }
+  .loop-step h4 { font-size: 0.9rem; margin-bottom: 0.3rem; }
+  .loop-step p { font-size: 0.75rem; color: var(— —text2); }
+  .loop-arrow {
+    display: flex;
+    align-items: center;
+    color: var(— —accent);
+    font-size: 1.2rem;
+    padding: 0 0.2rem;
+  }
+
+  /* ===== PHASE DETAIL ===== */
+  .phases {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  .phase {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  .phase-badge {
+    width: 100px; height: 100px;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    font-weight: 700;
+    position: sticky;
+    top: 80px;
+  }
+  .phase-badge .num { font-size: 2rem; }
+  .phase-badge .name { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+  .phase-content {
+    background: var(— —surface);
+    border: 1px solid var(— —border);
+    border-radius: 12px;
+    padding: 1.5rem;
+  }
+  .phase-content h4 { font-size: 1.1rem; margin-bottom: 0.8rem; }
+  .phase-content p { font-size: 0.9rem; color: var(— —text2); margin-bottom: 0.8rem; }
+  .phase-content ul {
+    list-style: none;
+    padding: 0;
+  }
+  .phase-content li {
+    font-size: 0.85rem;
+    color: var(— —text2);
+    padding: 0.4rem 0;
+    padding-left: 1.5rem;
+    position: relative;
+  }
+  .phase-content li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(— —accent);
+  }
+  .gate {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    background: rgba(245,158,11,0.08);
+    border: 1px dashed var(— —amber);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    margin-top: 1rem;
+  }
+  .gate-icon { font-size: 1.3rem; }
+  .gate-text { font-size: 0.85rem; color: var(— —amber); }
+  .gate-action { font-size: 0.75rem; color: var(— —text2); }
+
+  /* ===== EVOLUTION ===== */
+  .evo-timeline {
+    position: relative;
+    padding-left: 2rem;
+    margin-top: 2rem;
+  }
+  .evo-timeline::before {
+    content: '';
+    position: absolute;
+    left: 8px; top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(— —accent), var(— —green), var(— —cyan));
+  }
+  .evo-item {
+    position: relative;
+    margin-bottom: 2rem;
+    padding-left: 1.5rem;
+  }
+  .evo-item::before {
+    content: '';
+    position: absolute;
+    left: -2rem; top: 6px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(— —accent);
+    border: 3px solid var(— —bg);
+  }
+  .evo-item h4 { font-size: 1rem; color: var(— —accent2); }
+  .evo-item p { font-size: 0.85rem; color: var(— —text2); }
+  .evo-item .meta { font-size: 0.75rem; color: var(— —text2); margin-top: 0.3rem; }
+
+  /* ===== FEEDBACK LOOP DIAGRAM ===== */
+  .fb-diagram {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    margin: 2rem 0;
+  }
+  .fb-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .fb-box {
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    border: 1px solid var(— —border);
+    background: var(— —surface);
+    text-align: center;
+    min-width: 130px;
+  }
+  .fb-box h5 { font-size: 0.85rem; margin-bottom: 0.3rem; }
+  .fb-box p { font-size: 0.75rem; color: var(— —text2); }
+  .fb-arrow-h { color: var(— —accent); font-size: 1.5rem; }
+  .fb-arrow-v { color: var(— —accent); font-size: 1.5rem; }
+  .fb-loop-back {
+    color: var(— —red);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.5rem 1rem;
+    border: 1px dashed var(— —red);
+    border-radius: 8px;
+    background: rgba(239,68,68,0.05);
+  }
+
+  /* ===== COMPARISON TABLE ===== */
+  .compare-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 2rem;
+    font-size: 0.85rem;
+  }
+  .compare-table th {
+    text-align: left;
+    padding: 0.8rem 1rem;
+    background: var(— —surface);
+    border-bottom: 2px solid var(— —accent);
+    color: var(— —accent2);
+    font-weight: 600;
+  }
+  .compare-table td {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(— —border);
+    color: var(— —text2);
+  }
+  .compare-table tr:hover td { background: var(— —surface2); }
+
+  /* ===== DIVIDER ===== */
+  .divider {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(— —border), transparent);
+    margin: 3rem 0;
+  }
+
+  /* ===== FOOTER ===== */
+  footer {
+    text-align: center;
+    padding: 3rem 2rem;
+    color: var(— —text2);
+    font-size: 0.8rem;
+    border-top: 1px solid var(— —border);
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .phase { grid-template-columns: 1fr; }
+    .phase-badge { position: static; width: 100%; height: auto; flex-direction: row; gap: 0.5rem; padding: 1rem; }
+    .loop-steps { flex-direction: column; }
+    .loop-step { max-width: 100%; border-radius: 12px !important; }
+    .loop-arrow { transform: rotate(90deg); }
+  }
+
+  /* ===== CODE BLOCK ===== */
+  .code {
+    background: #0d1117;
+    border: 1px solid var(— —border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
+    color: #c9d1d9;
+    overflow-x: auto;
+    margin: 1rem 0;
+  }
+  .code .comment { color: #8b949e; }
+  .code .key { color: #79c0ff; }
+  .code .val { color: #a5d6ff; }
+
+  /* ===== HIGHLIGHT BOX ===== */
+  .highlight {
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(34,197,94,0.08));
+    border: 1px solid var(— —accent);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 2rem 0;
+  }
+  .highlight h4 { color: var(— —accent2); margin-bottom: 0.5rem; }
+  .highlight p { font-size: 0.9rem; color: var(— —text2); }
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+
+&lt;!— — NAV — —&gt;
+&lt;nav class="nav" id="nav"&gt;
+  &lt;a href="#overview"&gt;개요&lt;/a&gt;
+  &lt;a href="#architecture"&gt;6가지 부품&lt;/a&gt;
+  &lt;a href="#loop"&gt;루프 구조&lt;/a&gt;
+  &lt;a href="#phases"&gt;5-Phase 파이프라인&lt;/a&gt;
+  &lt;a href="#feedback"&gt;피드백 루프&lt;/a&gt;
+  &lt;a href="#evolution"&gt;진화 구조&lt;/a&gt;
+  &lt;a href="#example"&gt;삼체 만화 적용&lt;/a&gt;
+  &lt;a href="#comparison"&gt;루프 vs 기존&lt;/a&gt;
+  &lt;a href="#implementation"&gt;구현 계획&lt;/a&gt;
+&lt;/nav&gt;
+
+&lt;!— — HERO — —&gt;
+&lt;header class="hero" id="top"&gt;
+  &lt;h1&gt; 창의적 루프 엔지니어링 시스템&lt;/h1&gt;
+  &lt;p class="subtitle"&gt;프롬프트를 짜는 게 아니라 시스템을 짜는 시대.&lt;br&gt;선택 몇 개로 창의적 결과물이 자동으로 만들어지는 진화형 파이프라인.&lt;/p&gt;
+  &lt;p class="quote"&gt;
+    "루프 엔지니어링이란, 에이전트에게 프롬프트를 쓰는 사람 자리에서 당신을 빼내는 것이다.&lt;br&gt;대신 그 일을 해줄 시스템을 당신이 설계한다."&lt;br&gt;— Addy Osmani
+  &lt;/p&gt;
+&lt;/header&gt;
+
+&lt;!— — 1. OVERVIEW — —&gt;
+&lt;section id="overview"&gt;
+  &lt;h2&gt;📋 시스템 개요&lt;/h2&gt;
+  &lt;p class="desc"&gt;
+    이 문서는 "주제·화풍·분위기를 선택하면 중간 피드백 게이트를 거치며 점진적으로 완성되는 창의적 산출물 파이프라인"의 전체 설계도입니다.
+    기반은 Addy Osmani의 Loop Engineering 6가지 부품 + 기존 랄프톤 생태계의 Phase Split 구조를 통합합니다.
+  &lt;/p&gt;
+
+  &lt;div class="diagram"&gt;
+    &lt;div class="diagram-title"&gt;SYSTEM ARCHITECTURE — 전체 시스템 구조도&lt;/div&gt;
+    &lt;svg viewBox="0 0 1000 520" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;"&gt;
+      &lt;!— — Background — —&gt;
+      &lt;defs&gt;
+        &lt;linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%"&gt;
+          &lt;stop offset="0%" style="stop-color:#111827"/&gt;
+          &lt;stop offset="100%" style="stop-color:#1a2235"/&gt;
+        &lt;/linearGradient&gt;
+        &lt;filter id="glow"&gt;
+          &lt;feGaussianBlur stdDeviation="3" result="blur"/&gt;
+          &lt;feComposite in="SourceGraphic" in2="blur" operator="over"/&gt;
+        &lt;/filter&gt;
+      &lt;/defs&gt;
+
+      &lt;!— — Human Input Box — —&gt;
+      &lt;rect x="30" y="30" width="200" height="120" rx="12" fill="#1e293b" stroke="#6366f1" stroke-width="2"/&gt;
+      &lt;text x="130" y="60" text-anchor="middle" fill="#818cf8" font-size="14" font-weight="700"&gt;👤 주인님 (감독관)&lt;/text&gt;
+      &lt;text x="130" y="82" text-anchor="middle" fill="#94a3b8" font-size="11"&gt;주제 · 화풍 · 분위기&lt;/text&gt;
+      &lt;text x="130" y="100" text-anchor="middle" fill="#94a3b8" font-size="11"&gt;포맷 · 해상도 · 타겟&lt;/text&gt;
+      &lt;text x="130" y="118" text-anchor="middle" fill="#94a3b8" font-size="11"&gt;참고 이미지&lt;/text&gt;
+
+      &lt;!— — Arrow from Human — —&gt;
+      &lt;line x1="230" y1="90" x2="290" y2="90" stroke="#6366f1" stroke-width="2" marker-end="url(#arrow)"/&gt;
+      &lt;text x="260" y="80" text-anchor="middle" fill="#6366f1" font-size="9"&gt;설정&lt;/text&gt;
+
+      &lt;!— — Main Pipeline — —&gt;
+      &lt;rect x="290" y="20" width="420" height="480" rx="16" fill="url(#bgGrad)" stroke="#334155" stroke-width="1" stroke-dasharray="5,5"/&gt;
+      &lt;text x="500" y="45" text-anchor="middle" fill="#6366f1" font-size="13" font-weight="700"&gt;Creative Loop Engine&lt;/text&gt;
+
+      &lt;!— — Phase 1: Define — —&gt;
+      &lt;rect x="310" y="60" width="380" height="55" rx="8" fill="#1e293b" stroke="#6366f1" stroke-width="1.5"/&gt;
+      &lt;text x="325" y="83" fill="#818cf8" font-size="11" font-weight="600"&gt;① DEFINE&lt;/text&gt;
+      &lt;text x="325" y="100" fill="#94a3b8" font-size="10"&gt;PRD 자동 생성 · 캐릭터 설정 · 스타일 가이드&lt;/text&gt;
+
+      &lt;!— — Gate 1 — —&gt;
+      &lt;rect x="335" y="120" width="80" height="22" rx="4" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" stroke-width="1"/&gt;
+      &lt;text x="375" y="135" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="600"&gt;GATE ✋&lt;/text&gt;
+
+      &lt;!— — Phase 2: Sample — —&gt;
+      &lt;rect x="310" y="150" width="380" height="55" rx="8" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/&gt;
+      &lt;text x="325" y="173" fill="#06b6d4" font-size="11" font-weight="600"&gt;② SAMPLE&lt;/text&gt;
+      &lt;text x="325" y="190" fill="#94a3b8" font-size="10"&gt;대표 캐릭터/장면 샘플 3종 생성 · 화풍 확정&lt;/text&gt;
+
+      &lt;!— — Gate 2 — —&gt;
+      &lt;rect x="335" y="210" width="80" height="22" rx="4" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" stroke-width="1"/&gt;
+      &lt;text x="375" y="225" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="600"&gt;GATE ✋&lt;/text&gt;
+
+      &lt;!— — Phase 3: Produce — —&gt;
+      &lt;rect x="310" y="240" width="380" height="55" rx="8" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/&gt;
+      &lt;text x="325" y="263" fill="#22c55e" font-size="11" font-weight="600"&gt;③ PRODUCE&lt;/text&gt;
+      &lt;text x="325" y="280" fill="#94a3b8" font-size="10"&gt;전체 컷 생성 (서브에이전트 병렬) · 중간 체크포인트&lt;/text&gt;
+
+      &lt;!— — Gate 3 — —&gt;
+      &lt;rect x="335" y="300" width="80" height="22" rx="4" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" stroke-width="1"/&gt;
+      &lt;text x="375" y="315" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="600"&gt;GATE ✋&lt;/text&gt;
+
+      &lt;!— — Phase 4: Refine — —&gt;
+      &lt;rect x="310" y="330" width="380" height="55" rx="8" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/&gt;
+      &lt;text x="325" y="353" fill="#a855f7" font-size="11" font-weight="600"&gt;④ REFINE&lt;/text&gt;
+      &lt;text x="325" y="370" fill="#94a3b8" font-size="10"&gt;피드백 반영 수정 · Critic 평가 · v(N+1) 생성&lt;/text&gt;
+
+      &lt;!— — Gate 4 — —&gt;
+      &lt;rect x="335" y="390" width="80" height="22" rx="4" fill="rgba(245,158,11,0.15)" stroke="#f59e0b" stroke-width="1"/&gt;
+      &lt;text x="375" y="405" text-anchor="middle" fill="#f59e0b" font-size="9" font-weight="600"&gt;GATE ✋&lt;/text&gt;
+
+      &lt;!— — Phase 5: Deliver — —&gt;
+      &lt;rect x="310" y="420" width="380" height="55" rx="8" fill="#1e293b" stroke="#ec4899" stroke-width="1.5"/&gt;
+      &lt;text x="325" y="443" fill="#ec4899" font-size="11" font-weight="600"&gt;⑤ DELIVER&lt;/text&gt;
+      &lt;text x="325" y="460" fill="#94a3b8" font-size="10"&gt;최종 산출물 + 메타데이터 + 진화 기록&lt;/text&gt;
+
+      &lt;!— — Refinement Loop Arrow — —&gt;
+      &lt;path d="M 690 355 Q 720 355 720 300 L 720 175 Q 720 150 695 150" fill="none" stroke="#ef4444" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowRed)"/&gt;
+      &lt;text x="735" y="260" fill="#ef4444" font-size="9" transform="rotate(-90, 735, 260)"&gt;재시도 루프&lt;/text&gt;
+
+      &lt;!— — Sub-Agent Box — —&gt;
+      &lt;rect x="750" y="140" width="220" height="180" rx="12" fill="#1e293b" stroke="#a855f7" stroke-width="1.5"/&gt;
+      &lt;text x="860" y="165" text-anchor="middle" fill="#a855f7" font-size="12" font-weight="700"&gt;🤖 서브에이전트&lt;/text&gt;
+
+      &lt;rect x="765" y="180" width="90" height="35" rx="6" fill="#334155"/&gt;
+      &lt;text x="810" y="195" text-anchor="middle" fill="#22c55e" font-size="10"&gt;Writer&lt;/text&gt;
+      &lt;text x="810" y="208" text-anchor="middle" fill="#94a3b8" font-size="8"&gt;생성&lt;/text&gt;
+
+      &lt;rect x="865" y="180" width="90" height="35" rx="6" fill="#334155"/&gt;
+      &lt;text x="910" y="195" text-anchor="middle" fill="#ef4444" font-size="10"&gt;Evaluator&lt;/text&gt;
+      &lt;text x="910" y="208" text-anchor="middle" fill="#94a3b8" font-size="8"&gt;평가&lt;/text&gt;
+
+      &lt;rect x="765" y="225" width="90" height="35" rx="6" fill="#334155"/&gt;
+      &lt;text x="810" y="240" text-anchor="middle" fill="#f59e0b" font-size="10"&gt;Critic&lt;/text&gt;
+      &lt;text x="810" y="253" text-anchor="middle" fill="#94a3b8" font-size="8"&gt;비판&lt;/text&gt;
+
+      &lt;rect x="865" y="225" width="90" height="35" rx="6" fill="#334155"/&gt;
+      &lt;text x="910" y="240" text-anchor="middle" fill="#06b6d4" font-size="10"&gt;Researcher&lt;/text&gt;
+      &lt;text x="910" y="253" text-anchor="middle" fill="#94a3b8" font-size="8"&gt;조사&lt;/text&gt;
+
+      &lt;rect x="765" y="270" width="190" height="30" rx="6" fill="#334155"/&gt;
+      &lt;text x="860" y="289" text-anchor="middle" fill="#94a3b8" font-size="9"&gt;Planner (설계 + 오케스트레이션)&lt;/text&gt;
+
+      &lt;!— — Output Box — —&gt;
+      &lt;rect x="750" y="380" width="220" height="100" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/&gt;
+      &lt;text x="860" y="405" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="700"&gt;📦 산출물&lt;/text&gt;
+      &lt;text x="770" y="430" fill="#94a3b8" font-size="10"&gt;• 이미지/만화/디자인&lt;/text&gt;
+      &lt;text x="770" y="448" fill="#94a3b8" font-size="10"&gt;• 메타데이터 (어떤 선택이 왜 좋았는지)&lt;/text&gt;
+      &lt;text x="770" y="466" fill="#94a3b8" font-size="10"&gt;• 진화 로그 (v1→v2→... 변경 이력)&lt;/text&gt;
+
+      &lt;!— — State File Box — —&gt;
+      &lt;rect x="30" y="200" width="200" height="140" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="1.5"/&gt;
+      &lt;text x="130" y="225" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="700"&gt;💾 상태 파일&lt;/text&gt;
+      &lt;text x="50" y="250" fill="#94a3b8" font-size="10"&gt;config.json — 설정&lt;/text&gt;
+      &lt;text x="50" y="268" fill="#94a3b8" font-size="10"&gt;progress.md — 진행 상태&lt;/text&gt;
+      &lt;text x="50" y="286" fill="#94a3b8" font-size="10"&gt;feedback.md — 피드백 기록&lt;/text&gt;
+      &lt;text x="50" y="304" fill="#94a3b8" font-size="10"&gt;evolution.md — 진화 로그&lt;/text&gt;
+      &lt;text x="50" y="322" fill="#94a3b8" font-size="10"&gt;scores.json — 평가 점수&lt;/text&gt;
+
+      &lt;!— — Arrow from State — —&gt;
+      &lt;line x1="230" y1="270" x2="290" y2="270" stroke="#22c55e" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowGreen)"/&gt;
+
+      &lt;!— — Skill File Box — —&gt;
+      &lt;rect x="30" y="380" width="200" height="100" rx="12" fill="#1e293b" stroke="#06b6d4" stroke-width="1.5"/&gt;
+      &lt;text x="130" y="405" text-anchor="middle" fill="#06b6d4" font-size="12" font-weight="700"&gt;📜 SKILL.md&lt;/text&gt;
+      &lt;text x="50" y="430" fill="#94a3b8" font-size="10"&gt;• 프로젝트 인수인계 노트&lt;/text&gt;
+      &lt;text x="50" y="448" fill="#94a3b8" font-size="10"&gt;• 화풍 가이드 · 프롬프트 템플릿&lt;/text&gt;
+      &lt;text x="50" y="466" fill="#94a3b8" font-size="10"&gt;• 평가 기준 · 품질 체크리스트&lt;/text&gt;
+
+      &lt;!— — Arrow from Skill — —&gt;
+      &lt;line x1="230" y1="430" x2="290" y2="430" stroke="#06b6d4" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowCyan)"/&gt;
+
+      &lt;!— — Arrow markers — —&gt;
+      &lt;defs&gt;
+        &lt;marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"&gt;
+          &lt;path d="M 0 0 L 10 5 L 0 10 z" fill="#6366f1"/&gt;
+        &lt;/marker&gt;
+        &lt;marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"&gt;
+          &lt;path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/&gt;
+        &lt;/marker&gt;
+        &lt;marker id="arrowGreen" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"&gt;
+          &lt;path d="M 0 0 L 10 5 L 0 10 z" fill="#22c55e"/&gt;
+        &lt;/marker&gt;
+        &lt;marker id="arrowCyan" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"&gt;
+          &lt;path d="M 0 0 L 10 5 L 0 10 z" fill="#06b6d4"/&gt;
+        &lt;/marker&gt;
+      &lt;/defs&gt;
+    &lt;/svg&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+
+&lt;div class="divider"&gt;&lt;/div&gt;
+
+&lt;!— — 2. ARCHITECTURE — 6 PARTS — —&gt;
+&lt;section id="architecture"&gt;
+  &lt;h2&gt;🧩 루프의 6가지 부품&lt;/h2&gt;
+  &lt;p class="desc"&gt;
+    Addy Osmani가 정의한 루프 엔지니어링의 핵심 부품 5개 + 기억장치 1개를 창의적 파이프라인에 맞게 적용합니다.
+  &lt;/p&gt;
+
+  &lt;div class="arch-grid"&gt;
+    &lt;div class="arch-card"&gt;
+      &lt;div class="icon"&gt;⏰&lt;/div&gt;
+      &lt;h4&gt;① 오토메이션&lt;/h4&gt;
+      &lt;p&gt;정해진 조건에서 루프를 자동 시작. 주기 반복(cron), 조건 만족까지(goal), 이벤트 트리거(hooks)&lt;/p&gt;
+      &lt;span class="tag tag-automation"&gt;자동 시작&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class="arch-card"&gt;
+      &lt;div class="icon"&gt;🌳&lt;/div&gt;
+      &lt;h4&gt;② 워크트리&lt;/h4&gt;
+      &lt;p&gt;버전별로 독립 작업 폴더 생성. v1/v2/v3가 충돌 없이 병렬 작업 가능&lt;/p&gt;
+      &lt;span class="tag tag-automation"&gt;격리&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class="arch-card"&gt;
+      &lt;div class="icon"&gt;📜&lt;/div&gt;
+      &lt;h4&gt;③ 스킬 (SKILL.md)&lt;/h4&gt;
+      &lt;p&gt;프로젝트 지식을 파일에 적어두고 AI가 매 작업마다 읽고 시작. 인수인계 노트&lt;/p&gt;
+      &lt;span class="tag tag-skill"&gt;재사용&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class="arch-card"&gt;
+      &lt;div class="icon"&gt;🔌&lt;/div&gt;
+      &lt;h4&gt;④ 커넥터&lt;/h4&gt;
+      &lt;p&gt;외부 도구 연결. GitHub, 이미지 API, 프롬프트 모델, 배포 파이프라인&lt;/p&gt;
+      &lt;span class="tag tag-skill"&gt;손발&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class="arch-card"&gt;
+      &lt;div class="icon"&gt;🤖&lt;/div&gt;
+      &lt;h4&gt;⑤ 서브에이전트&lt;/h4&gt;
+      &lt;p&gt;만드는 AI와 검사하는 AI를 분리. 자기 채점 후한 편향을 독립 평가로 보정&lt;/p&gt;
+      &lt;span class="tag tag-eval"&gt;검증&lt;/span&gt;
+    &lt;/div&gt;
+    &lt;div class="arch-card"&gt;
+      &lt;div class="icon"&gt;💾&lt;/div&gt;
+      &lt;h4&gt;⑥ 상태 파일 (기억)&lt;/h4&gt;
+      &lt;p&gt;에이전트는 잊어도 저장소는 잊지 않는다. 진행/피드백/평가/진화를 디스크에 기록&lt;/p&gt;
+      &lt;span class="tag tag-memory"&gt;기억&lt;/span&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class="highlight"&gt;
+    &lt;h4&gt;💡 창의적 파이프라인에의 적용&lt;/h4&gt;
+    &lt;p&gt;이 6가지 부품을 창의적 작업(만화, 일러스트, 디자인 등)에 맞게 재조합합니다. 코드가 아니라 콘텐츠를 만들지만, "발견→분류→수정→검증"의 루프 구조는 동일합니다.&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+
+&lt;div class="divider"&gt;&lt;/div&gt;
+
+&lt;!— — 3. LOOP STRUCTURE — —&gt;
+&lt;section id="loop"&gt;
+  &lt;h2&gt;🔄 루프 구조 — 한 바퀴의 4단계&lt;/h2&gt;
+  &lt;p class="desc"&gt;
+    하나의 루프는 발견→분류→수정→검증 네 동작으로 압축됩니다. 각 단계 끝에 자동/수동 피드백 게이트가 있습니다.
+  &lt;/p&gt;
+
+  &lt;div class="diagram"&gt;
+    &lt;div class="diagram-title"&gt;LOOP CYCLE — 루프 한 바퀴&lt;/div&gt;
+    &lt;svg viewBox="0 0 800 320" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;"&gt;
+      &lt;!— — Central Loop — —&gt;
+      &lt;circle cx="400" cy="160" r="120" fill="none" stroke="#334155" stroke-width="2" stroke-dasharray="8,4"/&gt;
+
+      &lt;!— — Discover — —&gt;
+      &lt;circle cx="400" cy="40" r="40" fill="#1e293b" stroke="#6366f1" stroke-width="2"/&gt;
+      &lt;text x="400" y="37" text-anchor="middle" fill="#818cf8" font-size="11" font-weight="700"&gt;🔍&lt;/text&gt;
+      &lt;text x="400" y="52" text-anchor="middle" fill="#818cf8" font-size="9"&gt;발견&lt;/text&gt;
+
+      &lt;!— — Triage — —&gt;
+      &lt;circle cx="520" cy="160" r="40" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/&gt;
+      &lt;text x="520" y="157" text-anchor="middle" fill="#06b6d4" font-size="11" font-weight="700"&gt;📋&lt;/text&gt;
+      &lt;text x="520" y="172" text-anchor="middle" fill="#06b6d4" font-size="9"&gt;분류&lt;/text&gt;
+
+      &lt;!— — Modify — —&gt;
+      &lt;circle cx="400" cy="280" r="40" fill="#1e293b" stroke="#22c55e" stroke-width="2"/&gt;
+      &lt;text x="400" y="277" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="700"&gt;✏️&lt;/text&gt;
+      &lt;text x="400" y="292" text-anchor="middle" fill="#22c55e" font-size="9"&gt;수정&lt;/text&gt;
+
+      &lt;!— — Verify — —&gt;
+      &lt;circle cx="280" cy="160" r="40" fill="#1e293b" stroke="#ef4444" stroke-width="2"/&gt;
+      &lt;text x="280" y="157" text-anchor="middle" fill="#ef4444" font-size="11" font-weight="700"&gt;✅&lt;/text&gt;
+      &lt;text x="280" y="172" text-anchor="middle" fill="#ef4444" font-size="9"&gt;검증&lt;/text&gt;
+
+      &lt;!— — Arrows — —&gt;
+      &lt;path d="M 435 55 Q 490 90 505 125" fill="none" stroke="#6366f1" stroke-width="1.5" marker-end="url(#loopArrow)"/&gt;
+      &lt;path d="M 510 200 Q 490 250 435 265" fill="none" stroke="#06b6d4" stroke-width="1.5" marker-end="url(#loopArrow)"/&gt;
+      &lt;path d="M 365 265 Q 310 250 290 200" fill="none" stroke="#22c55e" stroke-width="1.5" marker-end="url(#loopArrow)"/&gt;
+      &lt;path d="M 295 125 Q 310 90 365 55" fill="none" stroke="#ef4444" stroke-width="1.5" marker-end="url(#loopArrow)"/&gt;
+
+      &lt;!— — Rejection Loop — —&gt;
+      &lt;path d="M 340 280 Q 200 280 180 200 Q 160 130 200 70 Q 240 30 360 35" fill="none" stroke="#ef4444" stroke-width="1" stroke-dasharray="4,3" marker-end="url(#arrowRed)"/&gt;
+      &lt;text x="170" y="170" fill="#ef4444" font-size="9" transform="rotate(-90,170,170)"&gt;불통과 → 재시도&lt;/text&gt;
+
+      &lt;!— — Center Text — —&gt;
+      &lt;text x="400" y="155" text-anchor="middle" fill="#94a3b8" font-size="10"&gt;진화 카운터&lt;/text&gt;
+      &lt;text x="400" y="175" text-anchor="middle" fill="#818cf8" font-size="16" font-weight="700"&gt;vN&lt;/text&gt;
+
+      &lt;!— — Side Labels — —&gt;
+      &lt;text x="600" y="60" fill="#94a3b8" font-size="10"&gt;① 발견&lt;/text&gt;
+      &lt;text x="600" y="75" fill="#64748b" font-size="9"&gt;주제 분석 · 참고 수집 · 스타일 리서치&lt;/text&gt;
+
+      &lt;text x="600" y="120" fill="#94a3b8" font-size="10"&gt;② 분류&lt;/text&gt;
+      &lt;text x="600" y="135" fill="#64748b" font-size="9"&gt;프롬프트 설계 · 생성 계획 · 우선순위&lt;/text&gt;
+
+      &lt;text x="600" y="200" fill="#94a3b8" font-size="10"&gt;③ 수정&lt;/text&gt;
+      &lt;text x="600" y="215" fill="#64748b" font-size="9"&gt;이미지/콘텐츠 생성 · 피드백 반영&lt;/text&gt;
+
+      &lt;text x="600" y="270" fill="#94a3b8" font-size="10"&gt;④ 검증&lt;/text&gt;
+      &lt;text x="600" y="285" fill="#64748b" font-size="9"&gt;Critic 평가 · 품질 점수 · 승인/거부&lt;/text&gt;
+
+      &lt;defs&gt;
+        &lt;marker id="loopArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"&gt;
+          &lt;path d="M 0 0 L 10 5 L 0 10 z" fill="#64748b"/&gt;
+        &lt;/marker&gt;
+      &lt;/defs&gt;
+    &lt;/svg&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+
+&lt;div class="divider"&gt;&lt;/div&gt;
+
+&lt;!— — 4. 5-PHASE PIPELINE — —&gt;
+&lt;section id="phases"&gt;
+  &lt;h2&gt;📊 5-Phase 창의적 파이프라인&lt;/h2&gt;
+  &lt;p class="desc"&gt;
+    루프의 4단계를 실제 창의적 작업에 맞게 5개 Phase로 확장합니다. 각 Phase 끝에 피드백 게이트(✋)가 있어 주인님이 검토할 수 있습니다.
+  &lt;/p&gt;
+
+  &lt;div class="diagram"&gt;
+    &lt;div class="diagram-title"&gt;PHASE DETAIL — 각 Phase의 입력/출력/게이트&lt;/div&gt;
+
+    &lt;div class="loop-steps"&gt;
+      &lt;div class="loop-step" style="border-color: var(— —accent);"&gt;
+        &lt;div class="step-num"&gt;1&lt;/div&gt;
+        &lt;h4 style="color:var(— —accent2)"&gt;DEFINE&lt;/h4&gt;
+        &lt;p&gt;설계 단계&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div class="loop-arrow"&gt;→&lt;/div&gt;
+      &lt;div class="loop-step" style="border-color: var(— —cyan);"&gt;
+        &lt;div class="step-num" style="background:var(— —cyan)"&gt;2&lt;/div&gt;
+        &lt;h4 style="color:var(— —cyan)"&gt;SAMPLE&lt;/h4&gt;
+        &lt;p&gt;샘플 생성&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div class="loop-arrow"&gt;→&lt;/div&gt;
+      &lt;div class="loop-step" style="border-color: var(— —green);"&gt;
+        &lt;div class="step-num" style="background:var(— —green)"&gt;3&lt;/div&gt;
+        &lt;h4 style="color:var(— —green)"&gt;PRODUCE&lt;/h4&gt;
+        &lt;p&gt;전체 생성&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div class="loop-arrow"&gt;→&lt;/div&gt;
+      &lt;div class="loop-step" style="border-color: var(— —purple);"&gt;
+        &lt;div class="step-num" style="background:var(— —purple)"&gt;4&lt;/div&gt;
+        &lt;h4 style="color:var(— —purple)"&gt;REFINE&lt;/h4&gt;
+        &lt;p&gt;수정·진화&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div class="loop-arrow"&gt;→&lt;/div&gt;
+      &lt;div class="loop-step" style="border-color: var(— —pink);"&gt;
+        &lt;div class="step-num" style="background:var(— —pink)"&gt;5&lt;/div&gt;
+        &lt;h4 style="color:var(— —pink)"&gt;DELIVER&lt;/h4&gt;
+        &lt;p&gt;최종 산출&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class="phases"&gt;
+    &lt;!— — Phase 1 — —&gt;
+    &lt;div class="phase"&gt;
+      &lt;div class="phase-badge" style="background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(99,102,241,0.05)); border:2px solid var(— —accent);"&gt;
+        &lt;span class="num" style="color:var(— —accent2)"&gt;1&lt;/span&gt;
+        &lt;span class="name" style="color:var(— —accent2)"&gt;DEFINE&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div class="phase-content" style="border-color: var(— —accent);"&gt;
+        &lt;h4&gt;📋 기획 &amp; 설계&lt;/h4&gt;
+        &lt;p&gt;주인님이 선택한 주제/화풍/분위기를 바탕으로 PRD를 자동 생성합니다.&lt;/p&gt;
+        &lt;ul&gt;
+          &lt;li&gt;주인님 입력: 주제, 소제목, 화풍, 분위기, 포맷, 해상도&lt;/li&gt;
+          &lt;li&gt;Planner 서브에이전트가 PRD 자동 생성&lt;/li&gt;
+          &lt;li&gt;Researcher가 참고 자료·스타일 리서치&lt;/li&gt;
+          &lt;li&gt;캐릭터 설정 시트, 화풍 가이드, 프롬프트 템플릿 생성&lt;/li&gt;
+          &lt;li&gt;출력: &lt;code&gt;config.json&lt;/code&gt; + &lt;code&gt;PRD.md&lt;/code&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;div class="gate"&gt;
+          &lt;span class="gate-icon"&gt;✋&lt;/span&gt;
+          &lt;div&gt;
+            &lt;div class="gate-text"&gt;게이트 1: 기획 승인&lt;/div&gt;
+            &lt;div class="gate-action"&gt;주인님이 PRD 확인 → 수정/승인&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!— — Phase 2 — —&gt;
+    &lt;div class="phase"&gt;
+      &lt;div class="phase-badge" style="background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(6,182,212,0.05)); border:2px solid var(— —cyan);"&gt;
+        &lt;span class="num" style="color:var(— —cyan)"&gt;2&lt;/span&gt;
+        &lt;span class="name" style="color:var(— —cyan)"&gt;SAMPLE&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div class="phase-content" style="border-color: var(— —cyan);"&gt;
+        &lt;h4&gt;🎨 샘플 생성 &amp; 화풍 확정&lt;/h4&gt;
+        &lt;p&gt;대표 장면 3~5종을 샘플로 생성합니다. 화풀이 확정되는 단계입니다.&lt;/p&gt;
+        &lt;ul&gt;
+          &lt;li&gt;Writer가 프롬프트 생성 → 이미지 API로 샘플 생성&lt;/li&gt;
+          &lt;li&gt;서로 다른 화풍/구도/빛 조건으로 A/B/C 버전 생성&lt;/li&gt;
+          &lt;li&gt;캐릭터 시트 기반으로 주요 캐릭터 샘플&lt;/li&gt;
+          &lt;li&gt;배경, 분위기, 컬러 팔레트 테스트&lt;/li&gt;
+          &lt;li&gt;출력: &lt;code&gt;samples/v1/&lt;/code&gt; (3~5장)&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;div class="gate"&gt;
+          &lt;span class="gate-icon"&gt;✋&lt;/span&gt;
+          &lt;div&gt;
+            &lt;div class="gate-text"&gt;게이트 2: 화풍 &amp; 방향 승인&lt;/div&gt;
+            &lt;div class="gate-action"&gt;"A 버전 좋아" / "B에 C의 색감 섞어" / "다시" → 피드백이 Phase 3 입력으로&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!— — Phase 3 — —&gt;
+    &lt;div class="phase"&gt;
+      &lt;div class="phase-badge" style="background:linear-gradient(135deg,rgba(34,197,94,0.2),rgba(34,197,94,0.05)); border:2px solid var(— —green);"&gt;
+        &lt;span class="num" style="color:var(— —green)"&gt;3&lt;/span&gt;
+        &lt;span class="name" style="color:var(— —green)"&gt;PRODUCE&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div class="phase-content" style="border-color: var(— —green);"&gt;
+        &lt;h4&gt;🏭 전체 컷 생성 (본제작)&lt;/h4&gt;
+        &lt;p&gt;승인된 샘플의 스타일로 전체 컷을 생성합니다. 서브에이전트가 병렬로 작업합니다.&lt;/p&gt;
+        &lt;ul&gt;
+          &lt;li&gt;전체 컷 목록(auto-generated from PRD)을 배치&lt;/li&gt;
+          &lt;li&gt;Writer 서브에이전트: 컷별 프롬프트 생성&lt;/li&gt;
+          &lt;li&gt;이미지 API 병렬 호출 (timeout 관리)&lt;/li&gt;
+          &lt;li&gt;중간 체크포인트: 10컷마다 Evaluator 자동 검토&lt;/li&gt;
+          &lt;li&gt;컷 간 일관성 검사 (캐릭터 얼굴, 색감, 배경)&lt;/li&gt;
+          &lt;li&gt;출력: &lt;code&gt;output/v1/pages/&lt;/code&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;div class="gate"&gt;
+          &lt;span class="gate-icon"&gt;✋&lt;/span&gt;
+          &lt;div&gt;
+            &lt;div class="gate-text"&gt;게이트 3: 중간 검토&lt;/div&gt;
+            &lt;div class="gate-action"&gt;진행 상황 확인 + 방향 수정 가능 / "이거 계속 해" / "방향 바꿔"&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!— — Phase 4 — —&gt;
+    &lt;div class="phase"&gt;
+      &lt;div class="phase-badge" style="background:linear-gradient(135deg,rgba(168,85,247,0.2),rgba(168,85,247,0.05)); border:2px solid var(— —purple);"&gt;
+        &lt;span class="num" style="color:var(— —purple)"&gt;4&lt;/span&gt;
+        &lt;span class="name" style="color:var(— —purple)"&gt;REFINE&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div class="phase-content" style="border-color: var(— —purple);"&gt;
+        &lt;h4&gt;🔧 수정 &amp; 진화&lt;/h4&gt;
+        &lt;p&gt;피드백을 반영하여 v(N+1)을 생성합니다. 이 단계가 루프의 핵심입니다.&lt;/p&gt;
+        &lt;ul&gt;
+          &lt;li&gt;주인님 피드백을 &lt;code&gt;feedback.md&lt;/code&gt;에 기록&lt;/li&gt;
+          &lt;li&gt;Critic 서브에이전트: 현재 버전 비판적 평가&lt;/li&gt;
+          &lt;li&gt;Writer: 피드백 + Critic 분석 → 수정 프롬프트 생성&lt;/li&gt;
+          &lt;li&gt;Evaluator: v(N) vs v(N+1) 비교 평가 → 점수 산출&lt;/li&gt;
+          &lt;li&gt;점수가 기준 미달이면 자동으로 Phase 4 반복 (최대 N회)&lt;/li&gt;
+          &lt;li&gt;출력: &lt;code&gt;output/v2/&lt;/code&gt;, &lt;code&gt;scores.json&lt;/code&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;div class="gate"&gt;
+          &lt;span class="gate-icon"&gt;✋&lt;/span&gt;
+          &lt;div&gt;
+            &lt;div class="gate-text"&gt;게이트 4: 최종 승인&lt;/div&gt;
+            &lt;div class="gate-action"&gt;"이걸로 간다" (DELIVER) / "아직 부족해" (REFINE 루프)&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;!— — Phase 5 — —&gt;
+    &lt;div class="phase"&gt;
+      &lt;div class="phase-badge" style="background:linear-gradient(135deg,rgba(236,72,153,0.2),rgba(236,72,153,0.05)); border:2px solid var(— —pink);"&gt;
+        &lt;span class="num" style="color:var(— —pink)"&gt;5&lt;/span&gt;
+        &lt;span class="name" style="color:var(— —pink)"&gt;DELIVER&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div class="phase-content" style="border-color: var(— —pink);"&gt;
+        &lt;h4&gt;📦 최종 산출 &amp; 메타데이터&lt;/h4&gt;
+        &lt;p&gt;최종 산출물과 함께 "무엇이 좋았는지"를 기록합니다. 다음 프로젝트의 진화 재료가 됩니다.&lt;/p&gt;
+        &lt;ul&gt;
+          &lt;li&gt;최종 이미지/콘텐츠 정리 및 저장&lt;/li&gt;
+          &lt;li&gt;메타데이터 생성: 어떤 선택이 왜 좋았는지&lt;/li&gt;
+          &lt;li&gt;진화 로그: v1→v2→v3 변경 이력 + 이유&lt;/li&gt;
+          &lt;li&gt;평가 요약: Critic/Evaluator 점수 추이&lt;/li&gt;
+          &lt;li&gt;SKILL.md 자동 업데이트 (학습된 패턴 반영)&lt;/li&gt;
+          &lt;li&gt;GitHub 배포 / 웹 게시&lt;/li&gt;
+          &lt;li&gt;출력: &lt;code&gt;output/final/&lt;/code&gt;, &lt;code&gt;evolution.md&lt;/code&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+        &lt;div class="gate" style="border-color:var(— —green); background:rgba(34,197,94,0.08);"&gt;
+          &lt;span class="gate-icon"&gt;✅&lt;/span&gt;
+          &lt;div&gt;
+            &lt;div class="gate-text" style="color:var(— —green)"&gt;완료 — 진화 데이터가 다음 루프의 입력으로&lt;/div&gt;
+            &lt;div class="gate-action"&gt;이번 프로젝트에서 학습한 패턴이 SKILL.md에 누적 → 다음 프로젝트의 품질 기준 상향&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+
+&lt;div class="divider"&gt;&lt;/div&gt;
+
+&lt;!— — 5. FEEDBACK LOOP — —&gt;
+&lt;section id="feedback"&gt;
+  &lt;h2&gt;🔁 피드백 루프 상세&lt;/h2&gt;
+  &lt;p class="desc"&gt;
+    루프의 핵심은 "만드는 AI와 검사하는 AI를 분리"하는 것입니다. Claude가 자기 결과를 후하게 평가하는 경향(self-bias)을 독립 평가자로 보정합니다.
+  &lt;/p&gt;
+
+  &lt;div class="diagram"&gt;
+    &lt;div class="diagram-title"&gt;FEEDBACK LOOP DETAIL — 피드백 게이트 &amp; 재시도 구조&lt;/div&gt;
+
+    &lt;div class="fb-diagram"&gt;
+      &lt;!— — Top: Write — —&gt;
+      &lt;div class="fb-row"&gt;
+        &lt;div class="fb-box" style="border-color:var(— —green);"&gt;
+          &lt;h5 style="color:var(— —green)"&gt;Writer&lt;/h5&gt;
+          &lt;p&gt;프롬프트 생성 → 이미지/콘텐츠 생성&lt;/p&gt;
+        &lt;/div&gt;
+        &lt;span class="fb-arrow-h"&gt;→&lt;/span&gt;
+        &lt;div class="fb-box" style="border-color:var(— —red);"&gt;
+          &lt;h5 style="color:var(— —red)"&gt;Evaluator&lt;/h5&gt;
+          &lt;p&gt;일관성·품질·스타일 준수도 평가&lt;/p&gt;
+        &lt;/div&gt;
+        &lt;span class="fb-arrow-h"&gt;→&lt;/span&gt;
+        &lt;div class="fb-box" style="border-color:var(— —amber);"&gt;
+          &lt;h5 style="color:var(— —amber)"&gt;Critic&lt;/h5&gt;
+          &lt;p&gt;비판적 분석 · 개선점 도출&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;span class="fb-arrow-v"&gt;↓&lt;/span&gt;
+
+      &lt;!— — Middle: Decision — —&gt;
+      &lt;div class="fb-row"&gt;
+        &lt;div class="fb-box" style="border-color:var(— —amber); width:300px;"&gt;
+          &lt;h5 style="color:var(— —amber)"&gt;✋ 피드백 게이트&lt;/h5&gt;
+          &lt;p&gt;점수 ≥ 기준 → 통과 | 점수 &amp;lt; 기준 → 수정 루프&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;span class="fb-arrow-v"&gt;↓&lt;/span&gt;
+
+      &lt;!— — Bottom: Two Paths — —&gt;
+      &lt;div class="fb-row" style="gap:3rem;"&gt;
+        &lt;div style="text-align:center;"&gt;
+          &lt;div class="fb-box" style="border-color:var(— —green); min-width:180px;"&gt;
+            &lt;h5 style="color:var(— —green)"&gt;✅ 통과&lt;/h5&gt;
+            &lt;p&gt;다음 Phase로 진행&lt;/p&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;div style="text-align:center;"&gt;
+          &lt;div class="fb-box" style="border-color:var(— —red); min-width:180px;"&gt;
+            &lt;h5 style="color:var(— —red)"&gt;❌ 불통과&lt;/h5&gt;
+            &lt;p&gt;피드백 + 수정 → 재생성&lt;/p&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+
+      &lt;!— — Loop Back — —&gt;
+      &lt;div class="fb-loop-back" style="margin-top:1rem;"&gt;
+        🔁 불통과 시: feedback.md에 기록 → Writer가 피드백 기반으로 프롬프트 수정 → 재생성 → 다시 Evaluator
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="highlight" style="margin-top:2rem;"&gt;
+      &lt;h4&gt;⚠️ self-bias 보정 데이터 (Addy Osmani 하네스)&lt;/h4&gt;
+      &lt;p&gt;Claude 자기 채점: 9.04 / 독립 평가: 7.43 → 1.6점 차이. 같은 글을 자기가 쓰면 후하게 봅니다. 그래서 &lt;strong&gt;반드시 독립 Evaluator/Critic를 분리&lt;/strong&gt;합니다.&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+
+&lt;div class="divider"&gt;&lt;/div&gt;
+
+&lt;!— — 6. EVOLUTION — —&gt;
+&lt;section id="evolution"&gt;
+  &lt;h2&gt;📈 진화 구조 — 버전이 누적되면서 학습&lt;/h2&gt;
+  &lt;p class="desc"&gt;
+    매 루프마다 생성된 산출물, 피드백, 평가 점수가 상태 파일에 누적됩니다. 프로젝트가 끝나면 이 진화 기록이 SKILL.md에 반영되어 다음 프로젝트의 기준이 됩니다.
+  &lt;/p&gt;
+
+  &lt;div class="diagram"&gt;
+    &lt;div class="diagram-title"&gt;EVOLUTION TIMELINE — 진화가 누적되는 구조&lt;/div&gt;
+    &lt;svg viewBox="0 0 900 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto;"&gt;
+      &lt;!— — Timeline Base — —&gt;
+      &lt;line x1="50" y1="150" x2="850" y2="150" stroke="#334155" stroke-width="2"/&gt;
+
+      &lt;!— — v1 — —&gt;
+      &lt;circle cx="150" cy="150" r="25" fill="#1e293b" stroke="#6366f1" stroke-width="2"/&gt;
+      &lt;text x="150" y="155" text-anchor="middle" fill="#818cf8" font-size="11" font-weight="700"&gt;v1&lt;/text&gt;
+      &lt;text x="150" y="195" text-anchor="middle" fill="#94a3b8" font-size="9"&gt;초안 생성&lt;/text&gt;
+      &lt;text x="150" y="210" text-anchor="middle" fill="#64748b" font-size="8"&gt;Evaluator: 6.5&lt;/text&gt;
+      &lt;!— — v1 output — —&gt;
+      &lt;rect x="115" y="80" width="70" height="35" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/&gt;
+      &lt;text x="150" y="100" text-anchor="middle" fill="#64748b" font-size="8"&gt;28컷&lt;/text&gt;
+
+      &lt;!— — Arrow — —&gt;
+      &lt;line x1="175" y1="150" x2="275" y2="150" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrowRed2)"/&gt;
+      &lt;text x="225" y="140" text-anchor="middle" fill="#ef4444" font-size="8"&gt;feedback.md&lt;/text&gt;
+
+      &lt;!— — v2 — —&gt;
+      &lt;circle cx="300" cy="150" r="25" fill="#1e293b" stroke="#06b6d4" stroke-width="2"/&gt;
+      &lt;text x="300" y="155" text-anchor="middle" fill="#06b6d4" font-size="11" font-weight="700"&gt;v2&lt;/text&gt;
+      &lt;text x="300" y="195" text-anchor="middle" fill="#94a3b8" font-size="9"&gt;색감 수정&lt;/text&gt;
+      &lt;text x="300" y="210" text-anchor="middle" fill="#64748b" font-size="8"&gt;Evaluator: 7.8&lt;/text&gt;
+      &lt;rect x="265" y="80" width="70" height="35" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/&gt;
+      &lt;text x="300" y="100" text-anchor="middle" fill="#64748b" font-size="8"&gt;28컷&lt;/text&gt;
+
+      &lt;!— — Arrow — —&gt;
+      &lt;line x1="325" y1="150" x2="425" y2="150" stroke="#ef4444" stroke-width="1.5" marker-end="url(#arrowRed2)"/&gt;
+      &lt;text x="375" y="140" text-anchor="middle" fill="#ef4444" font-size="8"&gt;feedback.md&lt;/text&gt;
+
+      &lt;!— — v3 — —&gt;
+      &lt;circle cx="450" cy="150" r="25" fill="#1e293b" stroke="#22c55e" stroke-width="2"/&gt;
+      &lt;text x="450" y="155" text-anchor="middle" fill="#22c55e" font-size="11" font-weight="700"&gt;v3&lt;/text&gt;
+      &lt;text x="450" y="195" text-anchor="middle" fill="#94a3b8" font-size="9"&gt;일관성 보정&lt;/text&gt;
+      &lt;text x="450" y="210" text-anchor="middle" fill="#64748b" font-size="8"&gt;Evaluator: 8.5&lt;/text&gt;
+      &lt;rect x="415" y="80" width="70" height="35" rx="6" fill="#1e293b" stroke="#334155" stroke-width="1"/&gt;
+      &lt;text x="450" y="100" text-anchor="middle" fill="#64748b" font-size="8"&gt;28컷&lt;/text&gt;
+
+      &lt;!— — Approved — —&gt;
+      &lt;line x1="475" y1="150" x2="575" y2="150" stroke="#22c55e" stroke-width="2" marker-end="url(#arrowGreen2)"/&gt;
+      &lt;text x="525" y="135" text-anchor="middle" fill="#22c55e" font-size="9" font-weight="600"&gt;✅ 승인&lt;/text&gt;
+
+      &lt;!— — Final — —&gt;
+      &lt;rect x="575" y="120" width="120" height="60" rx="12" fill="#1e293b" stroke="#22c55e" stroke-width="2"/&gt;
+      &lt;text x="635" y="148" text-anchor="middle" fill="#22c55e" font-size="12" font-weight="700"&gt;📦 final&lt;/text&gt;
+      &lt;text x="635" y="166" text-anchor="middle" fill="#94a3b8" font-size="9"&gt;28컷 완성&lt;/text&gt;
+
+      &lt;!— — Evolution Log — —&gt;
+      &lt;rect x="575" y="200" width="250" height="80" rx="10" fill="#1e293b" stroke="#f59e0b" stroke-width="1.5"/&gt;
+      &lt;text x="700" y="220" text-anchor="middle" fill="#f59e0b" font-size="10" font-weight="600"&gt;evolution.md&lt;/text&gt;
+      &lt;text x="590" y="240" fill="#94a3b8" font-size="8"&gt;• v1→v2: 색감 feedback 반영 (+1.3점)&lt;/text&gt;
+      &lt;text x="590" y="255" fill="#94a3b8" font-size="8"&gt;• v2→v3: 캐릭터 일관성 보정 (+0.7점)&lt;/text&gt;
+      &lt;text x="590" y="270" fill="#94a3b8" font-size="8"&gt;• 학습 패턴 → SKILL.md 업데이트&lt;/text&gt;
+
+      &lt;!— — Next Project — —&gt;
+      &lt;line x1="695" y1="280" x2="695" y2="250" stroke="#f59e0b" stroke-width="1.5" marker-end="url(#arrowAmber)"/&gt;
+      &lt;text x="810" y="220" fill="#f59e0b" font-size="9" font-weight="600"&gt;→ 다음 프로젝트에 적용&lt;/text&gt;
+
+      &lt;defs&gt;
+        &lt;marker id="arrowRed2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"&gt;
+          &lt;path d="M 0 0 L 10 5 L 0 10 z" fill="#ef4444"/&gt;
+        &lt;/marker&gt;
+        &lt;marker id="arrowGreen2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"&gt;
+          &lt;path d="M 0 0 L 10 5 L 0 10 z" fill="#22c55e"/&gt;
+        &lt;/marker&gt;
+        &lt;marker id="arrowAmber" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"&gt;
+          &lt;path d="M 0 0 L 10 5 L 0 10 z" fill="#f59e0b"/&gt;
+        &lt;/marker&gt;
+      &lt;/defs&gt;
+    &lt;/svg&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+
+&lt;div class="divider"&gt;&lt;/div&gt;
+
+&lt;!— — 7. EXAMPLE: Three Body — —&gt;
+&lt;section id="example"&gt;
+  &lt;h2&gt;🌌 삼체 만화 EP001에 적용&lt;/h2&gt;
+  &lt;p class="desc"&gt;
+    기존에 수동으로 진행된 삼체 만화 제작 과정을 이 Creative Loop에 맞춰 재구조화합니다.
+  &lt;/p&gt;
+
+  &lt;div class="diagram"&gt;
+    &lt;div class="diagram-title"&gt;THREE BODY COMIC — 적용 예시&lt;/div&gt;
+
+    &lt;div class="code"&gt;
+&lt;span class="comment"&gt;// Phase 1: DEFINE — 주인님 입력 → PRD 자동 생성&lt;/span&gt;
+{
+  &lt;span class="key"&gt;"project"&lt;/span&gt;: &lt;span class="val"&gt;"삼체 만화 EP001"&lt;/span&gt;,
+  &lt;span class="key"&gt;"theme"&lt;/span&gt;: &lt;span class="val"&gt;"문화대혁명 시절의 밤, 과학자들의 선택"&lt;/span&gt;,
+  &lt;span class="key"&gt;"style"&lt;/span&gt;: &lt;span class="val"&gt;"수채화풍, 웹툰 컷 구성"&lt;/span&gt;,
+  &lt;span class="key"&gt;"mood"&lt;/span&gt;: &lt;span class="val"&gt;"긴장감, 미스터리, 클리프행거"&lt;/span&gt;,
+  &lt;span class="key"&gt;"format"&lt;/span&gt;: &lt;span class="val"&gt;"28페이지, 81패널"&lt;/span&gt;,
+  &lt;span class="key"&gt;"characters"&lt;/span&gt;: [&lt;span class="val"&gt;"장베이하이"&lt;/span&gt;, &lt;span class="val"&gt;"왕먀오"&lt;/span&gt;, &lt;span class="val"&gt;"스치친"&lt;/span&gt;],
+  &lt;span class="key"&gt;"reference"&lt;/span&gt;: &lt;span class="val"&gt;"wiki/characters/, PRD v2.1"&lt;/span&gt;
+}
+    &lt;/div&gt;
+
+    &lt;table class="compare-table"&gt;
+      &lt;thead&gt;
+        &lt;tr&gt;
+          &lt;th&gt;Phase&lt;/th&gt;
+          &lt;th&gt;기존 (수동)&lt;/th&gt;
+          &lt;th&gt;루프 적용 (자동)&lt;/th&gt;
+        &lt;/tr&gt;
+      &lt;/thead&gt;
+      &lt;tbody&gt;
+        &lt;tr&gt;
+          &lt;td&gt;&lt;strong style="color:var(— —accent2)"&gt;Define&lt;/strong&gt;&lt;/td&gt;
+          &lt;td&gt;주인님이 PRD 직접 작성&lt;/td&gt;
+          &lt;td&gt;주제 선택 → Planner가 PRD 자동 생성 → ✋ 승인&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td&gt;&lt;strong style="color:var(— —cyan)"&gt;Sample&lt;/strong&gt;&lt;/td&gt;
+          &lt;td&gt;화풍 4종 수동 비교&lt;/td&gt;
+          &lt;td&gt;Writer가 3화풍 샘플 자동 생성 → ✋ 주인님이 선택&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td&gt;&lt;strong style="color:var(— —green)"&gt;Produce&lt;/strong&gt;&lt;/td&gt;
+          &lt;td&gt;16/28장 수동 생성 후 멈춤&lt;/td&gt;
+          &lt;td&gt;전체 28컷 자동 생성 + 중간 체크포인트&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td&gt;&lt;strong style="color:var(— —purple)"&gt;Refine&lt;/strong&gt;&lt;/td&gt;
+          &lt;td&gt;없음 (수정 루프 없었음)&lt;/td&gt;
+          &lt;td&gt;Critic 평가 → 피드백 → v2/v3 자동 수정&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td&gt;&lt;strong style="color:var(— —pink)"&gt;Deliver&lt;/strong&gt;&lt;/td&gt;
+          &lt;td&gt;미완성 상태로 GitHub Pages&lt;/td&gt;
+          &lt;td&gt;최종 산출 + 메타데이터 + 진화 로그&lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/tbody&gt;
+    &lt;/table&gt;
+
+    &lt;div class="highlight" style="margin-top:1.5rem;"&gt;
+      &lt;h4&gt;🎯 핵심 차이&lt;/h4&gt;
+      &lt;p&gt;기존: 주인님이 매 단계 직접 지시 → "근데 8장만 생성된거니?" "나머지는?" → 멈춤&lt;br&gt;
+      루프 적용: 한 번 설정하면 전체 28컷 자동 생성 + 중간에만 주인님이 확인 → 완성&lt;/p&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+
+&lt;div class="divider"&gt;&lt;/div&gt;
+
+&lt;!— — 8. COMPARISON — —&gt;
+&lt;section id="comparison"&gt;
+  &lt;h2&gt;⚖️ 루프 엔지니어링 vs 기존 방식&lt;/h2&gt;
+  &lt;p class="desc"&gt;"매번 프롬프트"와 "루프를 설계"의 차이를 구체적으로 비교합니다.&lt;/p&gt;
+
+  &lt;table class="compare-table"&gt;
+    &lt;thead&gt;
+      &lt;tr&gt;
+        &lt;th&gt;관점&lt;/th&gt;
+        &lt;th&gt;기존 (프롬프트 엔지니어링)&lt;/th&gt;
+        &lt;th&gt;루프 엔지니어링&lt;/th&gt;
+      &lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tbody&gt;
+      &lt;tr&gt;
+        &lt;td&gt;&lt;strong&gt;역할&lt;/strong&gt;&lt;/td&gt;
+        &lt;td&gt;실행자 (매 줄 지시)&lt;/td&gt;
+        &lt;td&gt;감독관 (시스템 설계)&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td&gt;&lt;strong&gt;재사용&lt;/strong&gt;&lt;/td&gt;
+        &lt;td&gt;프롬프트 복붙&lt;/td&gt;
+        &lt;td&gt;SKILL.md + 상태 파일 (프로젝트 간)&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td&gt;&lt;strong&gt;품질 검증&lt;/strong&gt;&lt;/td&gt;
+        &lt;td&gt;주인님 눈으로만&lt;/td&gt;
+        &lt;td&gt;서브에이전트 독립 평가 + 주인님 최종 승인&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td&gt;&lt;strong&gt;피드백&lt;/strong&gt;&lt;/td&gt;
+        &lt;td&gt;대화 중 구두로&lt;/td&gt;
+        &lt;td&gt;게이트에서 구조화된 피드백 (기록됨)&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td&gt;&lt;strong&gt;진화&lt;/strong&gt;&lt;/td&gt;
+        &lt;td&gt;사람 머릿속에만&lt;/td&gt;
+        &lt;td&gt;evolution.md에 기록 → 다음 프로젝트에 적용&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td&gt;&lt;strong&gt;한계&lt;/strong&gt;&lt;/td&gt;
+        &lt;td&gt;세션 바뀌면 컨텍스트 리셋&lt;/td&gt;
+        &lt;td&gt;상태 파일로 컨텍스트 유지&lt;/td&gt;
+      &lt;/tr&gt;
+      &lt;tr&gt;
+        &lt;td&gt;&lt;strong&gt;주의점&lt;/strong&gt;&lt;/td&gt;
+        &lt;td&gt;AI 의존도 과대평가&lt;/td&gt;
+        &lt;td&gt;인지적 항복 주의 — 검토는 사람 몫&lt;/td&gt;
+      &lt;/tr&gt;
+    &lt;/tbody&gt;
+  &lt;/table&gt;
+&lt;/section&gt;
+
+&lt;div class="divider"&gt;&lt;/div&gt;
+
+&lt;!— — 9. IMPLEMENTATION — —&gt;
+&lt;section id="implementation"&gt;
+  &lt;h2&gt;🚀 구현 계획&lt;/h2&gt;
+  &lt;p class="desc"&gt;
+    OpenClaw의 기존 스킬 생태계 + 루프 엔지니어링을 통합하여 구현합니다.
+  &lt;/p&gt;
+
+  &lt;div class="phases"&gt;
+    &lt;div class="phase"&gt;
+      &lt;div class="phase-badge" style="background:rgba(99,102,241,0.1); border:1px solid var(— —accent);"&gt;
+        &lt;span class="num" style="color:var(— —accent2);font-size:1.5rem;"&gt;S1&lt;/span&gt;
+        &lt;span class="name" style="color:var(— —accent2);font-size:0.6rem;"&gt;스킬&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div class="phase-content"&gt;
+        &lt;h4&gt;SKILL.md 작성&lt;/h4&gt;
+        &lt;p&gt;Creative Loop SKILL.md에 프로젝트 인수인계 노트를 작성합니다.&lt;/p&gt;
+        &lt;ul&gt;
+          &lt;li&gt;Phase별 입력/출력 스펙 정의&lt;/li&gt;
+          &lt;li&gt;프롬프트 템플릿 라이브러리&lt;/li&gt;
+          &lt;li&gt;품질 평가 체크리스트&lt;/li&gt;
+          &lt;li&gt;진화 메타데이터 스키마&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="phase"&gt;
+      &lt;div class="phase-badge" style="background:rgba(6,182,212,0.1); border:1px solid var(— —cyan);"&gt;
+        &lt;span class="num" style="color:var(— —cyan);font-size:1.5rem;"&gt;S2&lt;/span&gt;
+        &lt;span class="name" style="color:var(— —cyan);font-size:0.6rem;"&gt;에이전트&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div class="phase-content"&gt;
+        &lt;h4&gt;서브에이전트 구성&lt;/h4&gt;
+        &lt;p&gt;Writer/Evaluator/Critic/Planner를 서브에이전트로 분리합니다.&lt;/p&gt;
+        &lt;ul&gt;
+          &lt;li&gt;Writer: 프롬프트 생성 + 이미지 API 호출&lt;/li&gt;
+          &lt;li&gt;Evaluator: 일관성/품질 자동 평가 (별도 세션)&lt;/li&gt;
+          &lt;li&gt;Critic: 비판적 분석 + 개선 제안 (별도 세션)&lt;/li&gt;
+          &lt;li&gt;Planner: Phase 오케스트레이션 + 게이트 관리&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="phase"&gt;
+      &lt;div class="phase-badge" style="background:rgba(34,197,94,0.1); border:1px solid var(— —green);"&gt;
+        &lt;span class="num" style="color:var(— —green);font-size:1.5rem;"&gt;S3&lt;/span&gt;
+        &lt;span class="name" style="color:var(— —green);font-size:0.6rem;"&gt;상태&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div class="phase-content"&gt;
+        &lt;h4&gt;상태 파일 시스템&lt;/h4&gt;
+        &lt;p&gt;프로젝트 진행 상태를 디스크에 지속적으로 기록합니다.&lt;/p&gt;
+        &lt;ul&gt;
+          &lt;li&gt;config.json: 주인님 설정&lt;/li&gt;
+          &lt;li&gt;progress.md: 현재 Phase + 완료된 컷&lt;/li&gt;
+          &lt;li&gt;feedback.md: 피드백 기록&lt;/li&gt;
+          &lt;li&gt;evolution.md: 버전별 변경 이력&lt;/li&gt;
+          &lt;li&gt;scores.json: Evaluator/Critic 점수 추이&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+
+    &lt;div class="phase"&gt;
+      &lt;div class="phase-badge" style="background:rgba(236,72,153,0.1); border:1px solid var(— —pink);"&gt;
+        &lt;span class="num" style="color:var(— —pink);font-size:1.5rem;"&gt;S4&lt;/span&gt;
+        &lt;span class="name" style="color:var(— —pink);font-size:0.6rem;"&gt;검증&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div class="phase-content"&gt;
+        &lt;h4&gt;삼체 EP001로 검증&lt;/h4&gt;
+        &lt;p&gt;실제 프로젝트에 적용하여 시스템을 검증합니다.&lt;/p&gt;
+        &lt;ul&gt;
+          &lt;li&gt;EP001 나머지 12컷을 루프로 자동 생성&lt;/li&gt;
+          &lt;li&gt;중간 피드백 게이트 실제 테스트&lt;/li&gt;
+          &lt;li&gt;v1→v2 진화 루프 실증&lt;/li&gt;
+          &lt;li&gt;학습 패턴이 SKILL.md에 자동 누적되는지 확인&lt;/li&gt;
+        &lt;/ul&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+
+  &lt;div class="highlight" style="margin-top:2rem;"&gt;
+    &lt;h4&gt;📝 최종 목표&lt;/h4&gt;
+    &lt;p&gt;"주제: 해적, 화풍: 3D 애니, 분위기: 모험" 한 줄이면 → 샘플 확인 → 자동 전체 생성 → 피드백 루프 → 완성 산출물. 주인님은 감독관 역할만 하시면 됩니다.&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/section&gt;
+
+&lt;footer&gt;
+  &lt;p&gt;창의적 루프 엔지니어링 시스템 설계 문서 — 2026.06.16&lt;/p&gt;
+  &lt;p&gt;기반: Addy Osmani "Loop Engineering" + OpenClaw Skill Ecosystem + 랄프톤 Phase Split&lt;/p&gt;
+  &lt;p style="margin-top:0.5rem; color:#64748b;"&gt;"Build the loop. But build it like someone who intends to stay the engineer."&lt;/p&gt;
+&lt;/footer&gt;
+
+&lt;script&gt;
+// Smooth scroll
+document.querySelectorAll('.nav a').forEach(a =&gt; {
+  a.addEventListener('click', e =&gt; {
+    e.preventDefault();
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+
+// Active nav highlight
+const sections = document.querySelectorAll('section[id]');
+const navLinks = document.querySelectorAll('.nav a');
+
+window.addEventListener('scroll', () =&gt; {
+  let current = '';
+  sections.forEach(section =&gt; {
+    const top = section.offsetTop - 100;
+    if (pageYOffset &gt;= top) current = section.getAttribute('id');
+  });
+  navLinks.forEach(link =&gt; {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === `#${current}`) link.classList.add('active');
+  });
+});
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+
+-->
+
+<!-- === v2 SPA Below === -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Creative Loop Engine v2</title>
+<style>
+:root{
+--bg:#0a0e17;--surface:#111827;--surface2:#1a2235;--border:#1e293b;
+--text:#e2e8f0;--text2:#94a3b8;--accent:#6366f1;--accent2:#818cf8;
+--green:#22c55e;--amber:#f59e0b;--red:#ef4444;--teal:#14b8a6;
+--purple:#a855f7;--blue:#3b82f6;--radius:12px;--shadow:0 4px 24px rgba(0,0,0,.3);
+--tr:.3s ease
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+body{font-family:'Inter','Noto Sans KR',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;overflow-x:hidden;padding-bottom:env(safe-area-inset-bottom)}
+a{color:var(--accent2);text-decoration:none}
+button{font-family:inherit;cursor:pointer}
+input,textarea,select{font-family:inherit}
+
+/* ===== TOAST ===== */
+#toast-container{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast{padding:10px 20px;border-radius:8px;font-size:.85rem;font-weight:500;opacity:0;transform:translateY(20px);animation:toastIn .3s ease forwards;pointer-events:auto;max-width:92vw}
+.toast.out{animation:toastOut .3s ease forwards}
+.toast.success{background:var(--green);color:#fff}
+.toast.error{background:var(--red);color:#fff}
+.toast.info{background:var(--accent);color:#fff}
+@keyframes toastIn{to{opacity:1;transform:translateY(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-20px)}}
+
+/* ===== NAV ===== */
+.nav{position:fixed;top:0;left:0;right:0;background:rgba(10,14,23,.95);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 1rem;display:flex;align-items:center;height:52px;z-index:100;padding-top:env(safe-area-inset-top)}
+.nav-logo{font-size:1.1rem;font-weight:800;margin-right:1rem;white-space:nowrap}
+.nav-logo span{background:linear-gradient(135deg,var(--accent2),var(--teal));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links{display:flex;gap:1.5rem;flex:1}
+.nav-links a{color:var(--text2);font-size:.82rem;font-weight:500;transition:color var(--tr);padding:6px 0;border-bottom:2px solid transparent;min-height:36px;display:flex;align-items:center}
+.nav-links a:hover,.nav-links a.active{color:var(--accent2);border-bottom-color:var(--accent2)}
+
+/* ===== MAIN ===== */
+main{width:min(1180px,calc(100% - 24px));margin:0 auto;padding:60px 12px 100px}
+.route-view{opacity:0;transform:translateY(18px);transition:opacity .35s ease,transform .35s ease}
+.route-view.is-ready{opacity:1;transform:translateY(0)}
+.page{display:flex;flex-direction:column;gap:24px}
+
+/* ===== PANEL ===== */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+.panel-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.panel-title{font-size:1.1rem;font-weight:700}
+.panel-subtitle{font-size:.85rem;color:var(--text2)}
+
+/* ===== BUTTONS ===== */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 18px;border-radius:8px;font-size:.88rem;font-weight:600;border:1px solid var(--border);transition:all var(--tr);min-height:44px;-webkit-user-select:none;user-select:none}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:var(--accent2);transform:translateY(-2px);box-shadow:0 4px 16px rgba(99,102,241,.3)}
+.btn-secondary{background:rgba(99,102,241,.12);color:var(--accent2);border-color:rgba(99,102,241,.25)}
+.btn-secondary:hover{background:rgba(99,102,241,.2)}
+.btn-danger{background:rgba(239,68,68,.12);color:#fecaca;border-color:rgba(239,68,68,.25)}
+.btn-sm{padding:6px 12px;font-size:.8rem}
+.btn-icon{padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);transition:all var(--tr)}
+.btn-icon:hover{border-color:var(--accent);color:var(--accent2)}
+
+/* ===== LANDING ===== */
+.hero{text-align:center;padding:32px 0 24px}
+.hero h1{font-size:clamp(1.6rem,6vw,3.2rem);font-weight:800;background:linear-gradient(135deg,var(--accent2),var(--teal),var(--green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:12px}
+.hero .subtitle{font-size:clamp(.9rem,3.5vw,1.25rem);color:var(--text2);max-width:650px;margin:0 auto 12px}
+.hero .sub2{font-size:.95rem;color:var(--text2);opacity:.8;margin-bottom:32px}
+.hero-cta{margin-top:24px}
+
+/* SVG Loop */
+.loop-svg-wrap{margin:20px auto;max-width:400px}
+.loop-svg-wrap svg{width:100%;height:auto}
+@keyframes loopRotate{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+.loop-rotate{animation:loopRotate 15s linear infinite;transform-origin:200px 120px}
+
+/* Category tags */
+.category-tags{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:16px}
+.cat-tag{padding:6px 16px;border-radius:20px;font-size:.85rem;background:var(--surface2);border:1px solid var(--border);color:var(--text2);transition:all var(--tr);cursor:pointer}
+.cat-tag:hover{border-color:var(--accent);color:var(--accent2)}
+
+/* Gallery preview strip */
+.gallery-strip{display:flex;gap:12px;overflow-x:auto;padding:8px 0}
+.gallery-strip .g-thumb{flex:0 0 160px;height:120px;border-radius:8px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:transform var(--tr)}
+.gallery-strip .g-thumb:hover{transform:scale(1.05)}
+
+/* Tutorial */
+.tutorial-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s}
+.tutorial-overlay.show{opacity:1;pointer-events:auto}
+.tutorial-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:40px;max-width:480px;text-align:center;box-shadow:var(--shadow)}
+.tutorial-card h3{font-size:1.3rem;margin-bottom:12px}
+.tutorial-card p{color:var(--text2);margin-bottom:24px}
+.tutorial-dots{display:flex;gap:8px;justify-content:center;margin-bottom:20px}
+.tutorial-dots span{width:10px;height:10px;border-radius:50%;background:var(--border);transition:background var(--tr)}
+.tutorial-dots span.active{background:var(--accent)}
+
+/* ===== WIZARD ===== */
+.wizard-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.step-pills{display:flex;gap:6px}
+.step-pill{padding:6px 12px;border-radius:16px;font-size:.8rem;font-weight:600;background:var(--surface2);border:1px solid var(--border);color:var(--text2);transition:all var(--tr)}
+.step-pill.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.step-pill.done{background:rgba(34,197,94,.15);color:var(--green);border-color:var(--green)}
+.step-nav{display:flex;gap:8px}
+
+.card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin-bottom:16px}
+.wiz-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px 12px;text-align:center;cursor:pointer;transition:all var(--tr);position:relative;-webkit-user-select:none;user-select:none}
+.wiz-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.3);border-color:var(--accent)}
+.wiz-card.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent),0 0 20px rgba(99,102,241,.2)}
+.wiz-card .card-icon{font-size:1.6rem;margin-bottom:6px}
+.wiz-card .card-title{font-size:.95rem;font-weight:600;margin-bottom:4px}
+.wiz-card .card-desc{font-size:.8rem;color:var(--text2)}
+
+/* Prompt input area */
+.prompt-area{margin-top:20px;padding-top:20px;border-top:1px solid var(--border)}
+.prompt-area label{display:block;font-size:.9rem;font-weight:600;margin-bottom:8px;color:var(--text2)}
+.prompt-area textarea{width:100%;min-height:100px;padding:12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:.9rem;resize:vertical;transition:border-color var(--tr)}
+.prompt-area textarea:focus{outline:none;border-color:var(--accent)}
+.char-count{font-size:.75rem;color:var(--text2);text-align:right;margin-top:4px}
+
+/* Reference attachments */
+.ref-area{margin-top:16px}
+.ref-btns{display:flex;gap:8px;margin-bottom:12px}
+.ref-grid{display:flex;flex-wrap:wrap;gap:8px}
+.ref-thumb{position:relative;width:80px;height:80px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.ref-thumb img{width:100%;height:100%;object-fit:cover}
+.ref-thumb .ref-del{position:absolute;top:2px;right:2px;width:20px;height:20px;border-radius:50%;background:var(--red);color:#fff;font-size:.7rem;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .2s}
+.ref-thumb:hover .ref-del{opacity:1}
+.ref-url-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);font-size:.8rem;color:var(--text2);max-width:300px}
+.ref-url-chip .url-del{cursor:pointer;color:var(--red);font-weight:700}
+.url-input-row{display:flex;gap:8px;margin-bottom:12px}
+.url-input-row input{flex:1;padding:8px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:.85rem}
+.url-input-row input:focus{outline:none;border-color:var(--accent)}
+
+/* Drag & drop overlay */
+.drop-overlay{position:fixed;inset:0;background:rgba(99,102,241,.1);border:3px dashed var(--accent);z-index:150;display:none;align-items:center;justify-content:center;font-size:1.2rem;font-weight:600;color:var(--accent2)}
+.drop-overlay.show{display:flex}
+
+/* Preview panel */
+.preview-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.preview-panel h4{font-size:.9rem;margin-bottom:12px;color:var(--text2)}
+.preview-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.preview-tag{padding:4px 10px;border-radius:12px;font-size:.75rem;background:rgba(99,102,241,.12);color:var(--accent2);border:1px solid rgba(99,102,241,.25)}
+.preview-prompt{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;font-size:.85rem;color:var(--text2);margin-bottom:12px;white-space:pre-wrap;max-height:200px;overflow-y:auto}
+.preview-info{font-size:.8rem;color:var(--text2)}
+.random-btn{margin-top:12px}
+
+/* Final prompt editor */
+.final-prompt-area{margin-top:16px}
+.final-prompt-area label{font-size:.85rem;font-weight:600;color:var(--text2);margin-bottom:6px;display:block}
+.final-prompt-area textarea{width:100%;min-height:80px;padding:10px;border-radius:8px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:.85rem;resize:vertical}
+
+/* ===== PROJECT PAGE ===== */
+.project-header{display:flex;justify-content:space-between;align-items:start;flex-wrap:wrap;gap:12px}
+.project-title{font-size:1.4rem;font-weight:700}
+
+/* Phase pipeline */
+.phase-pipeline{display:flex;align-items:center;gap:0;overflow-x:auto;padding:16px 0}
+.phase-node{display:flex;flex-direction:column;align-items:center;min-width:80px;position:relative}
+.phase-icon{width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;border:2px solid var(--border);background:var(--surface2);transition:all .3s}
+.phase-node.active .phase-icon{border-color:var(--accent);box-shadow:0 0 16px rgba(99,102,241,.3)}
+.phase-node.complete .phase-icon{border-color:var(--green);background:rgba(34,197,94,.15)}
+.phase-node.failed .phase-icon{border-color:var(--red);background:rgba(239,68,68,.15)}
+.phase-name{font-size:.7rem;color:var(--text2);margin-top:6px;font-weight:600}
+.phase-connector{width:40px;height:2px;background:var(--border);flex-shrink:0}
+.phase-connector.done{background:linear-gradient(90deg,var(--green),var(--accent))}
+
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@keyframes bounceIn{0%{transform:scale(0);opacity:0}60%{transform:scale(1.2)}100%{transform:scale(1);opacity:1}}
+.anim-spin{animation:spin 1.5s linear infinite}
+.anim-pulse{animation:pulse 2s ease infinite}
+.anim-bounce{animation:bounceIn .4s ease}
+
+/* Candidate grid */
+.candidate-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.candidate-card{aspect-ratio:4/3;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);position:relative;display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--text2)}
+.candidate-card.c1{background:linear-gradient(135deg,#1a1a3e,#2d1b69)}
+.candidate-card.c2{background:linear-gradient(135deg,#0d2137,#1b4d69)}
+.candidate-card.c3{background:linear-gradient(135deg,#1a3a1a,#2d6930)}
+.candidate-card.c4{background:linear-gradient(135deg,#3a2a1a,#694a2d)}
+
+/* Status bar */
+.status-bar{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:8px;font-size:.9rem;font-weight:500}
+.status-bar.generating{background:rgba(99,102,241,.1);border:1px solid var(--accent);color:var(--accent2)}
+.status-bar.complete{background:rgba(34,197,94,.1);border:1px solid var(--green);color:var(--green)}
+.status-bar.failed{background:rgba(239,68,68,.1);border:1px solid var(--red);color:var(--red)}
+.status-bar.idle{background:rgba(148,163,184,.1);border:1px solid var(--border);color:var(--text2)}
+
+/* Feedback chips */
+.feedback-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.feedback-chip{padding:10px 14px;border-radius:20px;background:var(--surface2);border:1px solid var(--border);font-size:.82rem;cursor:pointer;transition:all .2s;color:var(--text);min-height:40px;-webkit-user-select:none;user-select:none}
+.feedback-chip:hover{border-color:var(--accent)}
+.feedback-chip.selected{background:rgba(99,102,241,.15);border-color:var(--accent);color:var(--accent2)}
+
+/* Star rating */
+.star-rating{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+.star-rating label{font-size:.85rem;color:var(--text2);min-width:60px}
+.star-rating input[type=range]{flex:1;accent-color:var(--accent);max-width:120px}
+.star-rating .stars{font-size:.9rem;letter-spacing:2px}
+.star-rating .stars .filled{color:var(--amber)}
+
+/* Action buttons row */
+.action-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.comment-area textarea{width:100%;min-height:60px;padding:10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:.85rem;resize:vertical}
+
+/* Recovery URL */
+.recovery-url{display:flex;align-items:center;gap:8px;padding:10px;background:var(--surface2);border-radius:8px;font-size:.8rem;color:var(--text2);word-break:break-all}
+.recovery-url code{flex:1;color:var(--accent2)}
+
+/* Privacy */
+.privacy-options{display:flex;gap:12px;flex-wrap:wrap}
+.privacy-opt{flex:1;min-width:140px;padding:12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);cursor:pointer;text-align:center;font-size:.85rem;transition:all var(--tr)}
+.privacy-opt:hover{border-color:var(--accent)}
+.privacy-opt.active{border-color:var(--accent);background:rgba(99,102,241,.1);color:var(--accent2)}
+.privacy-opt input{display:none}
+
+/* Collapsible */
+.collapsible-header{display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:8px 0;user-select:none}
+.collapsible-header h4{font-size:.9rem;color:var(--text2)}
+.collapsible-body{overflow:hidden;max-height:0;transition:max-height .3s ease}
+.collapsible-body.open{max-height:600px}
+
+/* ===== DASHBOARD ===== */
+.filter-bar{display:flex;gap:8px;flex-wrap:wrap}
+.filter-btn{padding:6px 14px;border-radius:20px;font-size:.85rem;background:var(--surface2);border:1px solid var(--border);color:var(--text2);cursor:pointer;transition:all var(--tr)}
+.filter-btn:hover,.filter-btn.active{border-color:var(--accent);color:var(--accent2);background:rgba(99,102,241,.1)}
+.project-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.project-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all var(--tr)}
+.project-card:hover{transform:translateY(-4px);box-shadow:0 8px 24px rgba(0,0,0,.3);border-color:var(--accent)}
+.project-card .pc-title{font-size:1rem;font-weight:600;margin-bottom:8px}
+.project-card .pc-meta{font-size:.8rem;color:var(--text2);display:flex;gap:12px}
+.project-card .pc-status{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600}
+.project-card .pc-status.active{background:rgba(99,102,241,.15);color:var(--accent2)}
+.project-card .pc-status.complete{background:rgba(34,197,94,.15);color:var(--green)}
+
+/* ===== GALLERY ===== */
+.masonry{column-count:3;column-gap:16px}
+.gallery-card{break-inside:avoid;margin-bottom:16px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);background:var(--surface);cursor:pointer;transition:all var(--tr)}
+.gallery-card:hover{transform:translateY(-3px);box-shadow:var(--shadow)}
+.gallery-card .gc-img{width:100%;height:200px;display:flex;align-items:center;justify-content:center;font-size:3rem}
+.gallery-card .gc-info{padding:12px}
+.gallery-card .gc-title{font-size:.9rem;font-weight:600;margin-bottom:4px}
+.gallery-card .gc-tags{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px}
+.gallery-card .gc-tag{font-size:.7rem;padding:2px 6px;border-radius:4px;background:var(--surface2);color:var(--text2)}
+.gallery-card .gc-actions{display:flex;justify-content:space-between;align-items:center;font-size:.8rem;color:var(--text2)}
+.search-bar{display:flex;gap:8px;margin-bottom:16px}
+.search-bar input{flex:1;padding:10px 16px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-size:.9rem}
+.search-bar input:focus{outline:none;border-color:var(--accent)}
+
+/* ===== SETTINGS ===== */
+.settings-section{padding:16px 0;border-bottom:1px solid var(--border)}
+.settings-section:last-child{border:none}
+.settings-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0}
+.settings-label{font-size:.9rem}
+.settings-value{font-size:.85rem;color:var(--text2)}
+.placeholder-link{color:var(--text2);opacity:.5;cursor:not-allowed}
+
+/* ===== MODAL ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:150;display:none;align-items:center;justify-content:center;padding:24px}
+.modal-overlay.show{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:16px;max-width:600px;width:100%;max-height:80vh;overflow-y:auto;padding:32px;position:relative}
+.modal-close{position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:50%;border:1px solid var(--border);background:var(--surface2);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem}
+.confirm-msg{font-size:1rem;margin-bottom:20px}
+
+/* ===== TEST ===== */
+.test-header{text-align:center;margin-bottom:24px}
+.test-header h2{font-size:1.5rem;margin-bottom:8px}
+.test-counters{display:flex;gap:24px;justify-content:center;font-size:1.1rem;font-weight:700}
+.test-counters .pass{color:var(--green)}
+.test-counters .fail{color:var(--red)}
+.test-list{display:flex;flex-direction:column;gap:8px}
+.test-item{display:flex;align-items:center;gap:12px;padding:12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);font-size:.85rem}
+.test-item.pass{border-color:rgba(34,197,94,.3)}
+.test-item.fail{border-color:rgba(239,68,68,.3)}
+.test-icon{font-size:1.1rem}
+.test-name{flex:1}
+.test-error{color:var(--red);font-size:.75rem;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* ===== EMPTY STATE ===== */
+.empty-state{text-align:center;padding:60px 20px;color:var(--text2)}
+.empty-state .empty-icon{font-size:3rem;margin-bottom:12px}
+.empty-state h3{font-size:1.1rem;margin-bottom:8px;color:var(--text)}
+.empty-state p{font-size:.9rem;margin-bottom:20px}
+
+/* ===== FOOTER ===== */
+.footer{text-align:center;padding:40px 16px;color:var(--text2);font-size:.8rem;border-top:1px solid var(--border)}
+
+/* ===== MOBILE ===== */
+@media(max-width:960px){
+.preview-side{display:none}
+.project-header{flex-direction:column}
+.phase-pipeline{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.phase-pipeline::-webkit-scrollbar{display:none}
+}
+@media(max-width:720px){
+.nav-links{display:none}
+.card-grid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.candidate-grid{grid-template-columns:1fr 1fr;gap:8px}
+.masonry{column-count:2}
+.phase-pipeline{justify-content:start;padding-bottom:8px}
+.phase-node{min-width:64px}
+.phase-icon{width:40px;height:40px;font-size:1.1rem}
+.phase-connector{width:24px}
+.phase-name{font-size:.65rem}
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(10,14,23,.96);border-top:1px solid var(--border);display:flex;justify-content:space-around;padding:6px 0;padding-bottom:max(6px,env(safe-area-inset-bottom));z-index:100}
+.bottom-nav a{display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--text2);font-size:.65rem;text-decoration:none;padding:6px 8px;transition:color var(--tr);min-height:48px;justify-content:center}
+.bottom-nav a.active{color:var(--accent2)}
+.bottom-nav a .bn-icon{font-size:1.2rem}
+main{padding:56px 10px 110px}
+.hero{padding:20px 0 16px}
+.loop-svg-wrap{max-width:280px;margin:12px auto}
+.step-pills{gap:4px}
+.step-pill{padding:5px 10px;font-size:.75rem}
+.wiz-card{padding:12px 8px}
+.wiz-card .card-icon{font-size:1.4rem}
+.wiz-card .card-title{font-size:.82rem}
+.wiz-card .card-desc{font-size:.72rem}
+.prompt-area textarea{min-height:80px;padding:10px;font-size:.88rem}
+.panel{padding:12px;border-radius:10px}
+.btn{padding:8px 14px;font-size:.84rem;min-height:42px}
+.btn-sm{padding:6px 10px;font-size:.78rem;min-height:36px}
+.ref-grid{gap:6px}
+.ref-thumb{width:60px;height:60px}
+.feedback-chips{gap:6px}
+.feedback-chip{padding:8px 12px;font-size:.78rem}
+.star-rating{flex-wrap:wrap;gap:10px}
+.star-rating input[type=range]{max-width:100px}
+.privacy-options{gap:8px}
+.privacy-opt{min-width:100px;padding:10px 8px;font-size:.8rem}
+.action-row{gap:6px}
+.comment-area textarea{min-height:50px}
+.gallery-strip .g-thumb{flex:0 0 120px;height:90px}
+.project-list{grid-template-columns:1fr;gap:10px}
+.project-card{padding:12px}
+.search-bar input{padding:8px 12px;font-size:.85rem}
+.filter-bar{gap:6px}
+.filter-btn{padding:5px 10px;font-size:.8rem}
+.recovery-url{font-size:.75rem;padding:8px;flex-wrap:wrap}
+.collapsible-header{padding:6px 0}
+.tutorial-card{padding:24px 20px;max-width:340px;margin:0 16px}
+.tutorial-card h3{font-size:1.1rem}
+.tutorial-card p{font-size:.85rem}
+.modal{padding:20px;margin:12px;border-radius:12px}
+.test-counters{font-size:.95rem;gap:16px}
+.test-item{padding:10px;font-size:.8rem}
+.empty-state{padding:40px 16px}
+.empty-state .empty-icon{font-size:2.2rem}
+.footer{padding:24px 12px}
+}
+}
+@media(max-width:400px){
+.card-grid{grid-template-columns:1fr 1fr;gap:6px}
+.wiz-card{padding:10px 6px}
+.wiz-card .card-icon{font-size:1.2rem}
+.candidate-grid{grid-template-columns:1fr}
+.phase-node{min-width:56px}
+.phase-icon{width:36px;height:36px;font-size:1rem}
+.hero h1{font-size:1.4rem}
+.hero .subtitle{font-size:.85rem}
+.bottom-nav a{padding:4px 6px;font-size:.6rem}
+.bottom-nav a .bn-icon{font-size:1.1rem}
+main{padding:52px 8px 105px}
+}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-logo"><span>🔄 CLE</span></div><div class="nav-links" id="navLinks"></div></nav>
+<div id="toast-container"></div>
+<div class="drop-overlay" id="dropOverlay">📁 파일을 여기에 드롭하세요</div>
+<div class="tutorial-overlay" id="tutorialOverlay"><div class="tutorial-card"><h3 id="tutTitle"></h3><p id="tutText"></p><div class="tutorial-dots" id="tutDots"></div><div style="display:flex;gap:8px;justify-content:center"><button class="btn btn-secondary btn-sm" onclick="App.closeTutorial()">건너뛰기</button><button class="btn btn-primary btn-sm" id="tutNext">다음</button></div></div></div>
+<div class="modal-overlay" id="modalOverlay"><div class="modal" id="modalContent"><div class="modal-close" onclick="App.closeModal()">✕</div></div></div>
+<div id="app"></div>
+<div class="bottom-nav" id="bottomNav"></div>
+<footer class="footer">Creative Loop Engine v2.0 — Daegu-Agent-Crew</footer>
+<script>
+/* ===== UTILS ===== */
+const $=s=>document.querySelector(s);
+const $$=s=>document.querySelectorAll(s);
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+function toast(msg,type='info'){
+const c=$('#toast-container');
+const t=document.createElement('div');
+t.className=`toast ${type}`;
+t.textContent=msg;
+c.appendChild(t);
+setTimeout(()=>{t.classList.add('out');setTimeout(()=>t.remove(),300)},2000);
+}
+
+/* ===== STORAGE ===== */
+const STORAGE={
+get(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}},
+set(k,v){localStorage.setItem(k,JSON.stringify(v))},
+remove(k){localStorage.removeItem(k)},
+get projects(){return this.get('cle_projects')||[]},
+set projects(v){this.set('cle_projects',v)},
+get settings(){return this.get('cle_settings')||{theme:'dark',tutorial_seen:false}},
+set settings(v){this.set('cle_settings',v)}
+};
+
+/* ===== CONSTANTS ===== */
+const TOPICS=[{id:'sf',icon:'🚀',title:'SF 미래',desc:'사이버펑크, 우주, 미래 기술'},{id:'fantasy',icon:'🧙',title:'판타지 마법',desc:'마법, 요정, 신화 세계'},{id:'modern',icon:'🏙️',title:'현대 일상',desc:'도시, 학교, 일상 이야기'},{id:'history',icon:'📜',title:'역사',desc:'과거 시대, 역사적 장면'},{id:'drama',icon:'🎭',title:'드라마',desc:'인간 관계, 감정선'},{id:'custom',icon:'✏️',title:'커스텀',desc:'자유롭게 입력'}];
+const STYLES=[{id:'watercolor',icon:'🎨',title:'수채화',desc:'부드럽고 투명한 느낌'},{id:'ink',icon:'✒️',title:'잉크',desc:'선과 명암의 미학'},{id:'oil',icon:'🖌️',title:'유화',desc:'풍부한 색감과 질감'},{id:'digital',icon:'💻',title:'디지털 아트',desc:'정밀하고 현대적인'},{id:'realistic',icon:'📷',title:'사실주의',desc:'실제와 구분 어려운'},{id:'pop',icon:'🎭',title:'팝아트',desc:'대담하고 화려한'}];
+const MOODS=[{id:'bright',icon:'🌅',title:'밝고 따뜻함',desc:'희망, 기쁨, 따스함'},{id:'dark',icon:'🌙',title:'어두운 미스터리',desc:'그림자, 비밀, 긴장'},{id:'dynamic',icon:'⚡',title:'역동적',desc:'액션, 속도감, 에너지'},{id:'calm',icon:'🌿',title:'차분하고 편안',desc:'평온, 자연, 고요함'},{id:'intense',icon:'🔥',title:'강렬하고 대담',desc:'열정, 충격, 카타르시스'},{id:'dreamy',icon:'✨',title:'몽환적',desc:'꿈, 환상, 기이함'}];
+const PHASES=[
+{key:'define',label:'Define',icon:'📋',color:'var(--blue)'},
+{key:'generate',label:'Generate',icon:'🎨',color:'var(--purple)'},
+{key:'evaluate',label:'Evaluate',icon:'🔍',color:'var(--amber)'},
+{key:'refine',label:'Refine',icon:'✏️',color:'var(--green)'},
+{key:'deliver',label:'Deliver',icon:'📦',color:'var(--teal)'}
+];
+const FEEDBACK_CHIPS=['🎨 색감 더 강하게','👤 캐릭터 유지','🏔️ 배경 단순화','✍️ 텍스트 더 적게','📐 구도 유지','💡 더 밝게','🌟 디테일 강화','🎭 분위기 유지'];
+const PROMPT_EXAMPLES=[
+'사이버펑크 도시에서 로봇 고양이가 우유를 마시는 장면',
+'중세 마법사가 스마트폰을 처음 발견하는 순간',
+'우주 정거장에서 재배한 첫 번째 토마토를 수확하는 우주비행사',
+'시간이 멈춘 도서관에서 책 속으로 빠져드는 소녀',
+'바다 깊은 곳의 수중 도시에서 열리는 음악 축제'
+];
+const GALLERY_ITEMS=[
+{id:'g1',title:'SF 수채화 도시',tags:['SF','수채화'],likes:42,gradient:'linear-gradient(135deg,#1a1a3e,#4a2c8a)'},
+{id:'g2',title:'판타지 마법의 숲',tags:['판타지','유화'],likes:35,gradient:'linear-gradient(135deg,#0d2a0d,#1a5a2a)'},
+{id:'g3',title:'현대 도시 일몰',tags:['현대','사실주의'],likes:28,gradient:'linear-gradient(135deg,#3a2a1a,#8a5a2a)'},
+{id:'g4',title:'역사적 전투 장면',tags:['역사','잉크'],likes:56,gradient:'linear-gradient(135deg,#2a1a0d,#5a3a1a)'},
+{id:'g5',title:'드라마 우산 속',tags:['드라마','수채화'],likes:31,gradient:'linear-gradient(135deg,#1a2a3a,#2a4a6a)'},
+{id:'g6',title:'SF 로봇 정원',tags:['SF','디지털'],likes:48,gradient:'linear-gradient(135deg,#0d1a2a,#1a3a5a)'},
+{id:'g7',title:'몽환적 우주',tags:['SF','몽환적'],likes:63,gradient:'linear-gradient(135deg,#1a0d2a,#3a1a5a)'},
+{id:'g8',title:'차분한 바다 풍경',tags:['자연','차분'],likes:22,gradient:'linear-gradient(135deg,#0d2a2a,#1a5a5a)'},
+{id:'g9',title:'강렬한 화산 폭발',tags:['자연','강렬'],likes:39,gradient:'linear-gradient(135deg,#3a0d0d,#6a1a0d)'},
+{id:'g10',title:'팝아트 리트리버',tags:['동물','팝아트'],likes:71,gradient:'linear-gradient(135deg,#3a2a4a,#6a4a8a)'}
+];
+const TUTORIAL=[
+{title:'🎨 카드로 고르세요',text:'주제·화풍·분위기를 카드 3장만 클릭하면 시작됩니다. 프롬프트를 직접 쓸 수도 있어요.'},
+{title:'🔄 5단계 자동 생성',text:'Define → Generate → Evaluate → Refine → Deliver. 각 단계를 실시간으로 확인하세요.'},
+{title:'👍 피드백으로 조정',text:'마음에 안 들면 칩과 별점으로 방향을 알려주고 재생성하세요. AI가 반영합니다.'}
+];
+
+/* ===== CLE2: Request Management Constants ===== */
+const CATEGORIES={feature:{icon:'✨',label:'기능',cls:'cat-feature'},bug:{icon:'🐛',label:'버그',cls:'cat-bug'},improvement:{icon:'🔧',label:'개선',cls:'cat-improvement'},idea:{icon:'💡',label:'아이디어',cls:'cat-idea'}};
+const PRIORITIES={urgent:{icon:'🔴',label:'긴급',cls:'pri-urgent'},high:{icon:'🟠',label:'높음',cls:'pri-high'},normal:{icon:'🟢',label:'보통',cls:'pri-normal'},low:{icon:'⚪',label:'낮음',cls:'pri-low'}};
+const STATUS_FLOW=['proposed','reviewing','approved','in-progress','done','hold','rejected'];
+const STATUSES={proposed:{icon:'💡',label:'제안됨',cls:'st-proposed'},reviewing:{icon:'🔍',label:'검토중',cls:'st-reviewing'},approved:{icon:'✅',label:'승인됨',cls:'st-approved'},'in-progress':{icon:'🔄',label:'진행중',cls:'st-inprogress'},done:{icon:'✅',label:'완료',cls:'st-done'},hold:{icon:'⏸️',label:'보류',cls:'st-hold'},rejected:{icon:'❌',label:'거부됨',cls:'st-rejected'}};
+const MEMBERS={sfex11:{avatar:'👔',name:'회장님',role:'팀 리드',desc:'프로젝트 기획 및 방향 결정'},normalkim:{avatar:'👨‍💻',name:'Normalkim',role:'개발자',desc:'프론트엔드 개발'},eugene:{avatar:'🧑‍🔧',name:'Eugene',role:'개발자',desc:'백엔드 및 인프라'},junteken:{avatar:'👨‍🎓',name:'Junteken',role:'개발자',desc:'데이터 및 AI'},YoonJongHyuk:{avatar:'👨‍🔬',name:'YoonJongHyuk',role:'개발자',desc:'UI/UX 디자인'},대구루:{avatar:'🤖',name:'대구루',role:'AI 에이전트',desc:'코드 생성 및 분석 전문'},레노버:{avatar:'👼',name:'레노버',role:'AI 비서',desc:'프로젝트 관리 및 이미지 생성'}};
+const MEMBER_LIST=['sfex11','normalkim','eugene','junteken','YoonJongHyuk'];
+const AGENTS=['대구루','레노버'];
+
+/* ===== APP ===== */
+const App={
+currentRoute:'/',wizStep:0,wizData:{topics:[],styles:[],moods:[],prompt:'',images:[],urls:[],styleImages:[],styleUrls:[],finalPrompt:''},currentProjectId:null,
+filter:'all',galleryFilter:'all',gallerySearch:'',tutorialSlide:0,phaseIntervals:{},
+currentUser:'sfex11',reqFilter:{type:'all',status:'all',search:''},reqSort:'newest',msgFilter:'all',
+
+init(){
+window.addEventListener('hashchange',()=>this.route());
+this.buildNav();
+this.route();
+this.initDragDrop();
+},
+
+buildNav(){
+const links=[{h:'#/',label:'홈'},{h:'#/requests',label:'요구사항'},{h:'#/agents',label:'에이전트'},{h:'#/dashboard',label:'대시보드'},{h:'#/gallery',label:'갤러리'},{h:'#/settings',label:'설정'}];
+$('#navLinks').innerHTML=links.map(l=>`<a href="${l.h}" data-nav>${l.label}</a>`).join('');
+const bn=links.map(l=>`<a href="${l.h}" data-bnav><span class="bn-icon">${l.h==='#/'?'🏠':l.h==='#/requests'?'📋':l.h==='#/agents'?'🤖':l.h==='#/dashboard'?'📊':l.h==='#/gallery'?'🖼️':'⚙️'}</span>${l.label}</a>`).join('');
+$('#bottomNav').innerHTML=bn;
+},
+
+route(){
+const hash=window.location.hash.slice(1)||'/';
+this.currentRoute=hash;
+this.clearPhaseIntervals();
+const app=$('#app');
+app.innerHTML='<div class="route-view" id="routeView"></div>';
+const rv=$('#routeView');
+if(hash==='/')rv.innerHTML=this.renderLanding();
+else if(hash==='/new')rv.innerHTML=this.renderNewProject();
+else if(hash==='/dashboard')rv.innerHTML=this.renderDashboard();
+else if(hash==='/gallery')rv.innerHTML=this.renderGallery();
+else if(hash==='/requests')rv.innerHTML=this.renderRequestList();
+else if(hash.startsWith('/requests/')){this.currentProjectId=hash.split('/requests/').pop();rv.innerHTML=this.renderRequestDetail(this.currentProjectId)}
+else if(hash==='/agents')rv.innerHTML=this.renderAgents();
+else if(hash==='/settings')rv.innerHTML=this.renderSettings();
+else if(hash==='/test')rv.innerHTML=this.renderTest();
+else if(hash.startsWith('/project/')){this.currentProjectId=hash.split('/').pop();rv.innerHTML=this.renderProject()}
+else if(hash.startsWith('/resume/')){this.handleResume(hash.split('/resume/').pop());return}
+else rv.innerHTML=this.renderLanding();
+requestAnimationFrame(()=>requestAnimationFrame(()=>rv.classList.add('is-ready')));
+this.updateNav();
+if(hash==='/'&&!STORAGE.settings.tutorial_seen)setTimeout(()=>this.showTutorial(),800);
+},
+
+updateNav(){
+$$('[data-nav]').forEach(a=>{a.classList.toggle('active',a.getAttribute('href')==='#'+this.currentRoute)});
+$$('[data-bnav]').forEach(a=>{a.classList.toggle('active',a.getAttribute('href')==='#'+this.currentRoute)});
+},
+
+clearPhaseIntervals(){Object.values(this.phaseIntervals).forEach(clearInterval);this.phaseIntervals={}},
+
+/* ===== LANDING ===== */
+renderLanding(){return`<div class="page">
+<div class="hero"><h1>프롬프트를 쓰지 마세요. 고르세요.</h1><p class="subtitle">3단계 카드 선택으로 창의적 산출물 생성</p><p class="sub2">또는 자유롭게 프롬프트와 참고 자료로 방향을 지정하세요</p><div class="hero-cta"><a href="#/new" class="btn btn-primary">🚀 바로 체험하기</a></div></div>
+<div class="loop-svg-wrap"><svg viewBox="0 0 400 240"><g class="loop-rotate"><circle cx="200" cy="120" r="80" fill="none" stroke="var(--border)" stroke-width="1" stroke-dasharray="6 4"/><circle cx="200" cy="40" r="20" fill="var(--surface2)" stroke="var(--blue)" stroke-width="2"/><text x="200" y="44" text-anchor="middle" font-size="12" fill="var(--accent2)">📋</text><circle cx="280" cy="120" r="20" fill="var(--surface2)" stroke="var(--purple)" stroke-width="2"/><text x="280" y="124" text-anchor="middle" font-size="12" fill="var(--accent2)">🎨</text><circle cx="200" cy="200" r="20" fill="var(--surface2)" stroke="var(--amber)" stroke-width="2"/><text x="200" y="204" text-anchor="middle" font-size="12" fill="var(--accent2)">🔍</text><circle cx="120" cy="120" r="20" fill="var(--surface2)" stroke="var(--green)" stroke-width="2"/><text x="120" y="124" text-anchor="middle" font-size="12" fill="var(--accent2)">✏️</text></g><circle cx="200" cy="120" r="30" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"/><text x="200" y="116" text-anchor="middle" font-size="8" fill="var(--text2)">CLE</text><text x="200" y="128" text-anchor="middle" font-size="10" fill="var(--accent2)">🔄</text></svg></div>
+<div class="category-tags">${['만화','일러스트','스토리보드','글쓰기','디자인','커스텀'].map(c=>`<span class="cat-tag">${c}</span>`).join('')}</div>
+<div class="panel" style="margin-top:24px"><div class="panel-header"><span class="panel-title">🖼️ 최근 갤러리</span><a href="#/gallery" class="btn btn-secondary btn-sm">전체 보기</a></div><div class="gallery-strip">${GALLERY_ITEMS.slice(0,4).map(g=>`<div class="g-thumb" style="background:${g.gradient};display:flex;align-items:center;justify-content:center;font-size:1.5rem">${g.title.split(' ')[0]}</div>`).join('')}</div></div>
+</div>`},
+
+/* ===== NEW PROJECT WIZARD ===== */
+renderNewProject(){
+const steps=['주제 선택','화풍 선택','분위기 선택'];
+const pills=steps.map((s,i)=>`<span class="step-pill${this.wizStep===i?' active':''}${i<this.wizStep?' done':''}">${i+1}/3 ${s}</span>`).join('');
+const cards=this.wizStep===0?TOPICS:this.wizStep===1?STYLES:MOODS;
+const selected=this.wizStep===0?this.wizData.topics:this.wizStep===1?this.wizData.styles:this.wizData.moods;
+const cardsHTML=cards.map(c=>`<div class="wiz-card${selected.includes(c.id)?' selected':''}" onclick="App.toggleCard('${c.id}',${this.wizStep})"><div class="card-icon">${c.icon}</div><div class="card-title">${c.title}</div><div class="card-desc">${c.desc}</div></div>`).join('');
+let promptHTML='',refHTML='',previewHTML='';
+if(this.wizStep===0){
+const ex=PROMPT_EXAMPLES[Math.floor(Math.random()*PROMPT_EXAMPLES.length)];
+promptHTML=`<div class="prompt-area"><label>✍️ 또는 자유롭게 입력하세요</label><textarea id="promptText" placeholder="${ex}" maxlength="2000" oninput="App.updatePrompt()">${this.wizData.prompt}</textarea><div class="char-count"><span id="charCount">${this.wizData.prompt.length}</span>/2000</div><div class="ref-area"><div class="ref-btns"><button class="btn btn-secondary btn-sm" onclick="App.addImage()">📷 이미지 첨부</button><button class="btn btn-secondary btn-sm" onclick="App.toggleUrlInput()">🔗 URL 추가</button></div><div class="url-input-row" id="urlInputRow" style="display:none"><input id="urlInput" placeholder="https://example.com/reference"><button class="btn btn-primary btn-sm" onclick="App.addUrl()">추가</button></div><div class="ref-grid">${this.wizData.images.map(im=>`<div class="ref-thumb"><img src="${im.data}" alt="${im.name}"><div class="ref-del" onclick="App.removeImage('${im.id}')">✕</div></div>`).join('')}${this.wizData.urls.map(u=>`<div class="ref-url-chip">🔗 ${u.title} <span class="url-del" onclick="App.removeUrl('${u.id}')">✕</span></div>`).join('')}</div></div></div></div>`;
+}else if(this.wizStep===1){
+refHTML=`<div class="prompt-area"><label>🎨 화풍 참고 자료 (선택)</label><div class="ref-btns"><button class="btn btn-secondary btn-sm" onclick="App.addStyleImage()">📷 이미지 첨부</button><button class="btn btn-secondary btn-sm" onclick="App.toggleStyleUrlInput()">🔗 URL 추가</button></div><div class="url-input-row" id="styleUrlInputRow" style="display:none"><input id="styleUrlInput" placeholder="https://example.com/style-ref"><button class="btn btn-primary btn-sm" onclick="App.addStyleUrl()">추가</button></div><div class="ref-grid">${this.wizData.styleImages.map(im=>`<div class="ref-thumb"><img src="${im.data}" alt="${im.name}"><div class="ref-del" onclick="App.removeStyleImage('${im.id}')">✕</div></div>`).join('')}${this.wizData.styleUrls.map(u=>`<div class="ref-url-chip">🔗 ${u.title} <span class="url-del" onclick="App.removeStyleUrl('${u.id}')">✕</span></div>`).join('')}</div></div></div>`;
+}else{
+const autoPrompt=this.buildAutoPrompt();
+if(!this.wizData.finalPrompt)this.wizData.finalPrompt=autoPrompt;
+previewHTML=`<div class="preview-panel"><h4>📋 생성 프롬프트 프리뷰</h4><div class="preview-tags">${[...this.wizData.topics,...this.wizData.styles,...this.wizData.moods].map(id=>{const all=[...TOPICS,...STYLES,...MOODS];const item=all.find(c=>c.id===id);return item?`<span class="preview-tag">${item.icon} ${item.title}</span>`:''}).join('')}</div><div class="preview-prompt">${this.wizData.finalPrompt}</div><div class="final-prompt-area"><label>직접 수정하기</label><textarea oninput="App.updateFinalPrompt()" id="finalPromptText">${this.wizData.finalPrompt}</textarea></div><button class="btn btn-secondary btn-sm" onclick="App.resetFinalPrompt()" style="margin-top:8px">🔄 초기화</button></div></div>`}
+const previewSide=`<div class="preview-side"><div class="preview-panel"><h4>👀 선택 프리뷰</h4><div class="preview-tags">${selected.map(id=>{const all=[...TOPICS,...STYLES,...MOODS];const item=all.find(c=>c.id===id);return item?`<span class="preview-tag">${item.icon} ${item.title}</span>`:''}).join('')}</div>${this.wizData.prompt?`<div class="preview-prompt">${this.wizData.prompt}</div>`:''}<div class="preview-info">⏱️ 예상 생성 시간: ~2분 | 결과물 수: 4개 후보</div><button class="btn btn-secondary btn-sm random-btn" onclick="App.randomSelect()">🎲 AI가 추천해줘</button></div></div>`;
+return`<div class="page"><div class="wizard-header"><div><span class="panel-title">새 프로젝트</span><span class="panel-subtitle"> style="margin-left:12px">Step ${this.wizStep+1}/3</span></div><div class="step-pills">${pills}</div></div>
+<div style="display:grid;grid-template-columns:1fr 300px;gap:24px"><div><div class="card-grid">${cardsHTML}</div>${promptHTML}${refHTML}${previewHTML}
+<div class="step-nav" style="margin-top:24px;display:flex;justify-content:space-between">${this.wizStep>0?'<button class="btn btn-secondary" onclick="App.prevStep()">← 이전</button>':'<span></span>'}${this.wizStep<2?`<button class="btn btn-primary" onclick="App.nextStep()">다음 →</button>`:`<button class="btn btn-primary" onclick="App.createProject()">🚀 생성 시작</button>`}</div></div>
+${previewSide}</div></div>`},
+
+buildAutoPrompt(){
+const topicNames=this.wizData.topics.map(id=>{const c=TOPICS.find(t=>t.id===id);return c?c.title:id}).join(', ');
+const styleNames=this.wizData.styles.map(id=>{const c=STYLES.find(s=>s.id===id);return c?c.title:id}).join(', ');
+const moodNames=this.wizData.moods.map(id=>{const c=MOODS.find(m=>m.id===id);return c?c.title:id}).join(', ');
+let p='';if(topicNames)p+=`[주제] ${topicNames}\n`;if(styleNames)p+=`[화풍] ${styleNames}\n`;if(moodNames)p+=`[분위기] ${moodNames}\n`;if(this.wizData.prompt)p+=`[사용자 프롬프트] ${this.wizData.prompt}\n`;if(this.wizData.images.length)p+=`[참고 이미지] ${this.wizData.images.length}장\n`;if(this.wizData.urls.length)p+=`[참고 URL] ${this.wizData.urls.map(u=>u.url).join(', ')}\n`;return p.trim()||'선택해주세요'},
+
+resetFinalPrompt(){this.wizData.finalPrompt=this.buildAutoPrompt();$('#finalPromptText').value=this.wizData.finalPrompt;$('.preview-prompt').textContent=this.wizData.finalPrompt},
+updateFinalPrompt(){this.wizData.finalPrompt=$('#finalPromptText').value},
+updatePrompt(){this.wizData.prompt=$('#promptText').value;$('#charCount').textContent=this.wizData.prompt.length},
+
+toggleCard(id,step){
+const arr=step===0?'topics':step===1?'styles':'moods';
+const i=this.wizData[arr].indexOf(id);
+if(i>=0)this.wizData[arr].splice(i,1);else this.wizData[arr].push(id);
+this.route();
+},
+
+nextStep(){if(this.wizStep<2){this.wizStep++;this.route()}},
+prevStep(){if(this.wizStep>0){this.wizStep--;this.route()}},
+
+randomSelect(){
+const pick=(arr)=>arr[Math.floor(Math.random()*arr.length)];
+this.wizData.topics=[pick(TOPICS.filter(t=>t.id!=='custom')).id];
+this.wizData.styles=[pick(STYLES).id];
+this.wizData.moods=[pick(MOODS).id];
+this.route();toast('랜덤 조합 선택!','info');
+},
+
+createProject(){
+if(!this.wizData.topics.length&&!this.wizData.styles.length&&!this.wizData.moods.length&&!this.wizData.prompt){toast('카드나 프롬프트를 선택해주세요','error');return}
+const project={
+id:uid(),title:this.wizData.prompt||[...this.wizData.topics,...this.wizData.styles,...this.wizData.moods].map(id=>{const all=[...TOPICS,...STYLES,...MOODS];const c=all.find(x=>x.id===id);return c?c.title:id}).join(' ')||'새 프로젝트',
+topic_cards:[...this.wizData.topics],style_cards:[...this.wizData.styles],mood_cards:[...this.wizData.moods],
+prompt_text:this.wizData.prompt,final_prompt:this.wizData.finalPrompt||this.buildAutoPrompt.call(this),
+reference_images:[...this.wizData.images],reference_urls:[...this.wizData.urls],
+phases:{define:{status:'idle',timestamp:null},generate:{status:'idle',candidates:[],timestamp:null},evaluate:{status:'idle',timestamp:null},refine:{status:'idle',timestamp:null},deliver:{status:'idle',timestamp:null}},
+feedback:{chips:[],rating_direction:3,rating_quality:3,comment:''},
+privacy:'private',created:Date.now(),modified:Date.now(),recoveryToken:uid()
+};
+const projects=STORAGE.projects;projects.unshift(project);STORAGE.projects=projects;
+toast('프로젝트 생성!','success');
+this.wizData={topics:[],styles:[],moods:[],prompt:'',images:[],urls:[],styleImages:[],styleUrls:[],finalPrompt:''};
+this.wizStep=0;
+window.location.hash='#/project/'+project.id;
+},
+sendToDiscord(){
+const p=this.getProject();if(!p){toast('프로젝트를 찾을 수 없습니다','error');return}
+this._copyRequest(p).then(()=>toast('📋 요청 데이터 복사됨! 디스코드 #레노버-free에 붙여넣어주세요','success')).catch(()=>toast('복사 실패 — 콘솔에서 확인하세요','error'))
+},
+async createGitHubIssue(){
+const p=this.getProject();if(!p){toast('프로젝트를 찾을 수 없습니다','error');return}
+const s=STORAGE.settings;const pat=s.github_pat;
+const req={type:'CLE-REQUEST',id:p.id,title:p.title,
+topics:p.topic_cards.map(id=>{const c=TOPICS.find(x=>x.id===id);return c?c.title:id}),
+styles:p.style_cards.map(id=>{const c=STYLES.find(x=>x.id===id);return c?c.title:id}),
+moods:p.mood_cards.map(id=>{const c=MOODS.find(x=>x.id===id);return c?c.title:id}),
+prompt:p.final_prompt||p.prompt_text,
+refs:{images:p.reference_images.map(i=>i.name),urls:p.reference_urls.map(u=>u.url)},
+feedback:p.feedback,chips:p.feedback.chips,
+timestamp:p.modified};
+const bodyBase='## 🎨 CLE 요청\n\n'+JSON.stringify(req,null,2)+'\n\n---\n_CLE-REQUEST 자동 생성_';
+if(pat){try{toast('⏳ GitHub Issue 생성 중...','info');
+let body=bodyBase;
+const imgs=p.reference_images.filter(i=>i.data);
+if(imgs.length>0){body+='\n\n## 📎 참고 이미지\n';
+const b64Map=imgs.map((img,idx)=>{const b64=img.data.split(',')[1];return{name:img.name,ext:(img.name.split('.').pop()||'png'),b64,path:'assets/cle-requests/'+p.id+'-'+idx+'.'+(img.name.split('.').pop()||'png')}});
+for(const m of b64Map){try{const r=await fetch('https://api.github.com/repos/Daegu-Agent-Crew/creative-loop-engineering/contents/'+m.path,{method:'PUT',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({message:'feat: CLE ref image for '+p.id,content:m.b64})});if(r.ok){const d=await r.json();body+='![ '+m.name+']('+d.content.download_url+')\n\n'}}catch(e){}}}
+const r=await fetch('https://api.github.com/repos/Daegu-Agent-Crew/creative-loop-engineering/issues',{method:'POST',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({title:'🎨 '+p.title.slice(0,60),body,labels:['CLE-PENDING']})});if(r.ok){const d=await r.json();toast('✅ Issue #'+d.number+' 생성됨!','success');this._copyRequest(p);return}else{const e=await r.json();toast('❌ '+e.message,'error');}}catch(e){toast('❌ 네트워크 오류','error')}
+}
+const url='https://github.com/Daegu-Agent-Crew/creative-loop-engineering/issues/new?labels=CLE-PENDING&title='+encodeURIComponent('🎨 '+p.title.slice(0,60))+'&body='+encodeURIComponent(bodyBase);
+this._copyRequest(p).then(()=>{toast('📋 클립보드에 복사 + Issue 페이지 열림','success');window.open(url,'_blank')}).catch(()=>{window.open(url,'_blank')})
+},
+_copyRequest(p){
+const req={type:'CLE-REQUEST',id:p.id,title:p.title,
+topics:p.topic_cards.map(id=>{const c=TOPICS.find(x=>x.id===id);return c?c.title:id}),
+styles:p.style_cards.map(id=>{const c=STYLES.find(x=>x.id===id);return c?c.title:id}),
+moods:p.mood_cards.map(id=>{const c=MOODS.find(x=>x.id===id);return c?c.title:id}),
+prompt:p.final_prompt||p.prompt_text,
+refs:{images:p.reference_images.map(i=>i.name),urls:p.reference_urls.map(u=>u.url)},
+feedback:p.feedback,chips:p.feedback.chips,timestamp:p.modified};
+return navigator.clipboard.writeText(JSON.stringify(req,null,2))
+},
+
+/* ===== FILE HANDLERS ===== */
+initDragDrop(){
+const body=document.body;
+body.addEventListener('dragover',e=>{e.preventDefault();$('#dropOverlay').classList.add('show')});
+body.addEventListener('dragleave',e=>{if(e.relatedTarget===null)$('#dropOverlay').classList.remove('show')});
+body.addEventListener('drop',e=>{e.preventDefault();$('#dropOverlay').classList.remove('show');if(e.dataTransfer.files.length)this.processFiles(e.dataTransfer.files)});
+},
+
+processFiles(files){
+for(const f of files){
+if(f.type.startsWith('image/')&&this.wizData.images.length<5){
+const reader=new FileReader();
+reader.onload=e=>{this.wizData.images.push({id:'r'+uid(),name:f.name,data:e.target.result,size:f.size});this.route()};
+reader.readAsDataURL(f);
+}}
+},
+
+addImage(){
+const input=document.createElement('input');input.type='file';input.accept='image/*';input.multiple=true;
+input.onchange=()=>{if(input.files.length)this.processFiles(input.files)};input.click();
+},
+
+removeImage(id){this.wizData.images=this.wizData.images.filter(i=>i.id!==id);this.route()},
+
+toggleUrlInput(){const r=$('#urlInputRow');r.style.display=r.style.display==='none'?'flex':'none'},
+
+addUrl(){
+const input=$('#urlInput');const url=input.value.trim();
+if(!url||this.wizData.urls.length>=3)return;
+this.wizData.urls.push({id:'u'+uid(),url,title:new URL(url).hostname||url});
+input.value='';$('#urlInputRow').style.display='none';this.route();
+},
+
+removeUrl(id){this.wizData.urls=this.wizData.urls.filter(u=>u.id!==id);this.route()},
+
+addStyleImage(){
+const input=document.createElement('input');input.type='file';input.accept='image/*';input.multiple=true;
+input.onchange=()=>{for(const f of input.files){if(f.type.startsWith('image/')&&this.wizData.styleImages.length<5){const reader=new FileReader();reader.onload=e=>{this.wizData.styleImages.push({id:'rs'+uid(),name:f.name,data:e.target.result,size:f.size});this.route()};reader.readAsDataURL(f)}}};input.click();
+},
+
+removeStyleImage(id){this.wizData.styleImages=this.wizData.styleImages.filter(i=>i.id!==id);this.route()},
+
+toggleStyleUrlInput(){const r=$('#styleUrlInputRow');r.style.display=r.style.display==='none'?'flex':'none'},
+
+addStyleUrl(){
+const input=$('#styleUrlInput');const url=input.value.trim();
+if(!url||this.wizData.styleUrls.length>=3)return;
+this.wizData.styleUrls.push({id:'us'+uid(),url,title:new URL(url).hostname||url});
+input.value='';$('#styleUrlInputRow').style.display='none';this.route();
+},
+
+removeStyleUrl(id){this.wizData.styleUrls=this.wizData.styleUrls.filter(u=>u.id!==id);this.route()},
+
+/* ===== DASHBOARD ===== */
+renderDashboard(){
+const projects=STORAGE.projects;
+const filtered=this.filter==='all'?projects:this.filter==='active'?projects.filter(p=>p.phases.generate.status!=='complete'&&p.phases.generate.status!=='idle'):projects.filter(p=>p.phases.generate.status==='complete');
+const cards=filtered.length?filtered.map(p=>{
+const status=p.phases.deliver.status==='complete'?'complete':p.phases.generate.status==='generating'||p.phases.generate.status==='complete'?'active':'idle';
+const statusLabel=status==='complete'?'✅ 완료':status==='active'?'🔄 진행중':'⏳ 대기';
+const date=new Date(p.modified).toLocaleDateString('ko');
+return`<div class="project-card" onclick="location.hash='#/project/${p.id}'"><div class="pc-title">${p.title}</div><div class="pc-meta"><span>${date}</span><span class="pc-status ${status}">${statusLabel}</span></div></div>`}).join(''):`<div class="empty-state"><div class="empty-icon">📂</div><h3>아직 프로젝트가 없습니다</h3><p>첫 번째 창의적 작품을 만들어보세요!</p><a href="#/new" class="btn btn-primary">새 프로젝트</a></div>`;
+return`<div class="page"><div class="panel-header"><span class="panel-title">📊 내 프로젝트</span><a href="#/new" class="btn btn-primary btn-sm">+ 새 프로젝트</a></div><div class="filter-bar">${['all','active','complete'].map(f=>`<span class="filter-btn${this.filter===f?' active':''}" onclick="App.setFilter('${f}')">${f==='all'?'전체':f==='active'?'진행중':'완료'}</span>`).join('')}</div><div class="project-list">${cards}</div></div>`},
+
+setFilter(f){this.filter=f;this.route()},
+
+/* ===== PROJECT ===== */
+renderProject(){
+const project=STORAGE.projects.find(p=>p.id===this.currentProjectId);
+if(!project)return`<div class="empty-state"><div class="empty-icon">❓</div><h3>프로젝트를 찾을 수 없습니다</h3><p><a href="#/dashboard">대시보드로 돌아가기</a></p></div>`;
+const phaseKeys=PHASES.map(p=>p.key);
+const phaseHTML=PHASES.map((p,i)=>{
+const ph=project.phases[p.key];
+const st=ph.status;
+const cls=st==='complete'?'complete':st==='generating'?'active':st==='failed'?'failed':'';
+const iconCls=st==='generating'?'anim-spin':st==='idle'?'anim-pulse':st==='complete'?'anim-bounce':'';
+const icon=st==='complete'?'✅':st==='generating'?'🔄':st==='failed'?'❌':'⏳';
+const conn=i<4?`<div class="phase-connector${st==='complete'?' done':''}"></div>`:'';
+return`<div class="phase-node ${cls}"><div class="phase-icon" style="border-color:${p.color}"><span class="${iconCls}">${icon}</span></div><div class="phase-name">${p.label}</div></div>${conn}`}).join('');
+const candidates=project.phases.generate.candidates.length?project.phases.generate.candidates.map((c,i)=>{
+const status=c.status==='complete'?'완료':c.status==='failed'?'❌ 실패':'⏳ 대기';
+return`<div class="candidate-card c${(i%4)+1}">${status}</div>`}).join(''):[0,1,2,3].map(i=>`<div class="candidate-card c${i+1}">⏳ 대기</div>`).join('');
+const gSt=project.phases.generate.status;
+const statusText=gSt==='idle'?'생성 대기 중':gSt==='generating'?'🔄 생성 중...':gSt==='complete'?'✅ 생성 완료':gSt==='failed'?'❌ 생성 실패':'';
+const statusCls=gSt==='idle'?'idle':gSt;
+const refImgs=project.reference_images.length?`<div class="ref-grid" style="margin-top:8px">${project.reference_images.map(im=>`<div class="ref-thumb"><img src="${im.data}" alt="${im.name}"></div>`).join('')}</div>`:'';
+const refUrls=project.reference_urls.length?project.reference_urls.map(u=>`<div class="ref-url-chip" style="margin-top:4px">🔗 <a href="${u.url}" target="_blank">${u.title}</a></div>`).join(''):'';
+const chipsHTML=FEEDBACK_CHIPS.map(c=>`<span class="feedback-chip${project.feedback.chips.includes(c)?' selected':''}" onclick="App.toggleChip('${c.replace(/'/g,"\\'")}')">${c}</span>`).join('');
+const dirStars='★'.repeat(project.feedback.rating_direction)+'☆'.repeat(5-project.feedback.rating_direction);
+const qualStars='★'.repeat(project.feedback.rating_quality)+'☆'.repeat(5-project.feedback.rating_quality);
+return`<div class="page">
+<div class="project-header"><div><div class="project-title">${project.title}</div><div style="font-size:.8rem;color:var(--text2);margin-top:4px">${new Date(project.created).toLocaleDateString('ko')} 생성</div></div></div>
+<div class="panel"><div class="panel-title">🔄 Phase 파이프라인</div><div class="phase-pipeline">${phaseHTML}</div></div>
+<div class="status-bar ${statusCls}">${statusText}</div>
+<div class="panel"><div class="panel-title">🖼️ 후보 결과물</div><div class="candidate-grid">${candidates}</div></div>
+<div class="panel"><div class="panel-title">🎯 피드백</div><div class="feedback-chips">${chipsHTML}</div>
+<div class="star-rating"><label>방향성</label><input type="range" min="1" max="5" value="${project.feedback.rating_direction}" oninput="App.setRating('direction',this.value)"><span class="stars"><span class="filled">${dirStars}</span></span></div>
+<div class="star-rating"><label>품질</label><input type="range" min="1" max="5" value="${project.feedback.rating_quality}" oninput="App.setRating('quality',this.value)"><span class="stars"><span class="filled">${qualStars}</span></span></div>
+<div class="action-row"><button class="btn btn-primary btn-sm" onclick="App.approveProject()">✅ 승인</button><button class="btn btn-secondary btn-sm" onclick="App.regenerateProject()">🔄 재생성</button><button class="btn btn-secondary btn-sm">✏️ 방향 수정</button><button class="btn btn-secondary btn-sm" style="border-color:var(--green);color:var(--green)" onclick="App.sendToDiscord()">📤 디스코드 요청</button><button class="btn btn-secondary btn-sm" style="border-color:var(--blue);color:var(--blue)" onclick="App.createGitHubIssue()">📋 GitHub Issue</button></div>
+<div class="comment-area"><textarea placeholder="추가 코멘트 (선택)" oninput="App.setComment(this.value)">${project.feedback.comment||''}</textarea></div></div>
+<div class="collapsible-header" onclick="this.nextElementSibling.classList.toggle('open')"><h4>📋 생성 프롬프트 보기</h4><span>▼</span></div><div class="collapsible-body"><div style="padding:12px;background:var(--surface2);border-radius:8px;font-size:.85rem;color:var(--text2);margin-bottom:8px;white-space:pre-wrap">${project.final_prompt||project.prompt_text}</div><button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(\`${(project.final_prompt||'').replace(/`/g,'\\`')}\`);toast('복사 완료!','success')">📋 복사</button></div>
+<div class="collapsible-header" onclick="this.nextElementSibling.classList.toggle('open')"><h4>📎 참고 자료</h4><span>▼</span></div><div class="collapsible-body">${refImgs||refUrls||'<p style="font-size:.85rem;color:var(--text2)">참고 자료 없음</p>'}${refUrls}</div>
+<div class="panel"><div class="panel-title">🔗 복구 URL</div><div class="recovery-url"><code>#/resume/${project.recoveryToken}</code><button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(location.origin+location.pathname+'#/resume/${project.recoveryToken}');toast('클립보드에 복사!','success')">📋 복사</button></div></div>
+<div class="panel"><div class="panel-title">🔒 공개 설정</div><div class="privacy-options">${['private','link','gallery'].map(p=>`<div class="privacy-opt${project.privacy===p?' active':''}" onclick="App.setPrivacy('${p}')"><input type="radio" name="privacy" ${project.privacy===p?'checked':''}>${p==='private'?'🔒 비공개':p==='link'?'🔗 링크 공유':'🖼️ 갤러리 공개'}</div>`).join('')}</div></div>
+</div>`},
+
+toggleChip(chip){const p=this.getProject();const i=p.feedback.chips.indexOf(chip);if(i>=0)p.feedback.chips.splice(i,1);else p.feedback.chips.push(chip);this.saveProject(p);this.route()},
+setRating(type,val){const p=this.getProject();p.feedback['rating_'+type]=parseInt(val);this.saveProject(p)},
+setComment(val){const p=this.getProject();p.feedback.comment=val;this.saveProject(p)},
+setPrivacy(val){const p=this.getProject();p.privacy=val;this.saveProject(p);toast('공개 설정 변경','info')},
+approveProject(){const p=this.getProject();p.phases.deliver.status='complete';this.saveProject(p);toast('승인 완료!','success')},
+regenerateProject(){const p=this.getProject();p.phases.generate.status='generating';p.phases.generate.candidates=[];this.saveProject(p);this.simulatePhases(p.id);toast('재생성 시작!','info')},
+
+getProject(){return STORAGE.projects.find(p=>p.id===this.currentProjectId)||{id:'',feedback:{chips:[],rating_direction:3,rating_quality:3,comment:''},phases:{generate:{status:'idle',candidates:[]}}}},
+saveProject(p){const projects=STORAGE.projects;const i=projects.findIndex(x=>x.id===p.id);if(i>=0){p.modified=Date.now();projects[i]=p;STORAGE.projects=projects}},
+
+simulatePhases(projectId){
+this.clearPhaseIntervals();
+let step=0;
+const phaseOrder=['define','generate','evaluate','refine','deliver'];
+this.phaseIntervals.sim=setInterval(()=>{
+const projects=STORAGE.projects;
+const p=projects.find(x=>x.id===projectId);
+if(!p||step>=phaseOrder.length){clearInterval(this.phaseIntervals.sim);this.route();return}
+const key=phaseOrder[step];
+p.phases[key].status=step===1?'generating':'complete';
+p.phases[key].timestamp=Date.now();
+if(key==='generate'){
+const gradients=['linear-gradient(135deg,#1a1a3e,#4a2c8a)','linear-gradient(135deg,#0d2137,#1b4d69)','linear-gradient(135deg,#1a3a1a,#2d6930)','linear-gradient(135deg,#3a2a1a,#694a2d)'];
+p.phases.generate.candidates=gradients.map((g,i)=>({id:'c'+(i+1),status:i<3?'complete':'idle',gradient:g}));
+setTimeout(()=>{p.phases.generate.candidates[3].status='complete';p.phases.generate.status='complete';STORAGE.projects=projects;this.route()},2000);
+}
+STORAGE.projects=projects;
+step++;
+this.route();
+},3000);
+},
+
+/* ===== GALLERY ===== */
+renderGallery(){
+const items=GALLERY_ITEMS.filter(g=>this.galleryFilter==='all'||g.tags.some(t=>t.includes(this.galleryFilter)));
+const searched=this.gallerySearch?items.filter(g=>g.title.includes(this.gallerySearch)||g.tags.some(t=>t.includes(this.gallerySearch))):items;
+const cards=searched.map(g=>`<div class="gallery-card" onclick="App.showGalleryDetail('${g.id}')"><div class="gc-img" style="background:${g.gradient}">🖼️</div><div class="gc-info"><div class="gc-title">${g.title}</div><div class="gc-tags">${g.tags.map(t=>`<span class="gc-tag">${t}</span>`).join('')}</div><div class="gc-actions"><span>❤️ ${g.likes}</span><span class="btn btn-secondary btn-sm">복제</span></div></div></div>`).join('');
+return`<div class="page"><div class="panel-header"><span class="panel-title">🖼️ 갤러리</span></div><div class="search-bar"><input placeholder="검색..." value="${this.gallerySearch}" oninput="App.gallerySearch=this.value;this.route()"><div class="filter-bar">${['all','SF','판타지','현대','역사'].map(f=>`<span class="filter-btn${this.galleryFilter===f?' active':''}" onclick="App.galleryFilter='${f}';this.route()">${f==='all'?'전체':f}</span>`).join('')}</div></div><div class="masonry">${cards}</div></div>`},
+
+showGalleryDetail(id){
+const g=GALLERY_ITEMS.find(x=>x.id===id);if(!g)return;
+$('#modalContent').innerHTML=`<div class="modal-close" onclick="App.closeModal()">✕</div><div style="width:100%;height:300px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:4rem;margin-bottom:16px;background:${g.gradient}">🖼️</div><h2 style="margin-bottom:8px">${g.title}</h2><div style="color:var(--text2);margin-bottom:16px">${g.tags.map(t=>'#'+t).join(' ')} · ❤️ ${g.likes}</div><div style="display:flex;gap:8px"><button class="btn btn-primary btn-sm">복제하기</button><button class="btn btn-secondary btn-sm">❤️ 좋아요</button></div>`;
+$('#modalOverlay').classList.add('show');
+},
+
+closeModal(){$('#modalOverlay').classList.remove('show')},
+
+/* ===== SETTINGS ===== */
+renderSettings(){
+const s=STORAGE.settings;const pat=s.github_pat||'';
+const patOk=pat?"<span style=\"color:var(--green)\">✅ 연결됨</span>":"<span style=\"color:var(--text2)\">미설정</span>";
+return`<div class="page"><div class="panel"><div class="panel-title">⚙️ 설정</div>
+<div class="settings-section"><div class="settings-row"><span class="settings-label">🎨 테마</span><span class="settings-value">다크 (Phase 1 고정)</span></div><div class="settings-row"><span class="settings-label">🌐 언어</span><span class="settings-value">한국어 (Phase 1 고정)</span></div></div>
+<div class="settings-section"><div class="settings-row"><span class="settings-label">GitHub PAT</span>${patOk}</div>
+<div style="padding:8px 0"><input id="patInput" type="password" placeholder="ghp_xxxxxxxxxxxx" value="${pat}" style="width:100%;padding:8px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface2);color:var(--text1);font-size:.85rem;box-sizing:border-box" onfocus="this.select()"></div>
+<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="App.saveGitHubPat()">💾 저장</button><button class="btn btn-secondary btn-sm" onclick="App.testGitHubPat()">🧪 테스트</button>${pat?'<button class="btn btn-danger btn-sm" onclick="App.removeGitHubPat()">🗑️ 제거</button>':''}<span id="patStatus" style="font-size:.8rem;color:var(--text2)"></span></div></div>
+<div class="settings-section"><div class="settings-row"><span class="settings-label">Discord 연동</span><span class="placeholder-link">🔗 Phase 2.5에서 지원</span></div></div>
+<div class="settings-section"><div class="settings-row"><span class="settings-label">🗑️ 모든 데이터 삭제</span><button class="btn btn-danger btn-sm" onclick="App.clearAllData()">삭제</button></div></div>
+</div></div>`},
+
+saveGitHubPat(){const inp=document.getElementById('patInput');if(!inp)return;const v=inp.value.trim();if(!v){toast('PAT를 입력하세요','error');return}if(!v.startsWith('ghp_')&&!v.startsWith('github_pat_')&&!v.startsWith('gho_')&&!v.startsWith('ghs_')&&!v.startsWith('ghu_')){toast('올바른 GitHub PAT 형식이 아닙니다','error');return}const s=STORAGE.settings;s.github_pat=v;STORAGE.settings=s;toast('GitHub PAT 저장됨','success');this.route()},
+removeGitHubPat(){const s=STORAGE.settings;delete s.github_pat;STORAGE.settings=s;toast('GitHub PAT 제거됨','success');this.route()},
+async testGitHubPat(){const inp=document.getElementById('patInput');const status=document.getElementById('patStatus');if(!inp||!status)return;const v=inp.value.trim();if(!v){status.textContent='PAT를 먼저 입력하세요';status.style.color='var(--red)';return}status.textContent='테스트 중...';status.style.color='var(--text2)';try{const r=await fetch('https://api.github.com/user',{headers:{'Authorization':'Bearer '+v,'Accept':'application/vnd.github.v3+json'}});if(r.ok){const d=await r.json();status.textContent='✅ '+d.login;status.style.color='var(--green)'}else{const e=await r.json();status.textContent='❌ '+(e.message||'인증 실패').slice(0,40);status.style.color='var(--red)'}}catch(e){status.textContent='❌ 네트워크 오류';status.style.color='var(--red)'}},
+
+
+clearAllData(){
+$('#modalContent').innerHTML=`<div class="modal-close" onclick="App.closeModal()">✕</div><div class="confirm-msg">정말 모든 프로젝트와 설정을 삭제하시겠습니까?<br><small style="color:var(--text2)">이 작업은 되돌릴 수 없습니다.</small></div><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn btn-secondary" onclick="App.closeModal()">취소</button><button class="btn btn-danger" onclick="localStorage.removeItem('cle_projects');localStorage.removeItem('cle_settings');App.closeModal();toast('데이터 삭제 완료','success');App.route()">삭제</button></div>`;
+$('#modalOverlay').classList.add('show');
+},
+
+/* ===== RESUME ===== */
+handleResume(token){
+const project=STORAGE.projects.find(p=>p.recoveryToken===token);
+if(project){window.location.hash='#/project/'+project.id}else{toast('프로젝트를 찾을 수 없습니다','error');window.location.hash='#/'}
+},
+
+/* ===== TUTORIAL ===== */
+showTutorial(){
+const s=this.tutorialSlide;const t=TUTORIAL[s];
+$('#tutTitle').textContent=t.title;$('#tutText').textContent=t.text;
+$('#tutDots').innerHTML=TUTORIAL.map((_,i)=>`<span class="${i===s?'active':''}"></span>`).join('');
+$('#tutNext').textContent=s<TUTORIAL.length-1?'다음':'시작!';
+$('#tutNext').onclick=()=>{if(s<TUTORIAL.length-1){this.tutorialSlide++;this.showTutorial()}else{this.closeTutorial()}};
+$('#tutorialOverlay').classList.add('show');
+},
+
+closeTutorial(){
+$('#tutorialOverlay').classList.remove('show');
+const s=STORAGE.settings;s.tutorial_seen=true;STORAGE.settings=s;
+},
+
+/* ===== TEST ===== */
+renderTest(){
+return`<div class="page"><div class="test-header"><h2>🧪 자동 테스트</h2><div class="test-counters"><span class="pass" id="testPass">✅ 0</span><span class="fail" id="testFail">❌ 0</span></div><div style="margin-top:12px"><button class="btn btn-primary btn-sm" onclick="App.runTests()">▶️ 전체 재실행</button></div></div><div class="test-list" id="testList"></div></div>`},
+
+async runTests(){
+const tests=[
+{name:'라우팅: 랜딩 페이지 렌더',fn:()=>{window.location.hash='#/';return !!document.querySelector('.hero')}},
+{name:'라우팅: 새 프로젝트 위저드 렌더',fn:()=>{window.location.hash='#/new';return !!document.querySelector('.step-pill')}},
+{name:'라우팅: 대시보드 렌더',fn:()=>{window.location.hash='#/dashboard';return !!document.querySelector('.project-list')}},
+{name:'라우팅: 갤러리 렌더',fn:()=>{window.location.hash='#/gallery';return !!document.querySelector('.masonry')}},
+{name:'라우팅: 설정 렌더',fn:()=>{window.location.hash='#/settings';return !!document.querySelector('.settings-section')}},
+{name:'라우팅: 테스트 렌더',fn:()=>{window.location.hash='#/test';return !!document.querySelector('.test-header')}},
+{name:'스토리지: 설정 저장/불러오기',fn:()=>{STORAGE.settings={theme:'dark',tutorial_seen:true};const s=STORAGE.settings;if(!s||s.theme!=='dark')throw'fail';return true}},
+{name:'스토리지: 프로젝트 생성/저장',fn:()=>{const p={id:'test-1',title:'Test',topic_cards:[],style_cards:[],mood_cards:[],prompt_text:'',final_prompt:'',reference_images:[],reference_urls:[],phases:{define:{status:'idle'},generate:{status:'idle',candidates:[]},evaluate:{status:'idle'},refine:{status:'idle'},deliver:{status:'idle'}},feedback:{chips:[],rating_direction:3,rating_quality:3,comment:''},privacy:'private',created:Date.now(),modified:Date.now(),recoveryToken:'tok-test'};const arr=STORAGE.projects;arr.push(p);STORAGE.projects=arr;const found=STORAGE.projects.find(x=>x.id==='test-1');if(!found)throw'not found';STORAGE.projects=STORAGE.projects.filter(x=>x.id!=='test-1');return true}},
+{name:'스토리지: 복구 토큰으로 프로젝트 찾기',fn:()=>{const p={id:'test-r',title:'T',topic_cards:[],style_cards:[],mood_cards:[],prompt_text:'',final_prompt:'',reference_images:[],reference_urls:[],phases:{define:{status:'idle'},generate:{status:'idle',candidates:[]},evaluate:{status:'idle'},refine:{status:'idle'},deliver:{status:'idle'}},feedback:{chips:[],rating_direction:3,rating_quality:3,comment:''},privacy:'private',created:Date.now(),modified:Date.now(),recoveryToken:'tok-find'};const arr=STORAGE.projects;arr.push(p);STORAGE.projects=arr;const found=STORAGE.projects.find(x=>x.recoveryToken==='tok-find');STORAGE.projects=STORAGE.projects.filter(x=>x.id!=='test-r');if(!found)throw'not found';return true}},
+{name:'위저드: 카드 선택 토글',fn:()=>{const orig=App.wizData.topics.slice();App.toggleCard('sf',0);const after=App.wizData.topics;App.wizData.topics=orig;if(!after.includes('sf'))throw'not selected';return true}},
+{name:'위저드: 다중 카드 선택',fn:()=>{App.wizData.topics=['sf','fantasy'];if(App.wizData.topics.length!==2)throw'fail';App.wizData.topics=[];return true}},
+{name:'위저드: 커스텀 텍스트 입력',fn:()=>{App.wizData.prompt='test prompt';if(App.wizData.prompt!=='test prompt')throw'fail';App.wizData.prompt='';return true}},
+{name:'위저드: 프롬프트 2000자 제한',fn:()=>{const long='a'.repeat(2001);if(long.length>2000)throw'toolong';return true}},
+{name:'위저드: 참고 URL 추가/삭제',fn:()=>{App.wizData.urls=[{id:'u1',url:'https://test.com',title:'test'}];if(!App.wizData.urls.length)throw'fail';App.wizData.urls=[];return true}},
+{name:'위저드: Step 전진/후진',fn:()=>{App.wizStep=0;App.nextStep();if(App.wizStep!==1)throw'fail';App.prevStep();if(App.wizStep!==0)throw'fail';return true}},
+{name:'피드백: 칩 선택/해제',fn:()=>{const orig=App.wizData.topics.slice();App.toggleCard('sf',0);App.toggleCard('sf',0);if(App.wizData.topics.includes('sf'))throw'still selected';App.wizData.topics=orig;return true}},
+{name:'피드백: 별점 변경',fn:()=>{const testProject={id:'test-s',title:'T',topic_cards:[],style_cards:[],mood_cards:[],prompt_text:'',final_prompt:'',reference_images:[],reference_urls:[],phases:{define:{status:'idle'},generate:{status:'idle',candidates:[]},evaluate:{status:'idle'},refine:{status:'idle'},deliver:{status:'idle'}},feedback:{chips:[],rating_direction:3,rating_quality:3,comment:''},privacy:'private',created:Date.now(),modified:Date.now(),recoveryToken:'t'};const arr=STORAGE.projects;arr.push(testProject);STORAGE.projects=arr;App.currentProjectId='test-s';App.setRating('direction',5);const p=STORAGE.projects.find(x=>x.id==='test-s');STORAGE.projects=STORAGE.projects.filter(x=>x.id!=='test-s');if(!p||p.feedback.rating_direction!==5)throw'rating not saved';return true}},
+{name:'피드백: 코멘트 입력',fn:()=>{const testProject={id:'test-cm',title:'T',topic_cards:[],style_cards:[],mood_cards:[],prompt_text:'',final_prompt:'',reference_images:[],reference_urls:[],phases:{define:{status:'idle'},generate:{status:'idle',candidates:[]},evaluate:{status:'idle'},refine:{status:'idle'},deliver:{status:'idle'}},feedback:{chips:[],rating_direction:3,rating_quality:3,comment:''},privacy:'private',created:Date.now(),modified:Date.now(),recoveryToken:'t'};const arr=STORAGE.projects;arr.push(testProject);STORAGE.projects=arr;App.currentProjectId='test-cm';App.setComment('test comment');const p=STORAGE.projects.find(x=>x.id==='test-cm');STORAGE.projects=STORAGE.projects.filter(x=>x.id!=='test-cm');if(!p||p.feedback.comment!=='test comment')throw'comment not saved';return true}},
+{name:'프라이버시: 공개 설정 변경',fn:()=>{const testProject={id:'test-pr',title:'T',topic_cards:[],style_cards:[],mood_cards:[],prompt_text:'',final_prompt:'',reference_images:[],reference_urls:[],phases:{define:{status:'idle'},generate:{status:'idle',candidates:[]},evaluate:{status:'idle'},refine:{status:'idle'},deliver:{status:'idle'}},feedback:{chips:[],rating_direction:3,rating_quality:3,comment:''},privacy:'private',created:Date.now(),modified:Date.now(),recoveryToken:'t'};const arr=STORAGE.projects;arr.push(testProject);STORAGE.projects=arr;App.currentProjectId='test-pr';App.setPrivacy('gallery');const p=STORAGE.projects.find(x=>x.id==='test-pr');STORAGE.projects=STORAGE.projects.filter(x=>x.id!=='test-pr');if(!p||p.privacy!=='gallery')throw'privacy not saved';return true}},
+{name:'Phase: 상태 전이',fn:()=>{const statuses=['idle','generating','complete'];return statuses.length===3}},
+{name:'Phase: 진행률 계산',fn:()=>{const total=5;const done=2;const pct=Math.round(done/total*100);return pct===40}},
+{name:'대시보드: 프로젝트 필터',fn:()=>{const all=[{id:'a',phases:{generate:{status:'idle'},deliver:{status:'idle'},define:{status:'idle'},evaluate:{status:'idle'},refine:{status:'idle'}},modified:Date.now()},{id:'b',phases:{generate:{status:'complete'},deliver:{status:'complete'},define:{status:'complete'},evaluate:{status:'complete'},refine:{status:'complete'}},modified:Date.now()}];const active=all.filter(p=>p.phases.generate.status!=='complete'&&p.phases.generate.status!=='idle');if(active.length!==0)throw'fail';const complete=all.filter(p=>p.phases.deliver.status==='complete');if(complete.length!==1)throw'fail';return true}},
+{name:'갤러리: 검색 동작',fn:()=>{const items=GALLERY_ITEMS.filter(g=>g.title.includes('SF'));return items.length>0}}
+];
+let pass=0,fail=0;const list=$('#testList');list.innerHTML='';
+for(const t of tests){
+try{const r=await t.fn();if(r){pass++;list.innerHTML+=`<div class="test-item pass"><span class="test-icon">✅</span><span class="test-name">${t.name}</span></div>`}else throw'assertion failed'}catch(e){fail++;list.innerHTML+=`<div class="test-item fail"><span class="test-icon">❌</span><span class="test-name">${t.name}</span><span class="test-error">${e.message||e}</span></div>`}}
+$('#testPass').textContent='✅ '+pass;$('#testFail').textContent='❌ '+fail;
+console.log(`Tests: ${pass} passed, ${fail} failed`);toast(`테스트 완료: ${pass} 통과, ${fail} 실패`,fail?'error':'success');
+}
+};
+
+/* ===== INIT ===== */
+window.addEventListener('DOMContentLoaded',()=>App.init());
+
+/* Auto-simulate on project page if phases are idle */
+const origRoute=App.route.bind(App);
+App.route=function(){
+origRoute.call(this);
+if(this.currentRoute.startsWith('/project/')){
+const p=STORAGE.projects.find(x=>x.id===this.currentProjectId);
+if(p&&p.phases.define.status==='idle'&&p.phases.generate.status==='idle'){
+this.simulatePhases(p.id);
+}
+}
+};
+</script>
+</body>
+</html>
