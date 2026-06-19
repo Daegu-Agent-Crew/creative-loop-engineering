@@ -9,32 +9,32 @@
   @import url(&#x27;https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=Noto+Sans+KR:wght@300;400;500;700;800&amp;display=swap&#x27;);
 
   :root {
-    — —bg: #0a0e17;
-    — —surface: #111827;
-    — —surface2: #1a2235;
-    — —border: #1e293b;
-    — —text: #e2e8f0;
-    — —text2: #94a3b8;
-    — —accent: #6366f1;
-    — —accent2: #818cf8;
-    — —green: #22c55e;
-    — —green2: #16a34a;
-    — —amber: #f59e0b;
-    — —red: #ef4444;
-    — —blue: #3b82f6;
-    — —cyan: #06b6d4;
-    — —pink: #ec4899;
-    — —purple: #a855f7;
-    — —orange: #f97316;
-    — —glow: rgba(99,102,241,0.15);
+    --bg: #0a0e17;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e293b;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --accent: #6366f1;
+    --accent2: #818cf8;
+    --green: #22c55e;
+    --green2: #16a34a;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --blue: #3b82f6;
+    --cyan: #06b6d4;
+    --pink: #ec4899;
+    --purple: #a855f7;
+    --orange: #f97316;
+    --glow: rgba(99,102,241,0.15);
   }
 
   * { margin:0; padding:0; box-sizing:border-box; }
 
   body {
     font-family: &#x27;Inter&#x27;, &#x27;Noto Sans KR&#x27;, sans-serif;
-    background: var(— —bg);
-    color: var(— —text);
+    background: var(--bg);
+    color: var(--text);
     line-height: 1.7;
     overflow-x: hidden;
   }
@@ -55,30 +55,30 @@
     content: &#x27;&#x27;;
     position: absolute;
     width: 600px; height: 600px;
-    background: radial-gradient(circle, var(— —glow) 0%, transparent 70%);
+    background: radial-gradient(circle, var(--glow) 0%, transparent 70%);
     top: -100px; left: 50%; transform: translateX(-50%);
     pointer-events: none;
   }
   .hero h1 {
     font-size: clamp(2rem, 5vw, 3.5rem);
     font-weight: 800;
-    background: linear-gradient(135deg, var(— —accent2), var(— —cyan), var(— —green));
+    background: linear-gradient(135deg, var(--accent2), var(--cyan), var(--green));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     margin-bottom: 1rem;
   }
   .hero .subtitle {
     font-size: clamp(1rem, 2.5vw, 1.3rem);
-    color: var(— —text2);
+    color: var(--text2);
     max-width: 700px;
     margin-bottom: 2rem;
   }
   .hero .quote {
     font-style: italic;
-    color: var(— —amber);
+    color: var(--amber);
     font-size: 1.1rem;
     max-width: 600px;
-    border-left: 3px solid var(— —amber);
+    border-left: 3px solid var(--amber);
     padding-left: 1.2rem;
     text-align: left;
   }
@@ -88,7 +88,7 @@
     position: fixed; top:0; left:0; right:0;
     background: rgba(10,14,23,0.9);
     backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(— —border);
+    border-bottom: 1px solid var(--border);
     padding: 0.8rem 2rem;
     display: flex;
     gap: 1.5rem;
@@ -96,14 +96,14 @@
     overflow-x: auto;
   }
   .nav a {
-    color: var(— —text2);
+    color: var(--text2);
     text-decoration: none;
     font-size: 0.85rem;
     font-weight: 500;
     white-space: nowrap;
     transition: color 0.2s;
   }
-  .nav a:hover, .nav a.active { color: var(— —accent2); }
+  .nav a:hover, .nav a.active { color: var(--accent2); }
 
   /* ===== SECTION ===== */
   section {
@@ -115,24 +115,24 @@
     font-size: 1.8rem;
     font-weight: 700;
     margin-bottom: 0.5rem;
-    color: var(— —accent2);
+    color: var(--accent2);
   }
   section h3 {
     font-size: 1.2rem;
     font-weight: 600;
-    color: var(— —text);
+    color: var(--text);
     margin: 2rem 0 1rem;
   }
   .desc {
-    color: var(— —text2);
+    color: var(--text2);
     margin-bottom: 2rem;
     max-width: 800px;
   }
 
   /* ===== DIAGRAM CONTAINER ===== */
   .diagram {
-    background: var(— —surface);
-    border: 1px solid var(— —border);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 16px;
     padding: 2rem;
     margin: 2rem 0;
@@ -140,7 +140,7 @@
   }
   .diagram-title {
     font-size: 0.8rem;
-    color: var(— —text2);
+    color: var(--text2);
     text-transform: uppercase;
     letter-spacing: 2px;
     margin-bottom: 1.5rem;
@@ -159,19 +159,19 @@
     margin-top: 2rem;
   }
   .arch-card {
-    background: var(— —surface);
-    border: 1px solid var(— —border);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
     transition: border-color 0.3s, transform 0.2s;
   }
   .arch-card:hover {
-    border-color: var(— —accent);
+    border-color: var(--accent);
     transform: translateY(-2px);
   }
   .arch-card .icon { font-size: 2rem; margin-bottom: 0.5rem; }
-  .arch-card h4 { font-size: 1rem; color: var(— —accent2); margin-bottom: 0.3rem; }
-  .arch-card p { font-size: 0.85rem; color: var(— —text2); }
+  .arch-card h4 { font-size: 1rem; color: var(--accent2); margin-bottom: 0.3rem; }
+  .arch-card p { font-size: 0.85rem; color: var(--text2); }
   .arch-card .tag {
     display: inline-block;
     font-size: 0.7rem;
@@ -180,11 +180,11 @@
     margin-top: 0.5rem;
     font-weight: 600;
   }
-  .tag-automation { background: rgba(99,102,241,0.15); color: var(— —accent2); }
-  .tag-memory { background: rgba(34,197,94,0.15); color: var(— —green); }
-  .tag-skill { background: rgba(6,182,212,0.15); color: var(— —cyan); }
-  .tag-eval { background: rgba(239,68,68,0.15); color: var(— —red); }
-  .tag-agent { background: rgba(168,85,247,0.15); color: var(— —purple); }
+  .tag-automation { background: rgba(99,102,241,0.15); color: var(--accent2); }
+  .tag-memory { background: rgba(34,197,94,0.15); color: var(--green); }
+  .tag-skill { background: rgba(6,182,212,0.15); color: var(--cyan); }
+  .tag-eval { background: rgba(239,68,68,0.15); color: var(--red); }
+  .tag-agent { background: rgba(168,85,247,0.15); color: var(--purple); }
 
   /* ===== LOOP VISUAL ===== */
   .loop-steps {
@@ -199,8 +199,8 @@
     flex: 1;
     min-width: 140px;
     max-width: 200px;
-    background: var(— —surface);
-    border: 1px solid var(— —border);
+    background: var(--surface);
+    border: 1px solid var(--border);
     padding: 1.2rem 1rem;
     text-align: center;
     position: relative;
@@ -208,12 +208,12 @@
   }
   .loop-step:first-child { border-radius: 12px 0 0 12px; }
   .loop-step:last-child { border-radius: 0 12px 12px 0; }
-  .loop-step:hover { border-color: var(— —accent); background: var(— —surface2); }
+  .loop-step:hover { border-color: var(--accent); background: var(--surface2); }
   .loop-step .step-num {
     display: inline-block;
     width: 28px; height: 28px;
     border-radius: 50%;
-    background: var(— —accent);
+    background: var(--accent);
     color: #fff;
     font-size: 0.8rem;
     font-weight: 700;
@@ -221,11 +221,11 @@
     margin-bottom: 0.5rem;
   }
   .loop-step h4 { font-size: 0.9rem; margin-bottom: 0.3rem; }
-  .loop-step p { font-size: 0.75rem; color: var(— —text2); }
+  .loop-step p { font-size: 0.75rem; color: var(--text2); }
   .loop-arrow {
     display: flex;
     align-items: center;
-    color: var(— —accent);
+    color: var(--accent);
     font-size: 1.2rem;
     padding: 0 0.2rem;
   }
@@ -258,20 +258,20 @@
   .phase-badge .num { font-size: 2rem; }
   .phase-badge .name { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
   .phase-content {
-    background: var(— —surface);
-    border: 1px solid var(— —border);
+    background: var(--surface);
+    border: 1px solid var(--border);
     border-radius: 12px;
     padding: 1.5rem;
   }
   .phase-content h4 { font-size: 1.1rem; margin-bottom: 0.8rem; }
-  .phase-content p { font-size: 0.9rem; color: var(— —text2); margin-bottom: 0.8rem; }
+  .phase-content p { font-size: 0.9rem; color: var(--text2); margin-bottom: 0.8rem; }
   .phase-content ul {
     list-style: none;
     padding: 0;
   }
   .phase-content li {
     font-size: 0.85rem;
-    color: var(— —text2);
+    color: var(--text2);
     padding: 0.4rem 0;
     padding-left: 1.5rem;
     position: relative;
@@ -280,21 +280,21 @@
     content: &#x27;→&#x27;;
     position: absolute;
     left: 0;
-    color: var(— —accent);
+    color: var(--accent);
   }
   .gate {
     display: flex;
     align-items: center;
     gap: 0.8rem;
     background: rgba(245,158,11,0.08);
-    border: 1px dashed var(— —amber);
+    border: 1px dashed var(--amber);
     border-radius: 8px;
     padding: 0.8rem 1rem;
     margin-top: 1rem;
   }
   .gate-icon { font-size: 1.3rem; }
-  .gate-text { font-size: 0.85rem; color: var(— —amber); }
-  .gate-action { font-size: 0.75rem; color: var(— —text2); }
+  .gate-text { font-size: 0.85rem; color: var(--amber); }
+  .gate-action { font-size: 0.75rem; color: var(--text2); }
 
   /* ===== EVOLUTION ===== */
   .evo-timeline {
@@ -307,7 +307,7 @@
     position: absolute;
     left: 8px; top: 0; bottom: 0;
     width: 2px;
-    background: linear-gradient(to bottom, var(— —accent), var(— —green), var(— —cyan));
+    background: linear-gradient(to bottom, var(--accent), var(--green), var(--cyan));
   }
   .evo-item {
     position: relative;
@@ -320,12 +320,12 @@
     left: -2rem; top: 6px;
     width: 18px; height: 18px;
     border-radius: 50%;
-    background: var(— —accent);
-    border: 3px solid var(— —bg);
+    background: var(--accent);
+    border: 3px solid var(--bg);
   }
-  .evo-item h4 { font-size: 1rem; color: var(— —accent2); }
-  .evo-item p { font-size: 0.85rem; color: var(— —text2); }
-  .evo-item .meta { font-size: 0.75rem; color: var(— —text2); margin-top: 0.3rem; }
+  .evo-item h4 { font-size: 1rem; color: var(--accent2); }
+  .evo-item p { font-size: 0.85rem; color: var(--text2); }
+  .evo-item .meta { font-size: 0.75rem; color: var(--text2); margin-top: 0.3rem; }
 
   /* ===== FEEDBACK LOOP DIAGRAM ===== */
   .fb-diagram {
@@ -345,21 +345,21 @@
   .fb-box {
     padding: 1rem 1.5rem;
     border-radius: 10px;
-    border: 1px solid var(— —border);
-    background: var(— —surface);
+    border: 1px solid var(--border);
+    background: var(--surface);
     text-align: center;
     min-width: 130px;
   }
   .fb-box h5 { font-size: 0.85rem; margin-bottom: 0.3rem; }
-  .fb-box p { font-size: 0.75rem; color: var(— —text2); }
-  .fb-arrow-h { color: var(— —accent); font-size: 1.5rem; }
-  .fb-arrow-v { color: var(— —accent); font-size: 1.5rem; }
+  .fb-box p { font-size: 0.75rem; color: var(--text2); }
+  .fb-arrow-h { color: var(--accent); font-size: 1.5rem; }
+  .fb-arrow-v { color: var(--accent); font-size: 1.5rem; }
   .fb-loop-back {
-    color: var(— —red);
+    color: var(--red);
     font-size: 0.8rem;
     font-weight: 600;
     padding: 0.5rem 1rem;
-    border: 1px dashed var(— —red);
+    border: 1px dashed var(--red);
     border-radius: 8px;
     background: rgba(239,68,68,0.05);
   }
@@ -374,23 +374,23 @@
   .compare-table th {
     text-align: left;
     padding: 0.8rem 1rem;
-    background: var(— —surface);
-    border-bottom: 2px solid var(— —accent);
-    color: var(— —accent2);
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    color: var(--accent2);
     font-weight: 600;
   }
   .compare-table td {
     padding: 0.7rem 1rem;
-    border-bottom: 1px solid var(— —border);
-    color: var(— —text2);
+    border-bottom: 1px solid var(--border);
+    color: var(--text2);
   }
-  .compare-table tr:hover td { background: var(— —surface2); }
+  .compare-table tr:hover td { background: var(--surface2); }
 
   /* ===== DIVIDER ===== */
   .divider {
     width: 100%;
     height: 1px;
-    background: linear-gradient(to right, transparent, var(— —border), transparent);
+    background: linear-gradient(to right, transparent, var(--border), transparent);
     margin: 3rem 0;
   }
 
@@ -398,9 +398,9 @@
   footer {
     text-align: center;
     padding: 3rem 2rem;
-    color: var(— —text2);
+    color: var(--text2);
     font-size: 0.8rem;
-    border-top: 1px solid var(— —border);
+    border-top: 1px solid var(--border);
   }
 
   /* ===== RESPONSIVE ===== */
@@ -415,7 +415,7 @@
   /* ===== CODE BLOCK ===== */
   .code {
     background: #0d1117;
-    border: 1px solid var(— —border);
+    border: 1px solid var(--border);
     border-radius: 8px;
     padding: 1rem 1.2rem;
     font-family: &#x27;Fira Code&#x27;, monospace;
@@ -431,13 +431,13 @@
   /* ===== HIGHLIGHT BOX ===== */
   .highlight {
     background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(34,197,94,0.08));
-    border: 1px solid var(— —accent);
+    border: 1px solid var(--accent);
     border-radius: 12px;
     padding: 1.5rem;
     margin: 2rem 0;
   }
-  .highlight h4 { color: var(— —accent2); margin-bottom: 0.5rem; }
-  .highlight p { font-size: 0.9rem; color: var(— —text2); }
+  .highlight h4 { color: var(--accent2); margin-bottom: 0.5rem; }
+  .highlight p { font-size: 0.9rem; color: var(--text2); }
 
 /* ===== CLE2 Integration Styles ===== */
 .cle2-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px}
@@ -481,7 +481,7 @@
 &lt;/head&gt;
 &lt;body&gt;
 
-&lt;!— — NAV — —&gt;
+&lt;!-- NAV --&gt;
 &lt;nav class=&quot;nav&quot; id=&quot;nav&quot;&gt;
   &lt;a href=&quot;#overview&quot;&gt;개요&lt;/a&gt;
   &lt;a href=&quot;#architecture&quot;&gt;6가지 부품&lt;/a&gt;
@@ -494,7 +494,7 @@
   &lt;a href=&quot;#implementation&quot;&gt;구현 계획&lt;/a&gt;
 &lt;/nav&gt;
 
-&lt;!— — HERO — —&gt;
+&lt;!-- HERO --&gt;
 &lt;header class=&quot;hero&quot; id=&quot;top&quot;&gt;
   &lt;h1&gt; 창의적 루프 엔지니어링 시스템&lt;/h1&gt;
   &lt;p class=&quot;subtitle&quot;&gt;프롬프트를 짜는 게 아니라 시스템을 짜는 시대.&lt;br&gt;선택 몇 개로 창의적 결과물이 자동으로 만들어지는 진화형 파이프라인.&lt;/p&gt;
@@ -503,7 +503,7 @@
   &lt;/p&gt;
 &lt;/header&gt;
 
-&lt;!— — 1. OVERVIEW — —&gt;
+&lt;!-- 1. OVERVIEW --&gt;
 &lt;section id=&quot;overview&quot;&gt;
   &lt;h2&gt;📋 시스템 개요&lt;/h2&gt;
   &lt;p class=&quot;desc&quot;&gt;
@@ -514,7 +514,7 @@
   &lt;div class=&quot;diagram&quot;&gt;
     &lt;div class=&quot;diagram-title&quot;&gt;SYSTEM ARCHITECTURE — 전체 시스템 구조도&lt;/div&gt;
     &lt;svg viewBox=&quot;0 0 1000 520&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot; style=&quot;width:100%;height:auto;&quot;&gt;
-      &lt;!— — Background — —&gt;
+      &lt;!-- Background --&gt;
       &lt;defs&gt;
         &lt;linearGradient id=&quot;bgGrad&quot; x1=&quot;0%&quot; y1=&quot;0%&quot; x2=&quot;100%&quot; y2=&quot;100%&quot;&gt;
           &lt;stop offset=&quot;0%&quot; style=&quot;stop-color:#111827&quot;/&gt;
@@ -526,67 +526,67 @@
         &lt;/filter&gt;
       &lt;/defs&gt;
 
-      &lt;!— — Human Input Box — —&gt;
+      &lt;!-- Human Input Box --&gt;
       &lt;rect x=&quot;30&quot; y=&quot;30&quot; width=&quot;200&quot; height=&quot;120&quot; rx=&quot;12&quot; fill=&quot;#1e293b&quot; stroke=&quot;#6366f1&quot; stroke-width=&quot;2&quot;/&gt;
       &lt;text x=&quot;130&quot; y=&quot;60&quot; text-anchor=&quot;middle&quot; fill=&quot;#818cf8&quot; font-size=&quot;14&quot; font-weight=&quot;700&quot;&gt;👤 주인님 (감독관)&lt;/text&gt;
       &lt;text x=&quot;130&quot; y=&quot;82&quot; text-anchor=&quot;middle&quot; fill=&quot;#94a3b8&quot; font-size=&quot;11&quot;&gt;주제 · 화풍 · 분위기&lt;/text&gt;
       &lt;text x=&quot;130&quot; y=&quot;100&quot; text-anchor=&quot;middle&quot; fill=&quot;#94a3b8&quot; font-size=&quot;11&quot;&gt;포맷 · 해상도 · 타겟&lt;/text&gt;
       &lt;text x=&quot;130&quot; y=&quot;118&quot; text-anchor=&quot;middle&quot; fill=&quot;#94a3b8&quot; font-size=&quot;11&quot;&gt;참고 이미지&lt;/text&gt;
 
-      &lt;!— — Arrow from Human — —&gt;
+      &lt;!-- Arrow from Human --&gt;
       &lt;line x1=&quot;230&quot; y1=&quot;90&quot; x2=&quot;290&quot; y2=&quot;90&quot; stroke=&quot;#6366f1&quot; stroke-width=&quot;2&quot; marker-end=&quot;url(#arrow)&quot;/&gt;
       &lt;text x=&quot;260&quot; y=&quot;80&quot; text-anchor=&quot;middle&quot; fill=&quot;#6366f1&quot; font-size=&quot;9&quot;&gt;설정&lt;/text&gt;
 
-      &lt;!— — Main Pipeline — —&gt;
+      &lt;!-- Main Pipeline --&gt;
       &lt;rect x=&quot;290&quot; y=&quot;20&quot; width=&quot;420&quot; height=&quot;480&quot; rx=&quot;16&quot; fill=&quot;url(#bgGrad)&quot; stroke=&quot;#334155&quot; stroke-width=&quot;1&quot; stroke-dasharray=&quot;5,5&quot;/&gt;
       &lt;text x=&quot;500&quot; y=&quot;45&quot; text-anchor=&quot;middle&quot; fill=&quot;#6366f1&quot; font-size=&quot;13&quot; font-weight=&quot;700&quot;&gt;Creative Loop Engine&lt;/text&gt;
 
-      &lt;!— — Phase 1: Define — —&gt;
+      &lt;!-- Phase 1: Define --&gt;
       &lt;rect x=&quot;310&quot; y=&quot;60&quot; width=&quot;380&quot; height=&quot;55&quot; rx=&quot;8&quot; fill=&quot;#1e293b&quot; stroke=&quot;#6366f1&quot; stroke-width=&quot;1.5&quot;/&gt;
       &lt;text x=&quot;325&quot; y=&quot;83&quot; fill=&quot;#818cf8&quot; font-size=&quot;11&quot; font-weight=&quot;600&quot;&gt;① DEFINE&lt;/text&gt;
       &lt;text x=&quot;325&quot; y=&quot;100&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;PRD 자동 생성 · 캐릭터 설정 · 스타일 가이드&lt;/text&gt;
 
-      &lt;!— — Gate 1 — —&gt;
+      &lt;!-- Gate 1 --&gt;
       &lt;rect x=&quot;335&quot; y=&quot;120&quot; width=&quot;80&quot; height=&quot;22&quot; rx=&quot;4&quot; fill=&quot;rgba(245,158,11,0.15)&quot; stroke=&quot;#f59e0b&quot; stroke-width=&quot;1&quot;/&gt;
       &lt;text x=&quot;375&quot; y=&quot;135&quot; text-anchor=&quot;middle&quot; fill=&quot;#f59e0b&quot; font-size=&quot;9&quot; font-weight=&quot;600&quot;&gt;GATE ✋&lt;/text&gt;
 
-      &lt;!— — Phase 2: Sample — —&gt;
+      &lt;!-- Phase 2: Sample --&gt;
       &lt;rect x=&quot;310&quot; y=&quot;150&quot; width=&quot;380&quot; height=&quot;55&quot; rx=&quot;8&quot; fill=&quot;#1e293b&quot; stroke=&quot;#06b6d4&quot; stroke-width=&quot;1.5&quot;/&gt;
       &lt;text x=&quot;325&quot; y=&quot;173&quot; fill=&quot;#06b6d4&quot; font-size=&quot;11&quot; font-weight=&quot;600&quot;&gt;② SAMPLE&lt;/text&gt;
       &lt;text x=&quot;325&quot; y=&quot;190&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;대표 캐릭터/장면 샘플 3종 생성 · 화풍 확정&lt;/text&gt;
 
-      &lt;!— — Gate 2 — —&gt;
+      &lt;!-- Gate 2 --&gt;
       &lt;rect x=&quot;335&quot; y=&quot;210&quot; width=&quot;80&quot; height=&quot;22&quot; rx=&quot;4&quot; fill=&quot;rgba(245,158,11,0.15)&quot; stroke=&quot;#f59e0b&quot; stroke-width=&quot;1&quot;/&gt;
       &lt;text x=&quot;375&quot; y=&quot;225&quot; text-anchor=&quot;middle&quot; fill=&quot;#f59e0b&quot; font-size=&quot;9&quot; font-weight=&quot;600&quot;&gt;GATE ✋&lt;/text&gt;
 
-      &lt;!— — Phase 3: Produce — —&gt;
+      &lt;!-- Phase 3: Produce --&gt;
       &lt;rect x=&quot;310&quot; y=&quot;240&quot; width=&quot;380&quot; height=&quot;55&quot; rx=&quot;8&quot; fill=&quot;#1e293b&quot; stroke=&quot;#22c55e&quot; stroke-width=&quot;1.5&quot;/&gt;
       &lt;text x=&quot;325&quot; y=&quot;263&quot; fill=&quot;#22c55e&quot; font-size=&quot;11&quot; font-weight=&quot;600&quot;&gt;③ PRODUCE&lt;/text&gt;
       &lt;text x=&quot;325&quot; y=&quot;280&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;전체 컷 생성 (서브에이전트 병렬) · 중간 체크포인트&lt;/text&gt;
 
-      &lt;!— — Gate 3 — —&gt;
+      &lt;!-- Gate 3 --&gt;
       &lt;rect x=&quot;335&quot; y=&quot;300&quot; width=&quot;80&quot; height=&quot;22&quot; rx=&quot;4&quot; fill=&quot;rgba(245,158,11,0.15)&quot; stroke=&quot;#f59e0b&quot; stroke-width=&quot;1&quot;/&gt;
       &lt;text x=&quot;375&quot; y=&quot;315&quot; text-anchor=&quot;middle&quot; fill=&quot;#f59e0b&quot; font-size=&quot;9&quot; font-weight=&quot;600&quot;&gt;GATE ✋&lt;/text&gt;
 
-      &lt;!— — Phase 4: Refine — —&gt;
+      &lt;!-- Phase 4: Refine --&gt;
       &lt;rect x=&quot;310&quot; y=&quot;330&quot; width=&quot;380&quot; height=&quot;55&quot; rx=&quot;8&quot; fill=&quot;#1e293b&quot; stroke=&quot;#a855f7&quot; stroke-width=&quot;1.5&quot;/&gt;
       &lt;text x=&quot;325&quot; y=&quot;353&quot; fill=&quot;#a855f7&quot; font-size=&quot;11&quot; font-weight=&quot;600&quot;&gt;④ REFINE&lt;/text&gt;
       &lt;text x=&quot;325&quot; y=&quot;370&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;피드백 반영 수정 · Critic 평가 · v(N+1) 생성&lt;/text&gt;
 
-      &lt;!— — Gate 4 — —&gt;
+      &lt;!-- Gate 4 --&gt;
       &lt;rect x=&quot;335&quot; y=&quot;390&quot; width=&quot;80&quot; height=&quot;22&quot; rx=&quot;4&quot; fill=&quot;rgba(245,158,11,0.15)&quot; stroke=&quot;#f59e0b&quot; stroke-width=&quot;1&quot;/&gt;
       &lt;text x=&quot;375&quot; y=&quot;405&quot; text-anchor=&quot;middle&quot; fill=&quot;#f59e0b&quot; font-size=&quot;9&quot; font-weight=&quot;600&quot;&gt;GATE ✋&lt;/text&gt;
 
-      &lt;!— — Phase 5: Deliver — —&gt;
+      &lt;!-- Phase 5: Deliver --&gt;
       &lt;rect x=&quot;310&quot; y=&quot;420&quot; width=&quot;380&quot; height=&quot;55&quot; rx=&quot;8&quot; fill=&quot;#1e293b&quot; stroke=&quot;#ec4899&quot; stroke-width=&quot;1.5&quot;/&gt;
       &lt;text x=&quot;325&quot; y=&quot;443&quot; fill=&quot;#ec4899&quot; font-size=&quot;11&quot; font-weight=&quot;600&quot;&gt;⑤ DELIVER&lt;/text&gt;
       &lt;text x=&quot;325&quot; y=&quot;460&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;최종 산출물 + 메타데이터 + 진화 기록&lt;/text&gt;
 
-      &lt;!— — Refinement Loop Arrow — —&gt;
+      &lt;!-- Refinement Loop Arrow --&gt;
       &lt;path d=&quot;M 690 355 Q 720 355 720 300 L 720 175 Q 720 150 695 150&quot; fill=&quot;none&quot; stroke=&quot;#ef4444&quot; stroke-width=&quot;1.5&quot; stroke-dasharray=&quot;4,3&quot; marker-end=&quot;url(#arrowRed)&quot;/&gt;
       &lt;text x=&quot;735&quot; y=&quot;260&quot; fill=&quot;#ef4444&quot; font-size=&quot;9&quot; transform=&quot;rotate(-90, 735, 260)&quot;&gt;재시도 루프&lt;/text&gt;
 
-      &lt;!— — Sub-Agent Box — —&gt;
+      &lt;!-- Sub-Agent Box --&gt;
       &lt;rect x=&quot;750&quot; y=&quot;140&quot; width=&quot;220&quot; height=&quot;180&quot; rx=&quot;12&quot; fill=&quot;#1e293b&quot; stroke=&quot;#a855f7&quot; stroke-width=&quot;1.5&quot;/&gt;
       &lt;text x=&quot;860&quot; y=&quot;165&quot; text-anchor=&quot;middle&quot; fill=&quot;#a855f7&quot; font-size=&quot;12&quot; font-weight=&quot;700&quot;&gt;🤖 서브에이전트&lt;/text&gt;
 
@@ -609,14 +609,14 @@
       &lt;rect x=&quot;765&quot; y=&quot;270&quot; width=&quot;190&quot; height=&quot;30&quot; rx=&quot;6&quot; fill=&quot;#334155&quot;/&gt;
       &lt;text x=&quot;860&quot; y=&quot;289&quot; text-anchor=&quot;middle&quot; fill=&quot;#94a3b8&quot; font-size=&quot;9&quot;&gt;Planner (설계 + 오케스트레이션)&lt;/text&gt;
 
-      &lt;!— — Output Box — —&gt;
+      &lt;!-- Output Box --&gt;
       &lt;rect x=&quot;750&quot; y=&quot;380&quot; width=&quot;220&quot; height=&quot;100&quot; rx=&quot;12&quot; fill=&quot;#1e293b&quot; stroke=&quot;#22c55e&quot; stroke-width=&quot;1.5&quot;/&gt;
       &lt;text x=&quot;860&quot; y=&quot;405&quot; text-anchor=&quot;middle&quot; fill=&quot;#22c55e&quot; font-size=&quot;12&quot; font-weight=&quot;700&quot;&gt;📦 산출물&lt;/text&gt;
       &lt;text x=&quot;770&quot; y=&quot;430&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;• 이미지/만화/디자인&lt;/text&gt;
       &lt;text x=&quot;770&quot; y=&quot;448&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;• 메타데이터 (어떤 선택이 왜 좋았는지)&lt;/text&gt;
       &lt;text x=&quot;770&quot; y=&quot;466&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;• 진화 로그 (v1→v2→... 변경 이력)&lt;/text&gt;
 
-      &lt;!— — State File Box — —&gt;
+      &lt;!-- State File Box --&gt;
       &lt;rect x=&quot;30&quot; y=&quot;200&quot; width=&quot;200&quot; height=&quot;140&quot; rx=&quot;12&quot; fill=&quot;#1e293b&quot; stroke=&quot;#22c55e&quot; stroke-width=&quot;1.5&quot;/&gt;
       &lt;text x=&quot;130&quot; y=&quot;225&quot; text-anchor=&quot;middle&quot; fill=&quot;#22c55e&quot; font-size=&quot;12&quot; font-weight=&quot;700&quot;&gt;💾 상태 파일&lt;/text&gt;
       &lt;text x=&quot;50&quot; y=&quot;250&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;config.json — 설정&lt;/text&gt;
@@ -625,20 +625,20 @@
       &lt;text x=&quot;50&quot; y=&quot;304&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;evolution.md — 진화 로그&lt;/text&gt;
       &lt;text x=&quot;50&quot; y=&quot;322&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;scores.json — 평가 점수&lt;/text&gt;
 
-      &lt;!— — Arrow from State — —&gt;
+      &lt;!-- Arrow from State --&gt;
       &lt;line x1=&quot;230&quot; y1=&quot;270&quot; x2=&quot;290&quot; y2=&quot;270&quot; stroke=&quot;#22c55e&quot; stroke-width=&quot;1.5&quot; stroke-dasharray=&quot;4,3&quot; marker-end=&quot;url(#arrowGreen)&quot;/&gt;
 
-      &lt;!— — Skill File Box — —&gt;
+      &lt;!-- Skill File Box --&gt;
       &lt;rect x=&quot;30&quot; y=&quot;380&quot; width=&quot;200&quot; height=&quot;100&quot; rx=&quot;12&quot; fill=&quot;#1e293b&quot; stroke=&quot;#06b6d4&quot; stroke-width=&quot;1.5&quot;/&gt;
       &lt;text x=&quot;130&quot; y=&quot;405&quot; text-anchor=&quot;middle&quot; fill=&quot;#06b6d4&quot; font-size=&quot;12&quot; font-weight=&quot;700&quot;&gt;📜 SKILL.md&lt;/text&gt;
       &lt;text x=&quot;50&quot; y=&quot;430&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;• 프로젝트 인수인계 노트&lt;/text&gt;
       &lt;text x=&quot;50&quot; y=&quot;448&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;• 화풍 가이드 · 프롬프트 템플릿&lt;/text&gt;
       &lt;text x=&quot;50&quot; y=&quot;466&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;• 평가 기준 · 품질 체크리스트&lt;/text&gt;
 
-      &lt;!— — Arrow from Skill — —&gt;
+      &lt;!-- Arrow from Skill --&gt;
       &lt;line x1=&quot;230&quot; y1=&quot;430&quot; x2=&quot;290&quot; y2=&quot;430&quot; stroke=&quot;#06b6d4&quot; stroke-width=&quot;1.5&quot; stroke-dasharray=&quot;4,3&quot; marker-end=&quot;url(#arrowCyan)&quot;/&gt;
 
-      &lt;!— — Arrow markers — —&gt;
+      &lt;!-- Arrow markers --&gt;
       &lt;defs&gt;
         &lt;marker id=&quot;arrow&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;6&quot; markerHeight=&quot;6&quot; orient=&quot;auto&quot;&gt;
           &lt;path d=&quot;M 0 0 L 10 5 L 0 10 z&quot; fill=&quot;#6366f1&quot;/&gt;
@@ -659,7 +659,7 @@
 
 &lt;div class=&quot;divider&quot;&gt;&lt;/div&gt;
 
-&lt;!— — 2. ARCHITECTURE — 6 PARTS — —&gt;
+&lt;!-- 2. ARCHITECTURE — 6 PARTS --&gt;
 &lt;section id=&quot;architecture&quot;&gt;
   &lt;h2&gt;🧩 루프의 6가지 부품&lt;/h2&gt;
   &lt;p class=&quot;desc&quot;&gt;
@@ -713,7 +713,7 @@
 
 &lt;div class=&quot;divider&quot;&gt;&lt;/div&gt;
 
-&lt;!— — 3. LOOP STRUCTURE — —&gt;
+&lt;!-- 3. LOOP STRUCTURE --&gt;
 &lt;section id=&quot;loop&quot;&gt;
   &lt;h2&gt;🔄 루프 구조 — 한 바퀴의 4단계&lt;/h2&gt;
   &lt;p class=&quot;desc&quot;&gt;
@@ -723,44 +723,44 @@
   &lt;div class=&quot;diagram&quot;&gt;
     &lt;div class=&quot;diagram-title&quot;&gt;LOOP CYCLE — 루프 한 바퀴&lt;/div&gt;
     &lt;svg viewBox=&quot;0 0 800 320&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot; style=&quot;width:100%;height:auto;&quot;&gt;
-      &lt;!— — Central Loop — —&gt;
+      &lt;!-- Central Loop --&gt;
       &lt;circle cx=&quot;400&quot; cy=&quot;160&quot; r=&quot;120&quot; fill=&quot;none&quot; stroke=&quot;#334155&quot; stroke-width=&quot;2&quot; stroke-dasharray=&quot;8,4&quot;/&gt;
 
-      &lt;!— — Discover — —&gt;
+      &lt;!-- Discover --&gt;
       &lt;circle cx=&quot;400&quot; cy=&quot;40&quot; r=&quot;40&quot; fill=&quot;#1e293b&quot; stroke=&quot;#6366f1&quot; stroke-width=&quot;2&quot;/&gt;
       &lt;text x=&quot;400&quot; y=&quot;37&quot; text-anchor=&quot;middle&quot; fill=&quot;#818cf8&quot; font-size=&quot;11&quot; font-weight=&quot;700&quot;&gt;🔍&lt;/text&gt;
       &lt;text x=&quot;400&quot; y=&quot;52&quot; text-anchor=&quot;middle&quot; fill=&quot;#818cf8&quot; font-size=&quot;9&quot;&gt;발견&lt;/text&gt;
 
-      &lt;!— — Triage — —&gt;
+      &lt;!-- Triage --&gt;
       &lt;circle cx=&quot;520&quot; cy=&quot;160&quot; r=&quot;40&quot; fill=&quot;#1e293b&quot; stroke=&quot;#06b6d4&quot; stroke-width=&quot;2&quot;/&gt;
       &lt;text x=&quot;520&quot; y=&quot;157&quot; text-anchor=&quot;middle&quot; fill=&quot;#06b6d4&quot; font-size=&quot;11&quot; font-weight=&quot;700&quot;&gt;📋&lt;/text&gt;
       &lt;text x=&quot;520&quot; y=&quot;172&quot; text-anchor=&quot;middle&quot; fill=&quot;#06b6d4&quot; font-size=&quot;9&quot;&gt;분류&lt;/text&gt;
 
-      &lt;!— — Modify — —&gt;
+      &lt;!-- Modify --&gt;
       &lt;circle cx=&quot;400&quot; cy=&quot;280&quot; r=&quot;40&quot; fill=&quot;#1e293b&quot; stroke=&quot;#22c55e&quot; stroke-width=&quot;2&quot;/&gt;
       &lt;text x=&quot;400&quot; y=&quot;277&quot; text-anchor=&quot;middle&quot; fill=&quot;#22c55e&quot; font-size=&quot;11&quot; font-weight=&quot;700&quot;&gt;✏️&lt;/text&gt;
       &lt;text x=&quot;400&quot; y=&quot;292&quot; text-anchor=&quot;middle&quot; fill=&quot;#22c55e&quot; font-size=&quot;9&quot;&gt;수정&lt;/text&gt;
 
-      &lt;!— — Verify — —&gt;
+      &lt;!-- Verify --&gt;
       &lt;circle cx=&quot;280&quot; cy=&quot;160&quot; r=&quot;40&quot; fill=&quot;#1e293b&quot; stroke=&quot;#ef4444&quot; stroke-width=&quot;2&quot;/&gt;
       &lt;text x=&quot;280&quot; y=&quot;157&quot; text-anchor=&quot;middle&quot; fill=&quot;#ef4444&quot; font-size=&quot;11&quot; font-weight=&quot;700&quot;&gt;✅&lt;/text&gt;
       &lt;text x=&quot;280&quot; y=&quot;172&quot; text-anchor=&quot;middle&quot; fill=&quot;#ef4444&quot; font-size=&quot;9&quot;&gt;검증&lt;/text&gt;
 
-      &lt;!— — Arrows — —&gt;
+      &lt;!-- Arrows --&gt;
       &lt;path d=&quot;M 435 55 Q 490 90 505 125&quot; fill=&quot;none&quot; stroke=&quot;#6366f1&quot; stroke-width=&quot;1.5&quot; marker-end=&quot;url(#loopArrow)&quot;/&gt;
       &lt;path d=&quot;M 510 200 Q 490 250 435 265&quot; fill=&quot;none&quot; stroke=&quot;#06b6d4&quot; stroke-width=&quot;1.5&quot; marker-end=&quot;url(#loopArrow)&quot;/&gt;
       &lt;path d=&quot;M 365 265 Q 310 250 290 200&quot; fill=&quot;none&quot; stroke=&quot;#22c55e&quot; stroke-width=&quot;1.5&quot; marker-end=&quot;url(#loopArrow)&quot;/&gt;
       &lt;path d=&quot;M 295 125 Q 310 90 365 55&quot; fill=&quot;none&quot; stroke=&quot;#ef4444&quot; stroke-width=&quot;1.5&quot; marker-end=&quot;url(#loopArrow)&quot;/&gt;
 
-      &lt;!— — Rejection Loop — —&gt;
+      &lt;!-- Rejection Loop --&gt;
       &lt;path d=&quot;M 340 280 Q 200 280 180 200 Q 160 130 200 70 Q 240 30 360 35&quot; fill=&quot;none&quot; stroke=&quot;#ef4444&quot; stroke-width=&quot;1&quot; stroke-dasharray=&quot;4,3&quot; marker-end=&quot;url(#arrowRed)&quot;/&gt;
       &lt;text x=&quot;170&quot; y=&quot;170&quot; fill=&quot;#ef4444&quot; font-size=&quot;9&quot; transform=&quot;rotate(-90,170,170)&quot;&gt;불통과 → 재시도&lt;/text&gt;
 
-      &lt;!— — Center Text — —&gt;
+      &lt;!-- Center Text --&gt;
       &lt;text x=&quot;400&quot; y=&quot;155&quot; text-anchor=&quot;middle&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;진화 카운터&lt;/text&gt;
       &lt;text x=&quot;400&quot; y=&quot;175&quot; text-anchor=&quot;middle&quot; fill=&quot;#818cf8&quot; font-size=&quot;16&quot; font-weight=&quot;700&quot;&gt;vN&lt;/text&gt;
 
-      &lt;!— — Side Labels — —&gt;
+      &lt;!-- Side Labels --&gt;
       &lt;text x=&quot;600&quot; y=&quot;60&quot; fill=&quot;#94a3b8&quot; font-size=&quot;10&quot;&gt;① 발견&lt;/text&gt;
       &lt;text x=&quot;600&quot; y=&quot;75&quot; fill=&quot;#64748b&quot; font-size=&quot;9&quot;&gt;주제 분석 · 참고 수집 · 스타일 리서치&lt;/text&gt;
 
@@ -784,7 +784,7 @@
 
 &lt;div class=&quot;divider&quot;&gt;&lt;/div&gt;
 
-&lt;!— — 4. 5-PHASE PIPELINE — —&gt;
+&lt;!-- 4. 5-PHASE PIPELINE --&gt;
 &lt;section id=&quot;phases&quot;&gt;
   &lt;h2&gt;📊 5-Phase 창의적 파이프라인&lt;/h2&gt;
   &lt;p class=&quot;desc&quot;&gt;
@@ -795,46 +795,46 @@
     &lt;div class=&quot;diagram-title&quot;&gt;PHASE DETAIL — 각 Phase의 입력/출력/게이트&lt;/div&gt;
 
     &lt;div class=&quot;loop-steps&quot;&gt;
-      &lt;div class=&quot;loop-step&quot; style=&quot;border-color: var(— —accent);&quot;&gt;
+      &lt;div class=&quot;loop-step&quot; style=&quot;border-color: var(--accent);&quot;&gt;
         &lt;div class=&quot;step-num&quot;&gt;1&lt;/div&gt;
-        &lt;h4 style=&quot;color:var(— —accent2)&quot;&gt;DEFINE&lt;/h4&gt;
+        &lt;h4 style=&quot;color:var(--accent2)&quot;&gt;DEFINE&lt;/h4&gt;
         &lt;p&gt;설계 단계&lt;/p&gt;
       &lt;/div&gt;
       &lt;div class=&quot;loop-arrow&quot;&gt;→&lt;/div&gt;
-      &lt;div class=&quot;loop-step&quot; style=&quot;border-color: var(— —cyan);&quot;&gt;
-        &lt;div class=&quot;step-num&quot; style=&quot;background:var(— —cyan)&quot;&gt;2&lt;/div&gt;
-        &lt;h4 style=&quot;color:var(— —cyan)&quot;&gt;SAMPLE&lt;/h4&gt;
+      &lt;div class=&quot;loop-step&quot; style=&quot;border-color: var(--cyan);&quot;&gt;
+        &lt;div class=&quot;step-num&quot; style=&quot;background:var(--cyan)&quot;&gt;2&lt;/div&gt;
+        &lt;h4 style=&quot;color:var(--cyan)&quot;&gt;SAMPLE&lt;/h4&gt;
         &lt;p&gt;샘플 생성&lt;/p&gt;
       &lt;/div&gt;
       &lt;div class=&quot;loop-arrow&quot;&gt;→&lt;/div&gt;
-      &lt;div class=&quot;loop-step&quot; style=&quot;border-color: var(— —green);&quot;&gt;
-        &lt;div class=&quot;step-num&quot; style=&quot;background:var(— —green)&quot;&gt;3&lt;/div&gt;
-        &lt;h4 style=&quot;color:var(— —green)&quot;&gt;PRODUCE&lt;/h4&gt;
+      &lt;div class=&quot;loop-step&quot; style=&quot;border-color: var(--green);&quot;&gt;
+        &lt;div class=&quot;step-num&quot; style=&quot;background:var(--green)&quot;&gt;3&lt;/div&gt;
+        &lt;h4 style=&quot;color:var(--green)&quot;&gt;PRODUCE&lt;/h4&gt;
         &lt;p&gt;전체 생성&lt;/p&gt;
       &lt;/div&gt;
       &lt;div class=&quot;loop-arrow&quot;&gt;→&lt;/div&gt;
-      &lt;div class=&quot;loop-step&quot; style=&quot;border-color: var(— —purple);&quot;&gt;
-        &lt;div class=&quot;step-num&quot; style=&quot;background:var(— —purple)&quot;&gt;4&lt;/div&gt;
-        &lt;h4 style=&quot;color:var(— —purple)&quot;&gt;REFINE&lt;/h4&gt;
+      &lt;div class=&quot;loop-step&quot; style=&quot;border-color: var(--purple);&quot;&gt;
+        &lt;div class=&quot;step-num&quot; style=&quot;background:var(--purple)&quot;&gt;4&lt;/div&gt;
+        &lt;h4 style=&quot;color:var(--purple)&quot;&gt;REFINE&lt;/h4&gt;
         &lt;p&gt;수정·진화&lt;/p&gt;
       &lt;/div&gt;
       &lt;div class=&quot;loop-arrow&quot;&gt;→&lt;/div&gt;
-      &lt;div class=&quot;loop-step&quot; style=&quot;border-color: var(— —pink);&quot;&gt;
-        &lt;div class=&quot;step-num&quot; style=&quot;background:var(— —pink)&quot;&gt;5&lt;/div&gt;
-        &lt;h4 style=&quot;color:var(— —pink)&quot;&gt;DELIVER&lt;/h4&gt;
+      &lt;div class=&quot;loop-step&quot; style=&quot;border-color: var(--pink);&quot;&gt;
+        &lt;div class=&quot;step-num&quot; style=&quot;background:var(--pink)&quot;&gt;5&lt;/div&gt;
+        &lt;h4 style=&quot;color:var(--pink)&quot;&gt;DELIVER&lt;/h4&gt;
         &lt;p&gt;최종 산출&lt;/p&gt;
       &lt;/div&gt;
     &lt;/div&gt;
   &lt;/div&gt;
 
   &lt;div class=&quot;phases&quot;&gt;
-    &lt;!— — Phase 1 — —&gt;
+    &lt;!-- Phase 1 --&gt;
     &lt;div class=&quot;phase&quot;&gt;
-      &lt;div class=&quot;phase-badge&quot; style=&quot;background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(99,102,241,0.05)); border:2px solid var(— —accent);&quot;&gt;
-        &lt;span class=&quot;num&quot; style=&quot;color:var(— —accent2)&quot;&gt;1&lt;/span&gt;
-        &lt;span class=&quot;name&quot; style=&quot;color:var(— —accent2)&quot;&gt;DEFINE&lt;/span&gt;
+      &lt;div class=&quot;phase-badge&quot; style=&quot;background:linear-gradient(135deg,rgba(99,102,241,0.2),rgba(99,102,241,0.05)); border:2px solid var(--accent);&quot;&gt;
+        &lt;span class=&quot;num&quot; style=&quot;color:var(--accent2)&quot;&gt;1&lt;/span&gt;
+        &lt;span class=&quot;name&quot; style=&quot;color:var(--accent2)&quot;&gt;DEFINE&lt;/span&gt;
       &lt;/div&gt;
-      &lt;div class=&quot;phase-content&quot; style=&quot;border-color: var(— —accent);&quot;&gt;
+      &lt;div class=&quot;phase-content&quot; style=&quot;border-color: var(--accent);&quot;&gt;
         &lt;h4&gt;📋 기획 &amp; 설계&lt;/h4&gt;
         &lt;p&gt;주인님이 선택한 주제/화풍/분위기를 바탕으로 PRD를 자동 생성합니다.&lt;/p&gt;
         &lt;ul&gt;
@@ -854,13 +854,13 @@
       &lt;/div&gt;
     &lt;/div&gt;
 
-    &lt;!— — Phase 2 — —&gt;
+    &lt;!-- Phase 2 --&gt;
     &lt;div class=&quot;phase&quot;&gt;
-      &lt;div class=&quot;phase-badge&quot; style=&quot;background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(6,182,212,0.05)); border:2px solid var(— —cyan);&quot;&gt;
-        &lt;span class=&quot;num&quot; style=&quot;color:var(— —cyan)&quot;&gt;2&lt;/span&gt;
-        &lt;span class=&quot;name&quot; style=&quot;color:var(— —cyan)&quot;&gt;SAMPLE&lt;/span&gt;
+      &lt;div class=&quot;phase-badge&quot; style=&quot;background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(6,182,212,0.05)); border:2px solid var(--cyan);&quot;&gt;
+        &lt;span class=&quot;num&quot; style=&quot;color:var(--cyan)&quot;&gt;2&lt;/span&gt;
+        &lt;span class=&quot;name&quot; style=&quot;color:var(--cyan)&quot;&gt;SAMPLE&lt;/span&gt;
       &lt;/div&gt;
-      &lt;div class=&quot;phase-content&quot; style=&quot;border-color: var(— —cyan);&quot;&gt;
+      &lt;div class=&quot;phase-content&quot; style=&quot;border-color: var(--cyan);&quot;&gt;
         &lt;h4&gt;🎨 샘플 생성 &amp; 화풍 확정&lt;/h4&gt;
         &lt;p&gt;대표 장면 3~5종을 샘플로 생성합니다. 화풀이 확정되는 단계입니다.&lt;/p&gt;
         &lt;ul&gt;
@@ -880,13 +880,13 @@
       &lt;/div&gt;
     &lt;/div&gt;
 
-    &lt;!— — Phase 3 — —&gt;
+    &lt;!-- Phase 3 --&gt;
     &lt;div class=&quot;phase&quot;&gt;
-      &lt;div class=&quot;phase-badge&quot; style=&quot;background:linear-gradient(135deg,rgba(34,197,94,0.2),rgba(34,197,94,0.05)); border:2px solid var(— —green);&quot;&gt;
-        &lt;span class=&quot;num&quot; style=&quot;color:var(— —green)&quot;&gt;3&lt;/span&gt;
-        &lt;span class=&quot;name&quot; style=&quot;color:var(— —green)&quot;&gt;PRODUCE&lt;/span&gt;
+      &lt;div class=&quot;phase-badge&quot; style=&quot;background:linear-gradient(135deg,rgba(34,197,94,0.2),rgba(34,197,94,0.05)); border:2px solid var(--green);&quot;&gt;
+        &lt;span class=&quot;num&quot; style=&quot;color:var(--green)&quot;&gt;3&lt;/span&gt;
+        &lt;span class=&quot;name&quot; style=&quot;color:var(--green)&quot;&gt;PRODUCE&lt;/span&gt;
       &lt;/div&gt;
-      &lt;div class=&quot;phase-content&quot; style=&quot;border-color: var(— —green);&quot;&gt;
+      &lt;div class=&quot;phase-content&quot; style=&quot;border-color: var(--green);&quot;&gt;
         &lt;h4&gt;🏭 전체 컷 생성 (본제작)&lt;/h4&gt;
         &lt;p&gt;승인된 샘플의 스타일로 전체 컷을 생성합니다. 서브에이전트가 병렬로 작업합니다.&lt;/p&gt;
         &lt;ul&gt;
@@ -907,13 +907,13 @@
       &lt;/div&gt;
     &lt;/div&gt;
 
-    &lt;!— — Phase 4 — —&gt;
+    &lt;!-- Phase 4 --&gt;
     &lt;div class=&quot;phase&quot;&gt;
-      &lt;div class=&quot;phase-badge&quot; style=&quot;background:linear-gradient(135deg,rgba(168,85,247,0.2),rgba(168,85,247,0.05)); border:2px solid var(— —purple);&quot;&gt;
-        &lt;span class=&quot;num&quot; style=&quot;color:var(— —purple)&quot;&gt;4&lt;/span&gt;
-        &lt;span class=&quot;name&quot; style=&quot;color:var(— —purple)&quot;&gt;REFINE&lt;/span&gt;
+      &lt;div class=&quot;phase-badge&quot; style=&quot;background:linear-gradient(135deg,rgba(168,85,247,0.2),rgba(168,85,247,0.05)); border:2px solid var(--purple);&quot;&gt;
+        &lt;span class=&quot;num&quot; style=&quot;color:var(--purple)&quot;&gt;4&lt;/span&gt;
+        &lt;span class=&quot;name&quot; style=&quot;color:var(--purple)&quot;&gt;REFINE&lt;/span&gt;
       &lt;/div&gt;
-      &lt;div class=&quot;phase-content&quot; style=&quot;border-color: var(— —purple);&quot;&gt;
+      &lt;div class=&quot;phase-content&quot; style=&quot;border-color: var(--purple);&quot;&gt;
         &lt;h4&gt;🔧 수정 &amp; 진화&lt;/h4&gt;
         &lt;p&gt;피드백을 반영하여 v(N+1)을 생성합니다. 이 단계가 루프의 핵심입니다.&lt;/p&gt;
         &lt;ul&gt;
@@ -934,13 +934,13 @@
       &lt;/div&gt;
     &lt;/div&gt;
 
-    &lt;!— — Phase 5 — —&gt;
+    &lt;!-- Phase 5 --&gt;
     &lt;div class=&quot;phase&quot;&gt;
-      &lt;div class=&quot;phase-badge&quot; style=&quot;background:linear-gradient(135deg,rgba(236,72,153,0.2),rgba(236,72,153,0.05)); border:2px solid var(— —pink);&quot;&gt;
-        &lt;span class=&quot;num&quot; style=&quot;color:var(— —pink)&quot;&gt;5&lt;/span&gt;
-        &lt;span class=&quot;name&quot; style=&quot;color:var(— —pink)&quot;&gt;DELIVER&lt;/span&gt;
+      &lt;div class=&quot;phase-badge&quot; style=&quot;background:linear-gradient(135deg,rgba(236,72,153,0.2),rgba(236,72,153,0.05)); border:2px solid var(--pink);&quot;&gt;
+        &lt;span class=&quot;num&quot; style=&quot;color:var(--pink)&quot;&gt;5&lt;/span&gt;
+        &lt;span class=&quot;name&quot; style=&quot;color:var(--pink)&quot;&gt;DELIVER&lt;/span&gt;
       &lt;/div&gt;
-      &lt;div class=&quot;phase-content&quot; style=&quot;border-color: var(— —pink);&quot;&gt;
+      &lt;div class=&quot;phase-content&quot; style=&quot;border-color: var(--pink);&quot;&gt;
         &lt;h4&gt;📦 최종 산출 &amp; 메타데이터&lt;/h4&gt;
         &lt;p&gt;최종 산출물과 함께 &quot;무엇이 좋았는지&quot;를 기록합니다. 다음 프로젝트의 진화 재료가 됩니다.&lt;/p&gt;
         &lt;ul&gt;
@@ -952,10 +952,10 @@
           &lt;li&gt;GitHub 배포 / 웹 게시&lt;/li&gt;
           &lt;li&gt;출력: &lt;code&gt;output/final/&lt;/code&gt;, &lt;code&gt;evolution.md&lt;/code&gt;&lt;/li&gt;
         &lt;/ul&gt;
-        &lt;div class=&quot;gate&quot; style=&quot;border-color:var(— —green); background:rgba(34,197,94,0.08);&quot;&gt;
+        &lt;div class=&quot;gate&quot; style=&quot;border-color:var(--green); background:rgba(34,197,94,0.08);&quot;&gt;
           &lt;span class=&quot;gate-icon&quot;&gt;✅&lt;/span&gt;
           &lt;div&gt;
-            &lt;div class=&quot;gate-text&quot; style=&quot;color:var(— —green)&quot;&gt;완료 — 진화 데이터가 다음 루프의 입력으로&lt;/div&gt;
+            &lt;div class=&quot;gate-text&quot; style=&quot;color:var(--green)&quot;&gt;완료 — 진화 데이터가 다음 루프의 입력으로&lt;/div&gt;
             &lt;div class=&quot;gate-action&quot;&gt;이번 프로젝트에서 학습한 패턴이 SKILL.md에 누적 → 다음 프로젝트의 품질 기준 상향&lt;/div&gt;
           &lt;/div&gt;
         &lt;/div&gt;
@@ -966,7 +966,7 @@
 
 &lt;div class=&quot;divider&quot;&gt;&lt;/div&gt;
 
-&lt;!— — 5. FEEDBACK LOOP — —&gt;
+&lt;!-- 5. FEEDBACK LOOP --&gt;
 &lt;section id=&quot;feedback&quot;&gt;
   &lt;h2&gt;🔁 피드백 루프 상세&lt;/h2&gt;
   &lt;p class=&quot;desc&quot;&gt;
@@ -977,53 +977,53 @@
     &lt;div class=&quot;diagram-title&quot;&gt;FEEDBACK LOOP DETAIL — 피드백 게이트 &amp; 재시도 구조&lt;/div&gt;
 
     &lt;div class=&quot;fb-diagram&quot;&gt;
-      &lt;!— — Top: Write — —&gt;
+      &lt;!-- Top: Write --&gt;
       &lt;div class=&quot;fb-row&quot;&gt;
-        &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(— —green);&quot;&gt;
-          &lt;h5 style=&quot;color:var(— —green)&quot;&gt;Writer&lt;/h5&gt;
+        &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(--green);&quot;&gt;
+          &lt;h5 style=&quot;color:var(--green)&quot;&gt;Writer&lt;/h5&gt;
           &lt;p&gt;프롬프트 생성 → 이미지/콘텐츠 생성&lt;/p&gt;
         &lt;/div&gt;
         &lt;span class=&quot;fb-arrow-h&quot;&gt;→&lt;/span&gt;
-        &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(— —red);&quot;&gt;
-          &lt;h5 style=&quot;color:var(— —red)&quot;&gt;Evaluator&lt;/h5&gt;
+        &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(--red);&quot;&gt;
+          &lt;h5 style=&quot;color:var(--red)&quot;&gt;Evaluator&lt;/h5&gt;
           &lt;p&gt;일관성·품질·스타일 준수도 평가&lt;/p&gt;
         &lt;/div&gt;
         &lt;span class=&quot;fb-arrow-h&quot;&gt;→&lt;/span&gt;
-        &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(— —amber);&quot;&gt;
-          &lt;h5 style=&quot;color:var(— —amber)&quot;&gt;Critic&lt;/h5&gt;
+        &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(--amber);&quot;&gt;
+          &lt;h5 style=&quot;color:var(--amber)&quot;&gt;Critic&lt;/h5&gt;
           &lt;p&gt;비판적 분석 · 개선점 도출&lt;/p&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
       &lt;span class=&quot;fb-arrow-v&quot;&gt;↓&lt;/span&gt;
 
-      &lt;!— — Middle: Decision — —&gt;
+      &lt;!-- Middle: Decision --&gt;
       &lt;div class=&quot;fb-row&quot;&gt;
-        &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(— —amber); width:300px;&quot;&gt;
-          &lt;h5 style=&quot;color:var(— —amber)&quot;&gt;✋ 피드백 게이트&lt;/h5&gt;
+        &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(--amber); width:300px;&quot;&gt;
+          &lt;h5 style=&quot;color:var(--amber)&quot;&gt;✋ 피드백 게이트&lt;/h5&gt;
           &lt;p&gt;점수 ≥ 기준 → 통과 | 점수 &lt; 기준 → 수정 루프&lt;/p&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
       &lt;span class=&quot;fb-arrow-v&quot;&gt;↓&lt;/span&gt;
 
-      &lt;!— — Bottom: Two Paths — —&gt;
+      &lt;!-- Bottom: Two Paths --&gt;
       &lt;div class=&quot;fb-row&quot; style=&quot;gap:3rem;&quot;&gt;
         &lt;div style=&quot;text-align:center;&quot;&gt;
-          &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(— —green); min-width:180px;&quot;&gt;
-            &lt;h5 style=&quot;color:var(— —green)&quot;&gt;✅ 통과&lt;/h5&gt;
+          &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(--green); min-width:180px;&quot;&gt;
+            &lt;h5 style=&quot;color:var(--green)&quot;&gt;✅ 통과&lt;/h5&gt;
             &lt;p&gt;다음 Phase로 진행&lt;/p&gt;
           &lt;/div&gt;
         &lt;/div&gt;
         &lt;div style=&quot;text-align:center;&quot;&gt;
-          &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(— —red); min-width:180px;&quot;&gt;
-            &lt;h5 style=&quot;color:var(— —red)&quot;&gt;❌ 불통과&lt;/h5&gt;
+          &lt;div class=&quot;fb-box&quot; style=&quot;border-color:var(--red); min-width:180px;&quot;&gt;
+            &lt;h5 style=&quot;color:var(--red)&quot;&gt;❌ 불통과&lt;/h5&gt;
             &lt;p&gt;피드백 + 수정 → 재생성&lt;/p&gt;
           &lt;/div&gt;
         &lt;/div&gt;
       &lt;/div&gt;
 
-      &lt;!— — Loop Back — —&gt;
+      &lt;!-- Loop Back --&gt;
       &lt;div class=&quot;fb-loop-back&quot; style=&quot;margin-top:1rem;&quot;&gt;
         🔁 불통과 시: feedback.md에 기록 → Writer가 피드백 기반으로 프롬프트 수정 → 재생성 → 다시 Evaluator
       &lt;/div&gt;
@@ -1038,7 +1038,7 @@
 
 &lt;div class=&quot;divider&quot;&gt;&lt;/div&gt;
 
-&lt;!— — 6. EVOLUTION — —&gt;
+&lt;!-- 6. EVOLUTION --&gt;
 &lt;section id=&quot;evolution&quot;&gt;
   &lt;h2&gt;📈 진화 구조 — 버전이 누적되면서 학습&lt;/h2&gt;
   &lt;p class=&quot;desc&quot;&gt;
@@ -1048,23 +1048,23 @@
   &lt;div class=&quot;diagram&quot;&gt;
     &lt;div class=&quot;diagram-title&quot;&gt;EVOLUTION TIMELINE — 진화가 누적되는 구조&lt;/div&gt;
     &lt;svg viewBox=&quot;0 0 900 300&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot; style=&quot;width:100%;height:auto;&quot;&gt;
-      &lt;!— — Timeline Base — —&gt;
+      &lt;!-- Timeline Base --&gt;
       &lt;line x1=&quot;50&quot; y1=&quot;150&quot; x2=&quot;850&quot; y2=&quot;150&quot; stroke=&quot;#334155&quot; stroke-width=&quot;2&quot;/&gt;
 
-      &lt;!— — v1 — —&gt;
+      &lt;!-- v1 --&gt;
       &lt;circle cx=&quot;150&quot; cy=&quot;150&quot; r=&quot;25&quot; fill=&quot;#1e293b&quot; stroke=&quot;#6366f1&quot; stroke-width=&quot;2&quot;/&gt;
       &lt;text x=&quot;150&quot; y=&quot;155&quot; text-anchor=&quot;middle&quot; fill=&quot;#818cf8&quot; font-size=&quot;11&quot; font-weight=&quot;700&quot;&gt;v1&lt;/text&gt;
       &lt;text x=&quot;150&quot; y=&quot;195&quot; text-anchor=&quot;middle&quot; fill=&quot;#94a3b8&quot; font-size=&quot;9&quot;&gt;초안 생성&lt;/text&gt;
       &lt;text x=&quot;150&quot; y=&quot;210&quot; text-anchor=&quot;middle&quot; fill=&quot;#64748b&quot; font-size=&quot;8&quot;&gt;Evaluator: 6.5&lt;/text&gt;
-      &lt;!— — v1 output — —&gt;
+      &lt;!-- v1 output --&gt;
       &lt;rect x=&quot;115&quot; y=&quot;80&quot; width=&quot;70&quot; height=&quot;35&quot; rx=&quot;6&quot; fill=&quot;#1e293b&quot; stroke=&quot;#334155&quot; stroke-width=&quot;1&quot;/&gt;
       &lt;text x=&quot;150&quot; y=&quot;100&quot; text-anchor=&quot;middle&quot; fill=&quot;#64748b&quot; font-size=&quot;8&quot;&gt;28컷&lt;/text&gt;
 
-      &lt;!— — Arrow — —&gt;
+      &lt;!-- Arrow --&gt;
       &lt;line x1=&quot;175&quot; y1=&quot;150&quot; x2=&quot;275&quot; y2=&quot;150&quot; stroke=&quot;#ef4444&quot; stroke-width=&quot;1.5&quot; marker-end=&quot;url(#arrowRed2)&quot;/&gt;
       &lt;text x=&quot;225&quot; y=&quot;140&quot; text-anchor=&quot;middle&quot; fill=&quot;#ef4444&quot; font-size=&quot;8&quot;&gt;feedback.md&lt;/text&gt;
 
-      &lt;!— — v2 — —&gt;
+      &lt;!-- v2 --&gt;
       &lt;circle cx=&quot;300&quot; cy=&quot;150&quot; r=&quot;25&quot; fill=&quot;#1e293b&quot; stroke=&quot;#06b6d4&quot; stroke-width=&quot;2&quot;/&gt;
       &lt;text x=&quot;300&quot; y=&quot;155&quot; text-anchor=&quot;middle&quot; fill=&quot;#06b6d4&quot; font-size=&quot;11&quot; font-weight=&quot;700&quot;&gt;v2&lt;/text&gt;
       &lt;text x=&quot;300&quot; y=&quot;195&quot; text-anchor=&quot;middle&quot; fill=&quot;#94a3b8&quot; font-size=&quot;9&quot;&gt;색감 수정&lt;/text&gt;
@@ -1072,11 +1072,11 @@
       &lt;rect x=&quot;265&quot; y=&quot;80&quot; width=&quot;70&quot; height=&quot;35&quot; rx=&quot;6&quot; fill=&quot;#1e293b&quot; stroke=&quot;#334155&quot; stroke-width=&quot;1&quot;/&gt;
       &lt;text x=&quot;300&quot; y=&quot;100&quot; text-anchor=&quot;middle&quot; fill=&quot;#64748b&quot; font-size=&quot;8&quot;&gt;28컷&lt;/text&gt;
 
-      &lt;!— — Arrow — —&gt;
+      &lt;!-- Arrow --&gt;
       &lt;line x1=&quot;325&quot; y1=&quot;150&quot; x2=&quot;425&quot; y2=&quot;150&quot; stroke=&quot;#ef4444&quot; stroke-width=&quot;1.5&quot; marker-end=&quot;url(#arrowRed2)&quot;/&gt;
       &lt;text x=&quot;375&quot; y=&quot;140&quot; text-anchor=&quot;middle&quot; fill=&quot;#ef4444&quot; font-size=&quot;8&quot;&gt;feedback.md&lt;/text&gt;
 
-      &lt;!— — v3 — —&gt;
+      &lt;!-- v3 --&gt;
       &lt;circle cx=&quot;450&quot; cy=&quot;150&quot; r=&quot;25&quot; fill=&quot;#1e293b&quot; stroke=&quot;#22c55e&quot; stroke-width=&quot;2&quot;/&gt;
       &lt;text x=&quot;450&quot; y=&quot;155&quot; text-anchor=&quot;middle&quot; fill=&quot;#22c55e&quot; font-size=&quot;11&quot; font-weight=&quot;700&quot;&gt;v3&lt;/text&gt;
       &lt;text x=&quot;450&quot; y=&quot;195&quot; text-anchor=&quot;middle&quot; fill=&quot;#94a3b8&quot; font-size=&quot;9&quot;&gt;일관성 보정&lt;/text&gt;
@@ -1084,23 +1084,23 @@
       &lt;rect x=&quot;415&quot; y=&quot;80&quot; width=&quot;70&quot; height=&quot;35&quot; rx=&quot;6&quot; fill=&quot;#1e293b&quot; stroke=&quot;#334155&quot; stroke-width=&quot;1&quot;/&gt;
       &lt;text x=&quot;450&quot; y=&quot;100&quot; text-anchor=&quot;middle&quot; fill=&quot;#64748b&quot; font-size=&quot;8&quot;&gt;28컷&lt;/text&gt;
 
-      &lt;!— — Approved — —&gt;
+      &lt;!-- Approved --&gt;
       &lt;line x1=&quot;475&quot; y1=&quot;150&quot; x2=&quot;575&quot; y2=&quot;150&quot; stroke=&quot;#22c55e&quot; stroke-width=&quot;2&quot; marker-end=&quot;url(#arrowGreen2)&quot;/&gt;
       &lt;text x=&quot;525&quot; y=&quot;135&quot; text-anchor=&quot;middle&quot; fill=&quot;#22c55e&quot; font-size=&quot;9&quot; font-weight=&quot;600&quot;&gt;✅ 승인&lt;/text&gt;
 
-      &lt;!— — Final — —&gt;
+      &lt;!-- Final --&gt;
       &lt;rect x=&quot;575&quot; y=&quot;120&quot; width=&quot;120&quot; height=&quot;60&quot; rx=&quot;12&quot; fill=&quot;#1e293b&quot; stroke=&quot;#22c55e&quot; stroke-width=&quot;2&quot;/&gt;
       &lt;text x=&quot;635&quot; y=&quot;148&quot; text-anchor=&quot;middle&quot; fill=&quot;#22c55e&quot; font-size=&quot;12&quot; font-weight=&quot;700&quot;&gt;📦 final&lt;/text&gt;
       &lt;text x=&quot;635&quot; y=&quot;166&quot; text-anchor=&quot;middle&quot; fill=&quot;#94a3b8&quot; font-size=&quot;9&quot;&gt;28컷 완성&lt;/text&gt;
 
-      &lt;!— — Evolution Log — —&gt;
+      &lt;!-- Evolution Log --&gt;
       &lt;rect x=&quot;575&quot; y=&quot;200&quot; width=&quot;250&quot; height=&quot;80&quot; rx=&quot;10&quot; fill=&quot;#1e293b&quot; stroke=&quot;#f59e0b&quot; stroke-width=&quot;1.5&quot;/&gt;
       &lt;text x=&quot;700&quot; y=&quot;220&quot; text-anchor=&quot;middle&quot; fill=&quot;#f59e0b&quot; font-size=&quot;10&quot; font-weight=&quot;600&quot;&gt;evolution.md&lt;/text&gt;
       &lt;text x=&quot;590&quot; y=&quot;240&quot; fill=&quot;#94a3b8&quot; font-size=&quot;8&quot;&gt;• v1→v2: 색감 feedback 반영 (+1.3점)&lt;/text&gt;
       &lt;text x=&quot;590&quot; y=&quot;255&quot; fill=&quot;#94a3b8&quot; font-size=&quot;8&quot;&gt;• v2→v3: 캐릭터 일관성 보정 (+0.7점)&lt;/text&gt;
       &lt;text x=&quot;590&quot; y=&quot;270&quot; fill=&quot;#94a3b8&quot; font-size=&quot;8&quot;&gt;• 학습 패턴 → SKILL.md 업데이트&lt;/text&gt;
 
-      &lt;!— — Next Project — —&gt;
+      &lt;!-- Next Project --&gt;
       &lt;line x1=&quot;695&quot; y1=&quot;280&quot; x2=&quot;695&quot; y2=&quot;250&quot; stroke=&quot;#f59e0b&quot; stroke-width=&quot;1.5&quot; marker-end=&quot;url(#arrowAmber)&quot;/&gt;
       &lt;text x=&quot;810&quot; y=&quot;220&quot; fill=&quot;#f59e0b&quot; font-size=&quot;9&quot; font-weight=&quot;600&quot;&gt;→ 다음 프로젝트에 적용&lt;/text&gt;
 
@@ -1121,7 +1121,7 @@
 
 &lt;div class=&quot;divider&quot;&gt;&lt;/div&gt;
 
-&lt;!— — 7. EXAMPLE: Three Body — —&gt;
+&lt;!-- 7. EXAMPLE: Three Body --&gt;
 &lt;section id=&quot;example&quot;&gt;
   &lt;h2&gt;🌌 삼체 만화 EP001에 적용&lt;/h2&gt;
   &lt;p class=&quot;desc&quot;&gt;
@@ -1154,27 +1154,27 @@
       &lt;/thead&gt;
       &lt;tbody&gt;
         &lt;tr&gt;
-          &lt;td&gt;&lt;strong style=&quot;color:var(— —accent2)&quot;&gt;Define&lt;/strong&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;strong style=&quot;color:var(--accent2)&quot;&gt;Define&lt;/strong&gt;&lt;/td&gt;
           &lt;td&gt;주인님이 PRD 직접 작성&lt;/td&gt;
           &lt;td&gt;주제 선택 → Planner가 PRD 자동 생성 → ✋ 승인&lt;/td&gt;
         &lt;/tr&gt;
         &lt;tr&gt;
-          &lt;td&gt;&lt;strong style=&quot;color:var(— —cyan)&quot;&gt;Sample&lt;/strong&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;strong style=&quot;color:var(--cyan)&quot;&gt;Sample&lt;/strong&gt;&lt;/td&gt;
           &lt;td&gt;화풍 4종 수동 비교&lt;/td&gt;
           &lt;td&gt;Writer가 3화풍 샘플 자동 생성 → ✋ 주인님이 선택&lt;/td&gt;
         &lt;/tr&gt;
         &lt;tr&gt;
-          &lt;td&gt;&lt;strong style=&quot;color:var(— —green)&quot;&gt;Produce&lt;/strong&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;strong style=&quot;color:var(--green)&quot;&gt;Produce&lt;/strong&gt;&lt;/td&gt;
           &lt;td&gt;16/28장 수동 생성 후 멈춤&lt;/td&gt;
           &lt;td&gt;전체 28컷 자동 생성 + 중간 체크포인트&lt;/td&gt;
         &lt;/tr&gt;
         &lt;tr&gt;
-          &lt;td&gt;&lt;strong style=&quot;color:var(— —purple)&quot;&gt;Refine&lt;/strong&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;strong style=&quot;color:var(--purple)&quot;&gt;Refine&lt;/strong&gt;&lt;/td&gt;
           &lt;td&gt;없음 (수정 루프 없었음)&lt;/td&gt;
           &lt;td&gt;Critic 평가 → 피드백 → v2/v3 자동 수정&lt;/td&gt;
         &lt;/tr&gt;
         &lt;tr&gt;
-          &lt;td&gt;&lt;strong style=&quot;color:var(— —pink)&quot;&gt;Deliver&lt;/strong&gt;&lt;/td&gt;
+          &lt;td&gt;&lt;strong style=&quot;color:var(--pink)&quot;&gt;Deliver&lt;/strong&gt;&lt;/td&gt;
           &lt;td&gt;미완성 상태로 GitHub Pages&lt;/td&gt;
           &lt;td&gt;최종 산출 + 메타데이터 + 진화 로그&lt;/td&gt;
         &lt;/tr&gt;
@@ -1191,7 +1191,7 @@
 
 &lt;div class=&quot;divider&quot;&gt;&lt;/div&gt;
 
-&lt;!— — 8. COMPARISON — —&gt;
+&lt;!-- 8. COMPARISON --&gt;
 &lt;section id=&quot;comparison&quot;&gt;
   &lt;h2&gt;⚖️ 루프 엔지니어링 vs 기존 방식&lt;/h2&gt;
   &lt;p class=&quot;desc&quot;&gt;&quot;매번 프롬프트&quot;와 &quot;루프를 설계&quot;의 차이를 구체적으로 비교합니다.&lt;/p&gt;
@@ -1246,7 +1246,7 @@
 
 &lt;div class=&quot;divider&quot;&gt;&lt;/div&gt;
 
-&lt;!— — 9. IMPLEMENTATION — —&gt;
+&lt;!-- 9. IMPLEMENTATION --&gt;
 &lt;section id=&quot;implementation&quot;&gt;
   &lt;h2&gt;🚀 구현 계획&lt;/h2&gt;
   &lt;p class=&quot;desc&quot;&gt;
@@ -1255,9 +1255,9 @@
 
   &lt;div class=&quot;phases&quot;&gt;
     &lt;div class=&quot;phase&quot;&gt;
-      &lt;div class=&quot;phase-badge&quot; style=&quot;background:rgba(99,102,241,0.1); border:1px solid var(— —accent);&quot;&gt;
-        &lt;span class=&quot;num&quot; style=&quot;color:var(— —accent2);font-size:1.5rem;&quot;&gt;S1&lt;/span&gt;
-        &lt;span class=&quot;name&quot; style=&quot;color:var(— —accent2);font-size:0.6rem;&quot;&gt;스킬&lt;/span&gt;
+      &lt;div class=&quot;phase-badge&quot; style=&quot;background:rgba(99,102,241,0.1); border:1px solid var(--accent);&quot;&gt;
+        &lt;span class=&quot;num&quot; style=&quot;color:var(--accent2);font-size:1.5rem;&quot;&gt;S1&lt;/span&gt;
+        &lt;span class=&quot;name&quot; style=&quot;color:var(--accent2);font-size:0.6rem;&quot;&gt;스킬&lt;/span&gt;
       &lt;/div&gt;
       &lt;div class=&quot;phase-content&quot;&gt;
         &lt;h4&gt;SKILL.md 작성&lt;/h4&gt;
@@ -1272,9 +1272,9 @@
     &lt;/div&gt;
 
     &lt;div class=&quot;phase&quot;&gt;
-      &lt;div class=&quot;phase-badge&quot; style=&quot;background:rgba(6,182,212,0.1); border:1px solid var(— —cyan);&quot;&gt;
-        &lt;span class=&quot;num&quot; style=&quot;color:var(— —cyan);font-size:1.5rem;&quot;&gt;S2&lt;/span&gt;
-        &lt;span class=&quot;name&quot; style=&quot;color:var(— —cyan);font-size:0.6rem;&quot;&gt;에이전트&lt;/span&gt;
+      &lt;div class=&quot;phase-badge&quot; style=&quot;background:rgba(6,182,212,0.1); border:1px solid var(--cyan);&quot;&gt;
+        &lt;span class=&quot;num&quot; style=&quot;color:var(--cyan);font-size:1.5rem;&quot;&gt;S2&lt;/span&gt;
+        &lt;span class=&quot;name&quot; style=&quot;color:var(--cyan);font-size:0.6rem;&quot;&gt;에이전트&lt;/span&gt;
       &lt;/div&gt;
       &lt;div class=&quot;phase-content&quot;&gt;
         &lt;h4&gt;서브에이전트 구성&lt;/h4&gt;
@@ -1289,9 +1289,9 @@
     &lt;/div&gt;
 
     &lt;div class=&quot;phase&quot;&gt;
-      &lt;div class=&quot;phase-badge&quot; style=&quot;background:rgba(34,197,94,0.1); border:1px solid var(— —green);&quot;&gt;
-        &lt;span class=&quot;num&quot; style=&quot;color:var(— —green);font-size:1.5rem;&quot;&gt;S3&lt;/span&gt;
-        &lt;span class=&quot;name&quot; style=&quot;color:var(— —green);font-size:0.6rem;&quot;&gt;상태&lt;/span&gt;
+      &lt;div class=&quot;phase-badge&quot; style=&quot;background:rgba(34,197,94,0.1); border:1px solid var(--green);&quot;&gt;
+        &lt;span class=&quot;num&quot; style=&quot;color:var(--green);font-size:1.5rem;&quot;&gt;S3&lt;/span&gt;
+        &lt;span class=&quot;name&quot; style=&quot;color:var(--green);font-size:0.6rem;&quot;&gt;상태&lt;/span&gt;
       &lt;/div&gt;
       &lt;div class=&quot;phase-content&quot;&gt;
         &lt;h4&gt;상태 파일 시스템&lt;/h4&gt;
@@ -1307,9 +1307,9 @@
     &lt;/div&gt;
 
     &lt;div class=&quot;phase&quot;&gt;
-      &lt;div class=&quot;phase-badge&quot; style=&quot;background:rgba(236,72,153,0.1); border:1px solid var(— —pink);&quot;&gt;
-        &lt;span class=&quot;num&quot; style=&quot;color:var(— —pink);font-size:1.5rem;&quot;&gt;S4&lt;/span&gt;
-        &lt;span class=&quot;name&quot; style=&quot;color:var(— —pink);font-size:0.6rem;&quot;&gt;검증&lt;/span&gt;
+      &lt;div class=&quot;phase-badge&quot; style=&quot;background:rgba(236,72,153,0.1); border:1px solid var(--pink);&quot;&gt;
+        &lt;span class=&quot;num&quot; style=&quot;color:var(--pink);font-size:1.5rem;&quot;&gt;S4&lt;/span&gt;
+        &lt;span class=&quot;name&quot; style=&quot;color:var(--pink);font-size:0.6rem;&quot;&gt;검증&lt;/span&gt;
       &lt;/div&gt;
       &lt;div class=&quot;phase-content&quot;&gt;
         &lt;h4&gt;삼체 EP001로 검증&lt;/h4&gt;
