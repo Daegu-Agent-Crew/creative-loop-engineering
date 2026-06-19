@@ -1904,10 +1904,16 @@ prompt:p.final_prompt||p.prompt_text,
 refs:{images:p.reference_images.map(i=>i.name),urls:p.reference_urls.map(u=>u.url)},
 feedback:p.feedback,chips:p.feedback.chips,
 timestamp:p.modified};
-const body='## 🎨 CLE 요청\n\n'+JSON.stringify(req,null,2)+'\n\n---\n_CLE-REQUEST 자동 생성_';
-if(pat){try{toast('⏳ GitHub Issue 생성 중...','info');const r=await fetch('https://api.github.com/repos/Daegu-Agent-Crew/creative-loop-engineering/issues',{method:'POST',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({title:'🎨 '+p.title.slice(0,60),body,labels:['CLE-PENDING']})});if(r.ok){const d=await r.json();toast('✅ Issue #'+d.number+' 생성됨!','success');this._copyRequest(p);return}else{const e=await r.json();toast('❌ '+e.message,'error');}}catch(e){toast('❌ 네트워크 오류','error')}
+const bodyBase='## 🎨 CLE 요청\n\n'+JSON.stringify(req,null,2)+'\n\n---\n_CLE-REQUEST 자동 생성_';
+if(pat){try{toast('⏳ GitHub Issue 생성 중...','info');
+let body=bodyBase;
+const imgs=p.reference_images.filter(i=>i.data);
+if(imgs.length>0){body+='\n\n## 📎 참고 이미지\n';
+const b64Map=imgs.map((img,idx)=>{const b64=img.data.split(',')[1];return{name:img.name,ext:(img.name.split('.').pop()||'png'),b64,path:'assets/cle-requests/'+p.id+'-'+idx+'.'+(img.name.split('.').pop()||'png')}});
+for(const m of b64Map){try{const r=await fetch('https://api.github.com/repos/Daegu-Agent-Crew/creative-loop-engineering/contents/'+m.path,{method:'PUT',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({message:'feat: CLE ref image for '+p.id,content:m.b64})});if(r.ok){const d=await r.json();body+='![ '+m.name+']('+d.content.download_url+')\n\n'}}catch(e){}}}
+const r=await fetch('https://api.github.com/repos/Daegu-Agent-Crew/creative-loop-engineering/issues',{method:'POST',headers:{'Authorization':'Bearer '+pat,'Accept':'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify({title:'🎨 '+p.title.slice(0,60),body,labels:['CLE-PENDING']})});if(r.ok){const d=await r.json();toast('✅ Issue #'+d.number+' 생성됨!','success');this._copyRequest(p);return}else{const e=await r.json();toast('❌ '+e.message,'error');}}catch(e){toast('❌ 네트워크 오류','error')}
 }
-const url='https://github.com/Daegu-Agent-Crew/creative-loop-engineering/issues/new?labels=CLE-PENDING&title='+encodeURIComponent('🎨 '+p.title.slice(0,60))+'&body='+encodeURIComponent(body);
+const url='https://github.com/Daegu-Agent-Crew/creative-loop-engineering/issues/new?labels=CLE-PENDING&title='+encodeURIComponent('🎨 '+p.title.slice(0,60))+'&body='+encodeURIComponent(bodyBase);
 this._copyRequest(p).then(()=>{toast('📋 클립보드에 복사 + Issue 페이지 열림','success');window.open(url,'_blank')}).catch(()=>{window.open(url,'_blank')})
 },
 _copyRequest(p){
