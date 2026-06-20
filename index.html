@@ -1897,14 +1897,14 @@ const app=$('#app');
 app.innerHTML='<div class="route-view" id="routeView"></div>';
 const rv=$('#routeView');
 if(hash==='/')rv.innerHTML=this.renderLanding();
-else if(hash==='/new')rv.innerHTML=this.renderNewRequest();
+else if(hash==='/new')rv.innerHTML=this.renderNewProject();
 else if(hash==='/wizard')rv.innerHTML=this.renderNewProject();
 else if(hash==='/dashboard')rv.innerHTML=this.renderDashboard();
 else if(hash==='/gallery')rv.innerHTML=this.renderGallery();
 else if(hash==='/settings')rv.innerHTML=this.renderSettings();
 else if(hash==='/requests')rv.innerHTML=this.renderRequestList();
 else if(hash.startsWith('/requests/')){this.currentRequestId=hash.split('/requests/').pop();rv.innerHTML=this.renderRequestDetail(this.currentRequestId)}
-else if(hash==='/agents')rv.innerHTML=this.renderAgents();
+else if(hash==='/agents')rv.innerHTML=this.renderLanding();
 else if(hash==='/test')rv.innerHTML=this.renderTest();
 else if(hash.startsWith('/project/')){this.currentProjectId=hash.split('/').pop();rv.innerHTML=this.renderProject()}
 else if(hash.startsWith('/resume/')){this.handleResume(hash.split('/resume/').pop());return}
@@ -2179,7 +2179,7 @@ renderGallery(){
 const items=GALLERY_ITEMS.filter(g=>this.galleryFilter==='all'||g.tags.some(t=>t.includes(this.galleryFilter)));
 const searched=this.gallerySearch?items.filter(g=>g.title.includes(this.gallerySearch)||g.tags.some(t=>t.includes(this.gallerySearch))):items;
 const cards=searched.map(g=>`<div class="gallery-card" onclick="App.showGalleryDetail('${g.id}')"><div class="gc-img" style="background:${g.gradient}">🖼️</div><div class="gc-info"><div class="gc-title">${g.title}</div><div class="gc-tags">${g.tags.map(t=>`<span class="gc-tag">${t}</span>`).join('')}</div><div class="gc-actions"><span>❤️ ${g.likes}</span><span class="btn btn-secondary btn-sm">복제</span></div></div></div>`).join('');
-return`<div class="page"><div class="panel-header"><span class="panel-title">🖼️ 갤러리</span></div><div class="search-bar"><input placeholder="검색..." value="${this.gallerySearch}" oninput="App.gallerySearch=this.value;this.route()"><div class="filter-bar">${['all','SF','판타지','현대','역사'].map(f=>`<span class="filter-btn${this.galleryFilter===f?' active':''}" onclick="App.galleryFilter='${f}';this.route()">${f==='all'?'전체':f}</span>`).join('')}</div></div><div class="masonry">${cards}</div></div>`},
+return`<div class="page"><div class="panel-header"><span class="panel-title">🖼️ 갤러리</span></div><div class="search-bar"><input placeholder="검색..." value="${this.gallerySearch}" oninput="App.gallerySearch=this.value;App.route()"><div class="filter-bar">${['all','SF','판타지','현대','역사'].map(f=>`<span class="filter-btn${this.galleryFilter===f?' active':''}" onclick="App.galleryFilter='${f}';App.route()">${f==='all'?'전체':f}</span>`).join('')}</div></div><div class="masonry">${cards}</div></div>`},
 
 showGalleryDetail(id){
 const g=GALLERY_ITEMS.find(x=>x.id===id);if(!g)return;
