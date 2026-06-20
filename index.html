@@ -1902,8 +1902,8 @@ else if(hash==='/wizard')rv.innerHTML=this.renderNewProject();
 else if(hash==='/dashboard')rv.innerHTML=this.renderDashboard();
 else if(hash==='/gallery')rv.innerHTML=this.renderGallery();
 else if(hash==='/settings')rv.innerHTML=this.renderSettings();
-else if(hash==='/requests')rv.innerHTML=this.renderRequestList();
-else if(hash.startsWith('/requests/')){this.currentRequestId=hash.split('/requests/').pop();rv.innerHTML=this.renderRequestDetail(this.currentRequestId)}
+else if(hash==='/requests')rv.innerHTML=this.renderRequestPanel();
+else if(hash.startsWith('/requests/')){this.currentRequestId=hash.split('/requests/').pop();rv.innerHTML=this.renderRequestPanel()}
 else if(hash==='/agents')rv.innerHTML=this.renderLanding();
 else if(hash==='/test')rv.innerHTML=this.renderTest();
 else if(hash.startsWith('/project/')){this.currentProjectId=hash.split('/').pop();rv.innerHTML=this.renderProject()}
@@ -1927,7 +1927,7 @@ renderLanding(){return`<div class="page">
 <div class="loop-svg-wrap"><svg viewBox="0 0 400 240"><g class="loop-rotate"><circle cx="200" cy="120" r="80" fill="none" stroke="var(--border)" stroke-width="1" stroke-dasharray="6 4"/><circle cx="200" cy="40" r="20" fill="var(--surface2)" stroke="var(--blue)" stroke-width="2"/><text x="200" y="44" text-anchor="middle" font-size="12" fill="var(--accent2)">📋</text><circle cx="280" cy="120" r="20" fill="var(--surface2)" stroke="var(--purple)" stroke-width="2"/><text x="280" y="124" text-anchor="middle" font-size="12" fill="var(--accent2)">🎨</text><circle cx="200" cy="200" r="20" fill="var(--surface2)" stroke="var(--amber)" stroke-width="2"/><text x="200" y="204" text-anchor="middle" font-size="12" fill="var(--accent2)">🔍</text><circle cx="120" cy="120" r="20" fill="var(--surface2)" stroke="var(--green)" stroke-width="2"/><text x="120" y="124" text-anchor="middle" font-size="12" fill="var(--accent2)">✏️</text></g><circle cx="200" cy="120" r="30" fill="var(--surface)" stroke="var(--accent)" stroke-width="2"/><text x="200" y="116" text-anchor="middle" font-size="8" fill="var(--text2)">CLE</text><text x="200" y="128" text-anchor="middle" font-size="10" fill="var(--accent2)">🔄</text></svg></div>
 <div class="category-tags">${['만화','일러스트','스토리보드','글쓰기','디자인','커스텀'].map(c=>`<span class="cat-tag">${c}</span>`).join('')}</div>
 <div class="panel" style="margin-top:24px"><div class="panel-header"><span class="panel-title">🖼️ 최근 갤러리</span><a href="#/gallery" class="btn btn-secondary btn-sm">전체 보기</a></div><div class="gallery-strip">${GALLERY_ITEMS.slice(0,4).map(g=>`<div class="g-thumb" style="background:${g.gradient};display:flex;align-items:center;justify-content:center;font-size:1.5rem">${g.title.split(' ')[0]}</div>`).join('')}</div></div>
-${this.renderLandingEnhanced()}
+${this.renderRequestPanel()}
 </div>`},
 
 /* ===== NEW PROJECT WIZARD ===== */
@@ -1948,7 +1948,7 @@ const autoPrompt=this.buildAutoPrompt();
 if(!this.wizData.finalPrompt)this.wizData.finalPrompt=autoPrompt;
 previewHTML=`<div class="preview-panel"><h4>📋 생성 프롬프트 프리뷰</h4><div class="preview-tags">${[...this.wizData.topics,...this.wizData.styles,...this.wizData.moods].map(id=>{const all=[...TOPICS,...STYLES,...MOODS];const item=all.find(c=>c.id===id);return item?`<span class="preview-tag">${item.icon} ${item.title}</span>`:''}).join('')}</div><div class="preview-prompt">${this.wizData.finalPrompt}</div><div class="final-prompt-area"><label>직접 수정하기</label><textarea oninput="App.updateFinalPrompt()" id="finalPromptText">${this.wizData.finalPrompt}</textarea></div><button class="btn btn-secondary btn-sm" onclick="App.resetFinalPrompt()" style="margin-top:8px">🔄 초기화</button></div></div>`}
 const previewSide=`<div class="preview-side"><div class="preview-panel"><h4>👀 선택 프리뷰</h4><div class="preview-tags">${selected.map(id=>{const all=[...TOPICS,...STYLES,...MOODS];const item=all.find(c=>c.id===id);return item?`<span class="preview-tag">${item.icon} ${item.title}</span>`:''}).join('')}</div>${this.wizData.prompt?`<div class="preview-prompt">${this.wizData.prompt}</div>`:''}<div class="preview-info">⏱️ 예상 생성 시간: ~2분 | 결과물 수: 4개 후보</div><button class="btn btn-secondary btn-sm random-btn" onclick="App.randomSelect()">🎲 AI가 추천해줘</button></div></div>`;
-return`<div class="page"><div class="wizard-header"><div><span class="panel-title">새 프로젝트</span><span class="panel-subtitle"> style="margin-left:12px">Step ${this.wizStep+1}/3</span></div><div class="step-pills">${pills}</div></div>
+return`<div class="page"><div class="wizard-header"><div><span class="panel-title">새 프로젝트</span><span class="panel-subtitle" style="margin-left:12px">Step ${this.wizStep+1}/3</span></div><div class="step-pills">${pills}</div></div>
 <div style="display:grid;grid-template-columns:1fr 300px;gap:24px"><div><div class="card-grid">${cardsHTML}</div>${promptHTML}${refHTML}${previewHTML}
 <div class="step-nav" style="margin-top:24px;display:flex;justify-content:space-between">${this.wizStep>0?'<button class="btn btn-secondary" onclick="App.prevStep()">← 이전</button>':'<span></span>'}${this.wizStep<2?`<button class="btn btn-primary" onclick="App.nextStep()">다음 →</button>`:`<button class="btn btn-primary" onclick="App.createProject()">🚀 생성 시작</button>`}</div></div>
 ${previewSide}</div></div>`},
@@ -2188,6 +2188,20 @@ $('#modalOverlay').classList.add('show');
 },
 
 closeModal(){$('#modalOverlay').classList.remove('show')},
+
+/* ===== REQUEST PANEL ===== */
+renderRequestPanel(){
+const reqs=CLE2_STORAGE.requests;
+const filtered=this.reqFilter.type==='all'?reqs:reqs.filter(r=>r.type===this.reqFilter.type);
+const sorted=filtered.sort((a,b)=>this.reqFilter.sort==='newest'?b.created-a.created:a.created-b.created);
+const cards=sorted.map(r=>{
+const st=STATUSES[r.status]||{label:r.status,cls:'',icon:'❓'};
+const cat=CATEGORIES[r.category]||CATEGORIES.feature;
+const pri=PRIORITIES[r.priority]||PRIORITIES.normal;
+const assignee=r.assignee?MEMBERS[r.assignee]:null;
+const date=new Date(r.created).toLocaleDateString('ko');
+return`<div class="project-card" onclick="location.hash='#/requests/${r.id}'"><div class="pc-title">${cat.icon} ${r.title}</div><div class="pc-meta"><span>${date}</span><span class="pc-status ${st.cls}">${st.icon} ${st.label}</span></div></div>`}).join('');
+return`<div class="page"><div class="panel-header"><span class="panel-title">📋 요청 목록</span><a href="#/new" class="btn btn-primary btn-sm">+ 새 요청</a></div><div class="filter-bar">${['all','feature','bug','improvement','idea'].map(f=>`<span class="filter-btn${this.reqFilter.type===f?' active':''}" onclick="App.reqFilter.type='${f}';App.route()">${f==='all'?'전체':(CATEGORIES[f]||{}).label||f}</span>`).join('')}</div><div class="project-list">${cards||'<div class="empty-state"><div class="empty-icon">📭</div><h3>요청이 없습니다</h3></div>'}</div></div>`},
 
 /* ===== SETTINGS ===== */
 renderSettings(){
