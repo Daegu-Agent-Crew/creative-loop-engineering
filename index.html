@@ -2002,6 +2002,8 @@ const App = {
   async createGitHubIssue() {
     const project = this.getProject();
     if (!project) return toast('프로젝트를 찾을 수 없습니다', 'error');
+    const pat = STORAGE.settings.github_pat;
+    if (!pat) { toast('설정에서 GitHub PAT를 먼저 저장해주세요', 'error'); return; }
     const payload = {
       type: 'CLE-REQUEST',
       id: project.id,
@@ -2015,10 +2017,25 @@ const App = {
       timestamp: project.modified
     };
     const body = '## 🎨 CLE 요청\n\n' + JSON.stringify(payload, null, 2) + '\n\n---\n_CLE-REQUEST 자동 생성_';
-    const url = 'https://github.com/Daegu-Agent-Crew/creative-loop-engineering/issues/new?labels=CLE-PENDING&title=' + encodeURIComponent('🎨 ' + project.title.slice(0, 60)) + '&body=' + encodeURIComponent(body);
+    try {
+      toast('Issue 생성 중...', 'info');
+      const res = await fetch('https://api.github.com/repos/Daegu-Agent-Crew/creative-loop-engineering/issues', {
+        method: 'POST',
+        headers: { 'Authorization': 'token ' + pat, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: '🎨 ' + project.title.slice(0, 60), body, labels: ['CLE-PENDING'] })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        toast('✅ Issue #' + data.number + ' 생성 완료!', 'success');
+        window.open(data.html_url, '_blank');
+      } else {
+        const err = await res.json();
+        toast('❌ ' + (err.message || '생성 실패').slice(0, 50), 'error');
+      }
+    } catch (e) {
+      toast('❌ 네트워크 오류', 'error');
+    }
     await this.copyRequest(project).catch(() => {});
-    window.open(url, '_blank');
-    toast('📋 클립보드에 복사 + Issue 페이지 열림', 'success');
   },
 
   copyRequest(project) {
