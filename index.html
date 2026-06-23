@@ -1730,6 +1730,16 @@ const App = {
           <div class="panel-title">🖼️ 후보 결과물</div>
           <div class="candidate-grid">${candidates}</div>
         </section>
+        <section class="panel" id="cleResultsSection" style="display:none">
+          <div class="panel-head">
+            <div>
+              <div class="panel-title">🤖 CLE 생성 결과</div>
+              <div class="panel-subtitle" id="cleResultsSub"></div>
+            </div>
+            <span class="tag" style="background:rgba(0,180,80,.15);color:#00b450">GitHub</span>
+          </div>
+          <div id="cleResultsGrid" class="gallery-preview"></div>
+        </section>
         <section class="panel stack">
           <div class="panel-title">🎯 피드백</div>
           <div class="chips">${FEEDBACK_CHIPS.map(chip => `<span class="feedback-chip${project.feedback.chips.includes(chip) ? ' selected' : ''}" onclick="App.toggleChip('${chip.replace(/'/g, "\\'")}')">${chip}</span>`).join('')}</div>
@@ -1773,6 +1783,74 @@ const App = {
         </section>
       </div>
     `;
+  },
+
+  async loadCleResults(project) {
+    try {
+      const settings = STORAGE.settings;
+      const pat = settings.github_pat;
+      const headers = { 'Accept': 'application/vnd.github+json' };
+      if (pat) headers['Authorization'] = `Bearer ${pat}`;
+
+      // 이 프로젝트와 연관된 GitHub Issue 검색
+      const title = project.title.substring(0, 50);
+      const issuesResp = await fetch(`https://api.github.com/repos/${CLE_GALLERY_REPO}/issues?state=all&per_page=50`, { headers });
+      const issues = issuesResp.ok ? await issuesResp.json() : [];
+
+      // 타이틀 매칭 또는 본문에 recoveryToken 포함
+      const matched = issues.filter(i => {
+        const matchTitle = i.title.toLowerCase().includes(title.toLowerCase().substring(0, 20));
+        const matchBody = i.body && i.body.includes(project.recoveryToken);
+        return matchTitle || matchBody;
+      });
+
+      if (matched.length === 0) {
+        // recoveryToken 매칭 없으면 섹션 숨김 유지
+        return;
+      }
+
+      const issue = matched[0];
+      const issueNum = issue.number;
+      const issueLabels = issue.labels.map(l => l.name);
+      const statusLabel = issueLabels.includes('CLE-DONE') ? '✅ 완료' :
+                          issueLabels.includes('CLE-PENDING') ? '⏳ 대기 중' :
+                          issueLabels.includes('CLE-FAILED') ? '❌ 실패' :
+                          issueLabels.includes('CLE-REVISION') ? '🔄 수정 중' : issue.state;
+
+      // 해당 이슈의 이미지 파일 조회
+      const assetsResp = await fetch(`https://api.github.com/repos/${CLE_GALLERY_REPO}/contents/${CLE_GALLERY_ASSET_PATH}`, { headers });
+      const assets = assetsResp.ok ? await assetsResp.json() : [];
+      const imageFiles = Array.isArray(assets)
+        ? assets.filter(a => a.name.startsWith(`cle${issueNum}`) && a.name.match(/\.(png|jpg|jpeg|webp)$/i))
+        : [];
+
+      const section = document.getElementById('cleResultsSection');
+      const sub = document.getElementById('cleResultsSub');
+      const grid = document.getElementById('cleResultsGrid');
+
+      if (!section) return;
+
+      if (imageFiles.length > 0) {
+        sub.textContent = `Issue #${issueNum} · ${statusLabel} · ${imageFiles.length}개 결과물`;
+        grid.innerHTML = imageFiles.map(img => {
+          const rawUrl = img.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${img.name}`;
+          const size = (img.size / 1024).toFixed(0) + 'KB';
+          return `
+            <div class="gallery-preview-card" style="cursor:pointer" onclick="window.open('${rawUrl}')">
+              <div style="height:180px;background:url('${rawUrl}') center/cover;border-radius:14px"></div>
+              <div style="padding:8px;font-size:.8rem;font-weight:700">${img.name}</div>
+              <div style="font-size:.7rem;color:var(--text-3)">${size}</div>
+            </div>`;
+        }).join('');
+        section.style.display = 'block';
+      } else {
+        sub.textContent = `Issue #${issueNum} · ${statusLabel} · 결과물 없음`;
+        grid.innerHTML = '<p style="color:var(--text-3);font-size:.85rem">아직 이미지가 생성되지 않았습니다.</p>';
+        section.style.display = 'block';
+      }
+    } catch (err) {
+      console.warn('CLE results load failed:', err);
+    }
   },
 
   toggleChip(chip) {
