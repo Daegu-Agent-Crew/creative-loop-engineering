@@ -691,7 +691,12 @@ const PROMPT_EXAMPLES = [
   '시간이 멈춘 도서관에서 책 속으로 빠져드는 소녀',
   '바다 깊은 곳의 수중 도시에서 열리는 음악 축제'
 ];
-const GALLERY_ITEMS = [
+const CLE_GALLERY_REPO = 'Daegu-Agent-Crew/creative-loop-engineering';
+const CLE_GALLERY_BRANCH = 'main';
+const CLE_GALLERY_ASSET_PATH = 'assets/cle-requests';
+
+// 샘플 갤러리 (연동 전 기본 데이터)
+const SAMPLE_GALLERY = [
   { id: 'g1', title: 'SF 수채화 도시', tags: ['SF','수채화'], likes: 42 },
   { id: 'g2', title: '판타지 마법의 숲', tags: ['판타지','유화'], likes: 35 },
   { id: 'g3', title: '현대 도시 일몰', tags: ['현대','사실주의'], likes: 28 },
@@ -703,6 +708,17 @@ const GALLERY_ITEMS = [
   { id: 'g9', title: '강렬한 화산 폭발', tags: ['자연','강렬'], likes: 39 },
   { id: 'g10', title: '팝아트 리트리버', tags: ['동물','팝아트'], likes: 71 }
 ];
+
+// 실시간 갤러리 (GitHub API 연동)
+let LIVE_GALLERY = [];
+let GALLERY_LOADED = false;
+
+// GALLERY_ITEMS 호환 — 라이브 + 샘플 병합
+function getGalleryItems() {
+  if (LIVE_GALLERY.length > 0) return [...LIVE_GALLERY, ...SAMPLE_GALLERY.map(s => ({...s, id: 'sample-' + s.id}))];
+  return SAMPLE_GALLERY;
+}
+
 const TUTORIAL = [
   { title: '🎨 카드로 고르세요', text: '주제, 화풍, 분위기를 카드 3장만 클릭하면 시작됩니다. 직접 프롬프트를 입력해도 됩니다.' },
   { title: '🔄 5단계 자동 생성', text: 'Define → Generate → Evaluate → Refine → Deliver 흐름을 프로젝트 화면에서 실시간으로 확인할 수 있습니다.' },
@@ -746,7 +762,74 @@ const App = {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => this.applyTheme());
     $('#tutorialSkip').onclick = () => this.closeTutorial();
     this.initDragDrop();
+    this.loadLiveGallery();
     this.route();
+  },
+
+  async loadLiveGallery() {
+    try {
+      const settings = STORAGE.settings;
+      const pat = settings.github_pat;
+      const headers = { 'Accept': 'application/vnd.github+json' };
+      if (pat) headers['Authorization'] = `Bearer ${pat}`;
+
+      // CLE 이슈 목록 (CLE-DONE 라벨)
+      const issuesResp = await fetch(`https://api.github.com/repos/${CLE_GALLERY_REPO}/issues?labels=CLE-DONE&state=closed&per_page=30`, { headers });
+      const issues = issuesResp.ok ? await issuesResp.json() : [];
+
+      // assets 폴더 이미지 목록
+      const assetsResp = await fetch(`https://api.github.com/repos/${CLE_GALLERY_REPO}/contents/${CLE_GALLERY_ASSET_PATH}`, { headers });
+      const assets = assetsResp.ok ? await assetsResp.json() : [];
+      const imageFiles = Array.isArray(assets) ? assets.filter(a => a.name.match(/\.(png|jpg|jpeg|webp)$/i)) : [];
+
+      // 이슈 + 이미지 매핑
+      LIVE_GALLERY = [];
+      for (const issue of issues) {
+        const issueNum = issue.number;
+        const title = issue.title.replace(/\[CLE-[^\]]+\]\s*/, '').trim();
+        let body = {};
+        try { body = JSON.parse(issue.body?.match(/\{[\s\S]*\}/)?.[0] || '{}'); } catch(e) {}
+        const refImages = body.refs?.images || [];
+        const matchedImages = imageFiles.filter(f => f.name.startsWith(`cle${issueNum}`));
+        for (const img of matchedImages) {
+          const rawUrl = img.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${img.name}`;
+          const version = img.name.match(/-v(\d+)/)?.[1] || '1';
+          LIVE_GALLERY.push({
+            id: `cle-${issueNum}-${img.name}`,
+            title: title || `CLE #${issueNum}`,
+            tags: ['CLE', issueNum <= 5 ? '초기' : '최근'],
+            likes: issue.reactions?.total_count || 0,
+            imageUrl: rawUrl,
+            issueUrl: issue.html_url,
+            issueNum,
+            version,
+            refImages,
+            isLive: true
+          });
+        }
+      }
+
+      // 매칭 안 된 이미지도 아카이브로 추가
+      const matchedNames = new Set(LIVE_GALLERY.map(g => g.id));
+      for (const img of imageFiles) {
+        if (!matchedNames.has(`cle-${img.name}`)) {
+          const rawUrl = img.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${img.name}`;
+          LIVE_GALLERY.push({
+            id: `asset-${img.name}`,
+            title: img.name.replace(/\.(png|jpg|jpeg|webp)$/i, '').replace(/-/g, ' '),
+            tags: ['CLE', '아카이브'],
+            likes: 0,
+            imageUrl: rawUrl,
+            isLive: true
+          });
+        }
+      }
+
+      GALLERY_LOADED = true;
+      if (window.location.hash === '#/gallery') this.route();
+    } catch (err) {
+      console.warn('Live gallery load failed:', err);
+    }
   },
 
   buildNav() {
@@ -817,7 +900,7 @@ const App = {
   renderLanding() {
     const projectCount = STORAGE.projects.length;
     const requestCount = CLE2_STORAGE.requests.length;
-    const galleryCount = GALLERY_ITEMS.length;
+    const galleryCount = getGalleryItems().length;
     const features = [
       { icon: '🎯', title: '명확한 시작점', copy: '브리프와 레퍼런스를 한 화면에서 정리하고 바로 첫 실험으로 연결합니다.' },
       { icon: '⚙️', title: '루프 기반 제작', copy: '생성, 평가, 수정이 끊기지 않는 흐름으로 이어져 결과물을 빠르게 다듬습니다.' },
@@ -1783,7 +1866,8 @@ const App = {
   },
 
   renderGallery() {
-    const items = GALLERY_ITEMS.filter(item => this.galleryFilter === 'all' || item.tags.some(tag => tag.includes(this.galleryFilter)));
+    const allItems = getGalleryItems();
+    const items = allItems.filter(item => this.galleryFilter === 'all' || item.tags.some(tag => tag.includes(this.galleryFilter)));
     const filtered = this.gallerySearch ? items.filter(item => item.title.includes(this.gallerySearch) || item.tags.some(tag => tag.includes(this.gallerySearch))) : items;
     return `
       <div class="page">
@@ -1803,11 +1887,18 @@ const App = {
           <div class="masonry">
             ${filtered.map(item => `
               <article class="gallery-card" onclick="App.showGalleryDetail('${item.id}')">
-                <div class="gallery-card-media theme-${item.id}">🖼️</div>
+                <div class="gallery-card-media ${item.imageUrl ? '' : 'theme-'+item.id}" style="${item.imageUrl ? `background:url('${item.imageUrl}') center/cover` : ''}">
+                  ${item.isLive ? '<span style=\"background:rgba(0,180,80,.85);color:#fff;font-size:.65rem;padding:3px 8px;border-radius:99px;font-weight:800\">CLE</span>' : '🖼️'}
+                </div>
                 <div class="gallery-card-body">
                   <div class="gallery-card-title">${item.title}</div>
-                  <div class="gallery-tags">${item.tags.map(tag => `<span class="gallery-tag">${tag}</span>`).join('')}</div>
-                  <div class="gallery-actions"><span>❤️ ${item.likes}</span><span class="btn btn-secondary btn-sm">복제</span></div>
+                  <div class="gallery-tags">${item.tags.map(tag => `<span class="gallery-tag">${tag}</span>`).join('')}
+                    ${item.issueUrl ? `<a class="gallery-tag" href="${item.issueUrl}" target="_blank" onclick="event.stopPropagation()" style=\"text-decoration:none\">Issue #${item.issueNum}</a>` : ''}
+                  </div>
+                  <div class="gallery-actions">
+                    <span>❤️ ${item.likes}</span>
+                    ${item.imageUrl ? `<a class="btn btn-secondary btn-sm" href="${item.imageUrl}" target="_blank" onclick="event.stopPropagation()\">원본</a>` : '<span class="btn btn-secondary btn-sm">복제</span>'}
+                  </div>
                 </div>
               </article>
             `).join('')}
@@ -1818,16 +1909,19 @@ const App = {
   },
 
   showGalleryDetail(id) {
-    const item = GALLERY_ITEMS.find(entry => entry.id === id);
+    const item = [...getGalleryItems()].find(entry => entry.id === id);
     if (!item) return;
     $('#modalContent').innerHTML = `
       <button class="modal-close" onclick="App.closeModal()">✕</button>
-      <div class="modal-hero theme-${item.id}">🖼️</div>
+      <div class="modal-hero" style="${item.imageUrl ? `background:url('${item.imageUrl}') center/cover;min-height:300px` : ''} ${!item.imageUrl ? 'theme-'+item.id : ''}">
+        ${!item.imageUrl ? '🖼️' : ''}
+      </div>
       <div class="panel-title">${item.title}</div>
-      <div class="modal-meta">${item.tags.map(tag => '#' + tag).join(' ')} · ❤️ ${item.likes}</div>
+      <div class="modal-meta">${item.tags.map(tag => '#' + tag).join(' ')} · ❤️ ${item.likes}${item.version ? ` · v${item.version}` : ''}</div>
       <div class="modal-actions">
-        <button class="btn btn-primary btn-sm">복제하기</button>
-        <button class="btn btn-secondary btn-sm">❤️ 좋아요</button>
+        ${item.issueUrl ? `<a class="btn btn-primary btn-sm" href="${item.issueUrl}" target="_blank">📋 Issue 보기</a>` : '<button class="btn btn-primary btn-sm">복제하기</button>'}
+        ${item.imageUrl ? `<a class="btn btn-secondary btn-sm" href="${item.imageUrl}" target="_blank">🖼️ 원본 이미지</a>` : ''}
+        <button class="btn btn-secondary btn-sm" onclick="App.closeModal()">닫기</button>
       </div>
     `;
     $('#modalOverlay').classList.add('open');
@@ -2188,7 +2282,7 @@ const App = {
       { name: '스토리지: 설정 저장/불러오기', fn: () => { STORAGE.settings = { theme: 'dark', tutorial_seen: true }; return STORAGE.settings.theme === 'dark'; } },
       { name: '위저드: 카드 선택 토글', fn: () => { App.wizData.topics = []; App.toggleCard('sf', 0); return App.wizData.topics.includes('sf'); } },
       { name: '위저드: 프롬프트 생성', fn: () => { App.wizData.prompt = 'test'; return App.buildAutoPrompt().includes('test'); } },
-      { name: '갤러리: 검색 동작', fn: () => GALLERY_ITEMS.some(item => item.title.includes('SF')) }
+      { name: '갤러리: 검색 동작', fn: () => getGalleryItems().some(item => item.title.includes('SF')) }
     ];
     const list = $('#testList');
     let pass = 0;
