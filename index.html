@@ -1881,7 +1881,7 @@ const App = {
           <div class="collapse-body">
             ${project.reference_images.length || project.reference_urls.length ? `
               <div class="stack">
-                <div class="ref-grid">${project.reference_images.map(image => `<div class="ref-thumb"><img src="${image.data}" alt="${image.name}"></div>`).join('')}</div>
+                <div class="ref-grid">${project.reference_images.map(image => image.data ? `<div class="ref-thumb"><img src="${image.data}" alt="${image.name}"></div>` : image.url ? `<div class="ref-thumb"><a href="${image.url}" target="_blank" rel="noreferrer"><img src="${image.url}" alt="${image.name}"></a></div>` : `<div class="ref-chip">📎 ${image.name}</div>`).join('')}</div>
                 <div class="ref-grid">${project.reference_urls.map(url => `<div class="ref-chip">🔗 <a href="${url.url}" target="_blank" rel="noreferrer">${url.title}</a></div>`).join('')}</div>
               </div>
             ` : '<p class="empty-copy">참고 자료 없음</p>'}
@@ -1912,7 +1912,6 @@ const App = {
       const issueNum = project.cle_issue_number;
       if (!issueNum) return;
 
-      // 직접 해당 Issue fetch (목록 검색 대신)
       const issueResp = await fetch(`https://api.github.com/repos/${CLE_GALLERY_REPO}/issues/${issueNum}`, { headers });
       if (!issueResp.ok) return;
       const issue = await issueResp.json();
@@ -1923,42 +1922,62 @@ const App = {
                           issueLabels.includes('CLE-FAILED') ? '❌ 실패' :
                           issueLabels.includes('CLE-REVISION') ? '🔄 수정 중' : issue.state;
 
-      // assets에서 이미지 파일 조회
+      // assets에서 결과 이미지 파일 조회
       const assetsResp = await fetch(`https://api.github.com/repos/${CLE_GALLERY_REPO}/contents/${CLE_GALLERY_ASSET_PATH}`, { headers });
       const assets = assetsResp.ok ? await assetsResp.json() : [];
       const imageFiles = Array.isArray(assets)
         ? assets.filter(a => a.name.startsWith(`cle${issueNum}`) && a.name.match(/\.(png|jpg|jpeg|webp)$/i))
         : [];
 
+      // 참고 이미지도 assets에서 찾기 (CLE Request에 첨부된 원본)
+      const refImages = Array.isArray(assets)
+        ? assets.filter(a => a.name.startsWith(`ref${issueNum}`) && a.name.match(/\.(png|jpg|jpeg|webp)$/i))
+        : [];
+
       const sub = document.getElementById('candidatesSub');
       const grid = document.getElementById('candidatesGrid');
       if (!grid) return;
 
+      // candidates를 직접 DOM 조작 (saveProject로 route 재호출 안 함)
+      const candidates = [];
+      let changed = false;
+
       if (imageFiles.length > 0) {
         if (sub) sub.textContent = `Issue #${issueNum} · ${statusLabel} · ${imageFiles.length}개 결과물`;
-        grid.innerHTML = imageFiles.map(img => {
+        imageFiles.forEach(img => {
           const rawUrl = img.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${img.name}`;
           const size = (img.size / 1024).toFixed(0) + 'KB';
-          return `
+          candidates.push({ status: 'complete', url: rawUrl, name: img.name });
+          grid.insertAdjacentHTML('beforeend', `
             <div class="gallery-preview-card" style="cursor:pointer" onclick="window.open('${rawUrl}')">
               <div style="height:200px;background:url('${rawUrl}') center/cover;border-radius:14px"></div>
               <div style="padding:8px;font-size:.8rem;font-weight:700">${img.name}</div>
               <div style="font-size:.7rem;color:var(--text-3)">${size}</div>
-            </div>`;
-        }).join('');
-        // SPA 프로젝트 상태도 동기화
-        project.phases.generate.candidates = imageFiles.map(img => ({
-          status: 'complete',
-          url: img.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${img.name}`,
-          name: img.name
-        }));
-        this.saveProject(project);
+            </div>`);
+        });
+        changed = true;
       } else {
         if (sub) sub.textContent = `Issue #${issueNum} · ${statusLabel} · 아직 결과물 없음`;
-        grid.innerHTML = '<p style="color:var(--text-3);font-size:.85rem;padding:12px 0">이미지가 아직 생성되지 않았습니다.</p>';
+      }
+
+      // 참고 이미지 URL 보강 (data가 null이면 GitHub URL로 채움)
+      if (refImages.length > 0) {
+        refImages.forEach(ref => {
+          const rawUrl = ref.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${ref.name}`;
+          const match = project.reference_images.find(ri => ri.name === ref.name.replace(/^ref\d+-/, ''));
+          if (match && !match.data) { match.url = rawUrl; match.data = null; changed = true; }
+        });
+      }
+
+      // 저장은 필요한 것만, route는 호출하지 않음 (렌더링 깜빡임 방지)
+      if (changed) {
+        project.phases.generate.candidates = candidates;
+        STORAGE.projects = STORAGE.projects.map(p => p.id === project.id ? project : p);
       }
     } catch (err) {
       console.warn('CLE results load failed:', err);
+    }
+  },
     }
   },
 
