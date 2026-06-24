@@ -877,6 +877,11 @@ const App = {
     else if (hash.startsWith('/project/')) {
       this.currentProjectId = hash.split('/').pop();
       view.innerHTML = this.renderProject();
+      // GitHub 연동 프로젝트면 CLE 결과 자동 로드
+      const project = this.getProject();
+      if (project && project.cle_issue_number) {
+        setTimeout(() => this.loadCleResults(project), 300);
+      }
     } else if (hash.startsWith('/resume/')) {
       this.handleResume(hash.split('/resume/').pop());
       return;
@@ -1688,7 +1693,7 @@ const App = {
         }
 
         // 새 프로젝트 생성
-        const projectId = cleId ? 'cle-' + cleId.substring(0, 12) : 'issue-' + issueNum;
+        const projectId = cleId ? 'cle-' + cleId : 'issue-' + issueNum;
         const project = {
           id: projectId,
           title: payload.title || issue.title.replace(/^\[CLE-[\w]+\]\s*/, ''),
