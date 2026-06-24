@@ -1935,14 +1935,6 @@ const App = {
           const rawUrl = img.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${img.name}`;
           candidates.push({ status: 'complete', url: rawUrl, name: img.name });
         });
-        grid.innerHTML = candidates.map(img => {
-          const size = (img.size || 0) > 0 ? `${(img.size / 1024).toFixed(0)}KB` : '';
-          return `<div class="gallery-preview-card" style="cursor:pointer" onclick="window.open('${img.url}')">
-            <div style="height:200px;background:url('${img.url}') center/cover;border-radius:14px"></div>
-            <div style="padding:8px;font-size:.8rem;font-weight:700">${img.name}</div>
-            ${size ? `<div style="font-size:.7rem;color:var(--text-3)">${size}</div>` : ''}
-          </div>`;
-        }).join('');
         changed = true;
       } else {
         if (sub) sub.textContent = `Issue #${issueNum} · ${statusLabel} · 아직 결과물 없음`;
@@ -1968,8 +1960,6 @@ const App = {
       }
     } catch (err) {
       console.warn('CLE results load failed:', err);
-    }
-  },
     }
   },
 
