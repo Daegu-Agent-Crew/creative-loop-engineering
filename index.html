@@ -2174,10 +2174,11 @@ const App = {
           <div class="settings-row">
             <div>
               <div class="settings-label">GitHub PAT</div>
-              <div class="settings-value">${pat ? '✅ 연결됨' : '미설정'}</div>
+              <div class="settings-value">${pat ? '✅ 이 브라우저에 저장됨' : '미설정 · 브라우저 localStorage 사용'}</div>
             </div>
             <div class="stack stack-sm">
               <input class="field" id="patInput" type="password" value="${pat}" placeholder="ghp_xxxxxxxxxxxx" onfocus="this.select()">
+              <div class="settings-value">GitHub Pages에서는 토큰을 이 브라우저의 localStorage에만 저장합니다. `.env` 파일에는 저장되지 않습니다.</div>
               <div class="settings-actions">
                 <button class="btn btn-primary btn-sm" onclick="App.saveGitHubPat()">💾 저장</button>
                 <button class="btn btn-secondary btn-sm" onclick="App.testGitHubPat()">🧪 테스트</button>
@@ -2224,7 +2225,7 @@ const App = {
     const settings = STORAGE.settings;
     settings.github_pat = value;
     STORAGE.settings = settings;
-    toast('GitHub PAT 저장됨', 'success');
+    toast('GitHub PAT가 이 브라우저 localStorage에 저장됨', 'success');
     this.route();
   },
 
@@ -2232,7 +2233,7 @@ const App = {
     const settings = STORAGE.settings;
     delete settings.github_pat;
     STORAGE.settings = settings;
-    toast('GitHub PAT 제거됨', 'success');
+    toast('GitHub PAT가 이 브라우저 localStorage에서 제거됨', 'success');
     this.route();
   },
 
