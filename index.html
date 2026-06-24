@@ -697,18 +697,7 @@ const CLE_GALLERY_BRANCH = 'main';
 const CLE_GALLERY_ASSET_PATH = 'assets/cle-requests';
 
 // 샘플 갤러리 (연동 전 기본 데이터)
-const SAMPLE_GALLERY = [
-  { id: 'g1', title: 'SF 수채화 도시', tags: ['SF','수채화'], likes: 42 },
-  { id: 'g2', title: '판타지 마법의 숲', tags: ['판타지','유화'], likes: 35 },
-  { id: 'g3', title: '현대 도시 일몰', tags: ['현대','사실주의'], likes: 28 },
-  { id: 'g4', title: '역사적 전투 장면', tags: ['역사','잉크'], likes: 56 },
-  { id: 'g5', title: '드라마 우산 속', tags: ['드라마','수채화'], likes: 31 },
-  { id: 'g6', title: 'SF 로봇 정원', tags: ['SF','디지털'], likes: 48 },
-  { id: 'g7', title: '몽환적 우주', tags: ['SF','몽환적'], likes: 63 },
-  { id: 'g8', title: '차분한 바다 풍경', tags: ['자연','차분'], likes: 22 },
-  { id: 'g9', title: '강렬한 화산 폭발', tags: ['자연','강렬'], likes: 39 },
-  { id: 'g10', title: '팝아트 리트리버', tags: ['동물','팝아트'], likes: 71 }
-];
+const SAMPLE_GALLERY = [];
 
 // 실시간 갤러리 (GitHub API 연동)
 let LIVE_GALLERY = [];
@@ -716,8 +705,7 @@ let GALLERY_LOADED = false;
 
 // GALLERY_ITEMS 호환 — 라이브 + 샘플 병합
 function getGalleryItems() {
-  if (LIVE_GALLERY.length > 0) return [...LIVE_GALLERY, ...SAMPLE_GALLERY.map(s => ({...s, id: 'sample-' + s.id}))];
-  return SAMPLE_GALLERY;
+  return LIVE_GALLERY;
 }
 
 const TUTORIAL = [
