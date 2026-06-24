@@ -1622,6 +1622,114 @@ const App = {
     window.location.hash = '#/project/' + project.id;
   },
 
+  async syncFromGitHub() {
+    try {
+      toast('🔄 GitHub에서 프로젝트 동기화 중...', 'info');
+      const settings = STORAGE.settings;
+      const pat = settings.github_pat;
+      const headers = { 'Accept': 'application/vnd.github+json' };
+      if (pat) headers['Authorization'] = `Bearer ${pat}`;
+
+      let page = 1, allIssues = [];
+      while (true) {
+        const resp = await fetch(`https://api.github.com/repos/${CLE_GALLERY_REPO}/issues?state=all&per_page=100&page=${page}`, { headers });
+        if (!resp.ok) { toast('❌ GitHub API 오류', 'error'); return; }
+        const issues = await resp.json();
+        if (issues.length === 0) break;
+        allIssues = allIssues.concat(issues);
+        if (issues.length < 100) break;
+        page++;
+      }
+
+      // CLE 이슈 필터 (CLE-PENDING, CLE-DONE, CLE-REVISION, CLE-FAILED 라벨)
+      const cleLabels = ['CLE-PENDING','CLE-DONE','CLE-REVISION','CLE-FAILED'];
+      const cleIssues = allIssues.filter(i => i.labels.some(l => cleLabels.includes(l.name)));
+
+      let projects = STORAGE.projects;
+      let imported = 0, updated = 0;
+      const existingMap = new Map();
+      projects.forEach(p => {
+        if (p.cle_issue_number) existingMap.set(p.cle_issue_number, p);
+        if (p.cle_id) existingMap.set(p.cle_id, p);
+      });
+
+      for (const issue of cleIssues) {
+        // Issue body에서 JSON payload 파싱
+        let payload = null;
+        try {
+          const jsonMatch = issue.body.match(/\{[\s\S]*\}/);
+          if (jsonMatch) payload = JSON.parse(jsonMatch[0]);
+        } catch (e) { continue; }
+        if (!payload || payload.type !== 'CLE-REQUEST') continue;
+
+        const issueNum = issue.number;
+        const cleId = payload.id || '';
+        const issueLabels = issue.labels.map(l => l.name);
+        const isDone = issueLabels.includes('CLE-DONE');
+        const isPending = issueLabels.includes('CLE-PENDING');
+        const isRevision = issueLabels.includes('CLE-REVISION');
+        const isFailed = issueLabels.includes('CLE-FAILED');
+
+        // 이미 존재하는 프로젝트면 상태만 업데이트
+        const existing = existingMap.get(issueNum) || existingMap.get(cleId);
+        if (existing) {
+          // 이슈 번호 매핑
+          if (!existing.cle_issue_number) existing.cle_issue_number = issueNum;
+          if (!existing.cle_id) existing.cle_id = cleId;
+          // 라벨 기반 상태 동기화
+          if (isDone) {
+            existing.phases.generate.status = 'complete';
+            existing.phases.deliver.status = 'complete';
+          } else if (isPending) {
+            existing.phases.generate.status = existing.phases.generate.status === 'complete' ? 'complete' : 'idle';
+          }
+          updated++;
+          continue;
+        }
+
+        // 새 프로젝트 생성
+        const projectId = cleId ? 'cle-' + cleId.substring(0, 12) : 'issue-' + issueNum;
+        const project = {
+          id: projectId,
+          title: payload.title || issue.title.replace(/^\[CLE-[\w]+\]\s*/, ''),
+          topic_cards: payload.topics || [],
+          style_cards: payload.styles || [],
+          mood_cards: payload.moods || [],
+          prompt_text: payload.prompt || '',
+          final_prompt: payload.prompt || '',
+          reference_images: (payload.refs && payload.refs.images || []).map(name => ({ id: name, name, data: null })),
+          reference_urls: (payload.refs && payload.refs.urls || []).map(url => ({ id: url, url, title: url })),
+          phases: {
+            define: { status: 'complete', timestamp: payload.timestamp || null },
+            generate: { status: isDone ? 'complete' : isPending ? 'idle' : 'idle', timestamp: isDone ? payload.timestamp : null, candidates: [] },
+            evaluate: { status: isDone ? 'complete' : 'idle', timestamp: null },
+            refine: { status: isRevision ? 'idle' : isDone ? 'complete' : 'idle', timestamp: null },
+            deliver: { status: isDone ? 'complete' : 'idle', timestamp: null }
+          },
+          feedback: payload.feedback || { chips: [], rating_direction: 3, rating_quality: 3, comment: '' },
+          privacy: 'private',
+          created: payload.timestamp || new Date(issue.created_at).getTime(),
+          modified: new Date(issue.updated_at).getTime(),
+          recoveryToken: projectId + '-sync',
+          cle_issue_number: issueNum,
+          cle_id: cleId
+        };
+        projects.push(project);
+        existingMap.set(issueNum, project);
+        if (cleId) existingMap.set(cleId, project);
+        imported++;
+      }
+
+      STORAGE.projects = projects;
+      toast(`✅ 동기화 완료: ${imported}개 가져옴, ${updated}개 업데이트`, 'success');
+      this.filter = 'all';
+      this.route();
+    } catch (err) {
+      console.error('GitHub sync error:', err);
+      toast('❌ 동기화 실패: ' + (err.message || '').slice(0, 40), 'error');
+    }
+  },
+
   renderDashboard() {
     const projects = STORAGE.projects;
     const filtered = this.filter === 'all'
@@ -1631,11 +1739,12 @@ const App = {
         : projects.filter(project => project.phases.deliver.status === 'complete');
     const activeCount = projects.filter(project => project.phases.generate.status === 'generating' || project.phases.generate.status === 'complete').length;
     const doneCount = projects.filter(project => project.phases.deliver.status === 'complete').length;
+    const syncedCount = projects.filter(p => p.cle_issue_number).length;
     return `
       <div class="page">
         <section class="grid-4">
           <article class="metric-card"><strong>${projects.length}</strong><span>전체 프로젝트</span></article>
-          <article class="metric-card"><strong>${activeCount}</strong><span>진행 중</span></article>
+          <article class="metric-card"><strong>${syncedCount}</strong><span>GitHub 연동</span></article>
           <article class="metric-card"><strong>${doneCount}</strong><span>완료</span></article>
           <article class="metric-card"><strong>${Math.max(projects.length - doneCount, 0)}</strong><span>피드백 대기</span></article>
         </section>
@@ -1645,7 +1754,10 @@ const App = {
               <div class="panel-title">📊 내 프로젝트</div>
               <div class="panel-subtitle">카드 기반으로 프로젝트 상태를 빠르게 확인합니다.</div>
             </div>
-            <a href="#/new" class="btn btn-primary btn-sm">+ 새 프로젝트</a>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">
+              <button class="btn btn-primary btn-sm" onclick="App.syncFromGitHub()">🔄 GitHub에서 가져오기</button>
+              <a href="#/new" class="btn btn-ghost btn-sm">+ 새 프로젝트</a>
+            </div>
           </div>
           <div class="filter-bar">
             ${['all','active','complete'].map(filter => `<span class="tag${this.filter === filter ? ' active' : ''}" onclick="App.setFilter('${filter}')">${filter === 'all' ? '전체' : filter === 'active' ? '진행중' : '완료'}</span>`).join('')}
@@ -1656,7 +1768,7 @@ const App = {
               const label = status === 'complete' ? '✅ 완료' : status === 'active' ? '🔄 진행중' : '⏳ 대기';
               return `
                 <article class="project-card" onclick="location.hash='#/project/${project.id}'">
-                  <div class="project-card-title">${project.title}</div>
+                  <div class="project-card-title">${project.title}${project.cle_issue_number ? ` <small style="opacity:.6">#${project.cle_issue_number}</small>` : ''}</div>
                   <div class="project-meta">
                     <span>${new Date(project.modified).toLocaleDateString('ko')}</span>
                     <span class="status-pill ${status}">${label}</span>
