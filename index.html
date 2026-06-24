@@ -865,9 +865,9 @@ const App = {
     else if (hash.startsWith('/project/')) {
       this.currentProjectId = hash.split('/').pop();
       view.innerHTML = this.renderProject();
-      // GitHub 연동 프로젝트면 CLE 결과 자동 로드
+      // GitHub 연동 프로젝트면 CLE 결과 자동 로드 (이미 candidates에 url 있으면 스킵)
       const project = this.getProject();
-      if (project && project.cle_issue_number) {
+      if (project && project.cle_issue_number && !(project.phases.generate.candidates || []).some(c => c.url)) {
         setTimeout(() => this.loadCleResults(project), 300);
       }
     } else if (hash.startsWith('/resume/')) {
@@ -1926,7 +1926,6 @@ const App = {
       const grid = document.getElementById('candidatesGrid');
       if (!grid) return;
 
-      // candidates를 직접 DOM 조작 (saveProject로 route 재호출 안 함)
       const candidates = [];
       let changed = false;
 
@@ -1934,15 +1933,16 @@ const App = {
         if (sub) sub.textContent = `Issue #${issueNum} · ${statusLabel} · ${imageFiles.length}개 결과물`;
         imageFiles.forEach(img => {
           const rawUrl = img.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${img.name}`;
-          const size = (img.size / 1024).toFixed(0) + 'KB';
           candidates.push({ status: 'complete', url: rawUrl, name: img.name });
-          grid.insertAdjacentHTML('beforeend', `
-            <div class="gallery-preview-card" style="cursor:pointer" onclick="window.open('${rawUrl}')">
-              <div style="height:200px;background:url('${rawUrl}') center/cover;border-radius:14px"></div>
-              <div style="padding:8px;font-size:.8rem;font-weight:700">${img.name}</div>
-              <div style="font-size:.7rem;color:var(--text-3)">${size}</div>
-            </div>`);
         });
+        grid.innerHTML = candidates.map(img => {
+          const size = (img.size || 0) > 0 ? `${(img.size / 1024).toFixed(0)}KB` : '';
+          return `<div class="gallery-preview-card" style="cursor:pointer" onclick="window.open('${img.url}')">
+            <div style="height:200px;background:url('${img.url}') center/cover;border-radius:14px"></div>
+            <div style="padding:8px;font-size:.8rem;font-weight:700">${img.name}</div>
+            ${size ? `<div style="font-size:.7rem;color:var(--text-3)">${size}</div>` : ''}
+          </div>`;
+        }).join('');
         changed = true;
       } else {
         if (sub) sub.textContent = `Issue #${issueNum} · ${statusLabel} · 아직 결과물 없음`;
@@ -1952,15 +1952,19 @@ const App = {
       if (refImages.length > 0) {
         refImages.forEach(ref => {
           const rawUrl = ref.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${ref.name}`;
-          const match = project.reference_images.find(ri => ri.name === ref.name.replace(/^ref\d+-/, ''));
-          if (match && !match.data) { match.url = rawUrl; match.data = null; changed = true; }
+          const baseName = ref.name.replace(/^ref\d+-/, '');
+          const match = project.reference_images.find(ri => ri.name === baseName);
+          if (match && !match.data) { match.url = rawUrl; changed = true; }
         });
       }
 
-      // 저장은 필요한 것만, route는 호출하지 않음 (렌더링 깜빡임 방지)
       if (changed) {
         project.phases.generate.candidates = candidates;
-        STORAGE.projects = STORAGE.projects.map(p => p.id === project.id ? project : p);
+        // DOM 조작 대신 candidates에 저장 후 SPA가 알아서 렌더링
+        const projects = STORAGE.projects.map(p => p.id === project.id ? project : p);
+        STORAGE.projects = projects;
+        // 현재 보고 있는 프로젝트면 재렌더링 (이미 candidates에 url이 있으므로 정상 표시)
+        if (this.currentProjectId === project.id) this.route();
       }
     } catch (err) {
       console.warn('CLE results load failed:', err);
