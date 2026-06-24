@@ -1823,7 +1823,12 @@ const App = {
       const connector = index < PHASES.length - 1 ? `<div class="phase-connector${state === 'complete' ? ' done' : ''}"></div>` : '';
       return `<div class="phase-node ${stateClass}"><div class="phase-icon"><span class="${iconClass}">${icon}</span></div><div class="phase-label">${phase.label}</div></div>${connector}`;
     }).join('');
-    const candidates = (project.phases.generate.candidates.length ? project.phases.generate.candidates : [{status:'idle'},{status:'idle'},{status:'idle'},{status:'idle'}]).map((candidate, index) => `<div class="candidate-card c${(index % 4) + 1}"><span>${candidate.status === 'complete' ? '완료' : candidate.status === 'failed' ? '❌ 실패' : '⏳ 대기'}</span></div>`).join('');
+    const candidates = (project.phases.generate.candidates.length ? project.phases.generate.candidates : []).map((candidate, index) => {
+      if (candidate.url) {
+        return `<div class="candidate-card c${(index % 4) + 1}" style="background:url('${candidate.url}') center/cover;cursor:pointer" onclick="window.open('${candidate.url}')" title="${candidate.name || ''}"></div>`;
+      }
+      return `<div class="candidate-card c${(index % 4) + 1}"><span>${candidate.status === 'complete' ? '완료' : candidate.status === 'failed' ? '❌ 실패' : '⏳ 대기'}</span></div>`;
+    }).join('');
     const status = project.phases.generate.status;
     const statusText = status === 'idle' ? '생성 대기 중' : status === 'generating' ? '🔄 생성 중...' : status === 'complete' ? '✅ 생성 완료' : '❌ 생성 실패';
     const promptCopy = (project.final_prompt || project.prompt_text).replace(/`/g, '\\`');
@@ -1843,19 +1848,14 @@ const App = {
           <div class="phase-pipeline">${phaseMarkup}</div>
         </section>
         <div class="status-banner ${status}">${statusText}</div>
-        <section class="panel">
-          <div class="panel-title">🖼️ 후보 결과물</div>
-          <div class="candidate-grid">${candidates}</div>
-        </section>
-        <section class="panel" id="cleResultsSection" style="display:none">
+        <section class="panel" id="candidatesSection">
           <div class="panel-head">
             <div>
-              <div class="panel-title">🤖 CLE 생성 결과</div>
-              <div class="panel-subtitle" id="cleResultsSub"></div>
+              <div class="panel-title">🖼️ 후보 결과물</div>
+              <div class="panel-subtitle" id="candidatesSub">CLE에서 생성된 이미지 후보입니다</div>
             </div>
-            <span class="tag" style="background:rgba(0,180,80,.15);color:#00b450">GitHub</span>
           </div>
-          <div id="cleResultsGrid" class="gallery-preview"></div>
+          <div id="candidatesGrid" class="candidate-grid">${candidates}</div>
         </section>
         <section class="panel stack">
           <div class="panel-title">🎯 피드백</div>
@@ -1909,61 +1909,53 @@ const App = {
       const headers = { 'Accept': 'application/vnd.github+json' };
       if (pat) headers['Authorization'] = `Bearer ${pat}`;
 
-      // 이 프로젝트와 연관된 GitHub Issue 검색
-      const title = project.title.substring(0, 50);
-      const issuesResp = await fetch(`https://api.github.com/repos/${CLE_GALLERY_REPO}/issues?state=all&per_page=50`, { headers });
-      const issues = issuesResp.ok ? await issuesResp.json() : [];
+      const issueNum = project.cle_issue_number;
+      if (!issueNum) return;
 
-      // 타이틀 매칭 또는 본문에 recoveryToken 포함
-      const matched = issues.filter(i => {
-        const matchTitle = i.title.toLowerCase().includes(title.toLowerCase().substring(0, 20));
-        const matchBody = i.body && i.body.includes(project.recoveryToken);
-        return matchTitle || matchBody;
-      });
+      // 직접 해당 Issue fetch (목록 검색 대신)
+      const issueResp = await fetch(`https://api.github.com/repos/${CLE_GALLERY_REPO}/issues/${issueNum}`, { headers });
+      if (!issueResp.ok) return;
+      const issue = await issueResp.json();
 
-      if (matched.length === 0) {
-        // recoveryToken 매칭 없으면 섹션 숨김 유지
-        return;
-      }
-
-      const issue = matched[0];
-      const issueNum = issue.number;
       const issueLabels = issue.labels.map(l => l.name);
       const statusLabel = issueLabels.includes('CLE-DONE') ? '✅ 완료' :
                           issueLabels.includes('CLE-PENDING') ? '⏳ 대기 중' :
                           issueLabels.includes('CLE-FAILED') ? '❌ 실패' :
                           issueLabels.includes('CLE-REVISION') ? '🔄 수정 중' : issue.state;
 
-      // 해당 이슈의 이미지 파일 조회
+      // assets에서 이미지 파일 조회
       const assetsResp = await fetch(`https://api.github.com/repos/${CLE_GALLERY_REPO}/contents/${CLE_GALLERY_ASSET_PATH}`, { headers });
       const assets = assetsResp.ok ? await assetsResp.json() : [];
       const imageFiles = Array.isArray(assets)
         ? assets.filter(a => a.name.startsWith(`cle${issueNum}`) && a.name.match(/\.(png|jpg|jpeg|webp)$/i))
         : [];
 
-      const section = document.getElementById('cleResultsSection');
-      const sub = document.getElementById('cleResultsSub');
-      const grid = document.getElementById('cleResultsGrid');
-
-      if (!section) return;
+      const sub = document.getElementById('candidatesSub');
+      const grid = document.getElementById('candidatesGrid');
+      if (!grid) return;
 
       if (imageFiles.length > 0) {
-        sub.textContent = `Issue #${issueNum} · ${statusLabel} · ${imageFiles.length}개 결과물`;
+        if (sub) sub.textContent = `Issue #${issueNum} · ${statusLabel} · ${imageFiles.length}개 결과물`;
         grid.innerHTML = imageFiles.map(img => {
           const rawUrl = img.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${img.name}`;
           const size = (img.size / 1024).toFixed(0) + 'KB';
           return `
             <div class="gallery-preview-card" style="cursor:pointer" onclick="window.open('${rawUrl}')">
-              <div style="height:180px;background:url('${rawUrl}') center/cover;border-radius:14px"></div>
+              <div style="height:200px;background:url('${rawUrl}') center/cover;border-radius:14px"></div>
               <div style="padding:8px;font-size:.8rem;font-weight:700">${img.name}</div>
               <div style="font-size:.7rem;color:var(--text-3)">${size}</div>
             </div>`;
         }).join('');
-        section.style.display = 'block';
+        // SPA 프로젝트 상태도 동기화
+        project.phases.generate.candidates = imageFiles.map(img => ({
+          status: 'complete',
+          url: img.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${img.name}`,
+          name: img.name
+        }));
+        this.saveProject(project);
       } else {
-        sub.textContent = `Issue #${issueNum} · ${statusLabel} · 결과물 없음`;
-        grid.innerHTML = '<p style="color:var(--text-3);font-size:.85rem">아직 이미지가 생성되지 않았습니다.</p>';
-        section.style.display = 'block';
+        if (sub) sub.textContent = `Issue #${issueNum} · ${statusLabel} · 아직 결과물 없음`;
+        grid.innerHTML = '<p style="color:var(--text-3);font-size:.85rem;padding:12px 0">이미지가 아직 생성되지 않았습니다.</p>';
       }
     } catch (err) {
       console.warn('CLE results load failed:', err);
