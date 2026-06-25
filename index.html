@@ -485,8 +485,8 @@ body[data-theme="light"] .hero-card{background:linear-gradient(160deg,rgba(255,2
 .modal-meta{color:var(--text-2);margin-bottom:18px}
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px 0;border-bottom:1px solid var(--border)}
 .settings-row:last-child{border-bottom:none}
-.settings-label{font-size:.92rem;font-weight:800}
-.settings-value{font-size:.84rem;color:var(--text-3)}
+.settings-label{font-size:.95rem;font-weight:800;color:var(--text)}
+.settings-value{font-size:.88rem;color:var(--text-2)}
 .theme-switch{display:flex;gap:8px;flex-wrap:wrap}
 .theme-switch .btn.active{background:linear-gradient(135deg,var(--accent),#7d95ff);color:#fff}
 .empty-state{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:240px;padding:38px 24px;text-align:center;border:1px dashed rgba(129,140,248,.24);border-radius:24px;background:radial-gradient(circle at top,rgba(129,140,248,.12),transparent 52%),linear-gradient(180deg,rgba(129,140,248,.08),rgba(129,140,248,0));overflow:hidden}
@@ -1646,6 +1646,13 @@ const App = {
         if (p.cle_id) existingMap.set(p.cle_id, p);
       });
 
+      // assets에서 결과 이미지 파일 목록 먼저 조회 (공통)
+      let assetsCache = [];
+      try {
+        const assetsResp = await fetch(`https://api.github.com/repos/${CLE_GALLERY_REPO}/contents/${CLE_GALLERY_ASSET_PATH}`, { headers });
+        if (assetsResp.ok) assetsCache = await assetsResp.json();
+      } catch(e) {}
+
       for (const issue of cleIssues) {
         // Issue body에서 JSON payload 파싱
         let payload = null;
@@ -1663,6 +1670,16 @@ const App = {
         const isRevision = issueLabels.includes('CLE-REVISION');
         const isFailed = issueLabels.includes('CLE-FAILED');
 
+        // 이 이슈에 대한 결과 이미지를 assets에서 미리 찾기
+        const imageFiles = Array.isArray(assetsCache)
+          ? assetsCache.filter(a => a.name.startsWith(`cle${issueNum}`) && a.name.match(/\.(png|jpg|jpeg|webp)$/i))
+          : [];
+
+        const imageCandidates = imageFiles.map(img => {
+          const rawUrl = img.download_url || `https://raw.githubusercontent.com/${CLE_GALLERY_REPO}/${CLE_GALLERY_BRANCH}/${CLE_GALLERY_ASSET_PATH}/${img.name}`;
+          return { status: 'complete', url: rawUrl, name: img.name };
+        });
+
         // 이미 존재하는 프로젝트면 상태만 업데이트
         const existing = existingMap.get(issueNum) || existingMap.get(cleId);
         if (existing) {
@@ -1673,8 +1690,17 @@ const App = {
           if (isDone) {
             existing.phases.generate.status = 'complete';
             existing.phases.deliver.status = 'complete';
+            // 후보 이미지가 없고 GitHub에 결과물이 있으면 채우기
+            if (!existing.phases.generate.candidates.some(c => c.url) && imageCandidates.length > 0) {
+              existing.phases.generate.candidates = imageCandidates;
+            }
           } else if (isPending) {
             existing.phases.generate.status = existing.phases.generate.status === 'complete' ? 'complete' : 'idle';
+          } else if (isFailed) {
+            existing.phases.generate.status = 'failed';
+          } else if (isRevision) {
+            existing.phases.generate.status = 'complete';
+            existing.phases.refine.status = 'idle';
           }
           updated++;
           continue;
@@ -1694,7 +1720,7 @@ const App = {
           reference_urls: (payload.refs && payload.refs.urls || []).map(url => ({ id: url, url, title: url })),
           phases: {
             define: { status: 'complete', timestamp: payload.timestamp || null },
-            generate: { status: isDone ? 'complete' : isPending ? 'idle' : 'idle', timestamp: isDone ? payload.timestamp : null, candidates: [] },
+            generate: { status: isDone ? 'complete' : isPending ? 'pending' : isFailed ? 'failed' : 'idle', timestamp: isDone ? payload.timestamp : null, candidates: imageCandidates },
             evaluate: { status: isDone ? 'complete' : 'idle', timestamp: null },
             refine: { status: isRevision ? 'idle' : isDone ? 'complete' : 'idle', timestamp: null },
             deliver: { status: isDone ? 'complete' : 'idle', timestamp: null }
@@ -1818,7 +1844,8 @@ const App = {
       return `<div class="candidate-card c${(index % 4) + 1}"><span>${candidate.status === 'complete' ? '완료' : candidate.status === 'failed' ? '❌ 실패' : '⏳ 대기'}</span></div>`;
     }).join('');
     const status = project.phases.generate.status;
-    const statusText = status === 'idle' ? '생성 대기 중' : status === 'generating' ? '🔄 생성 중...' : status === 'complete' ? '✅ 생성 완료' : '❌ 생성 실패';
+    const statusText = status === 'idle' ? '생성 대기 중' : status === 'generating' ? '🔄 생성 중...' : status === 'complete' ? '✅ 생성 완료' : status === 'failed' ? '❌ 생성 실패' : status === 'pending' ? '⏳ CLE 처리 대기 중' : status;
+    const statusClass = status === 'pending' ? 'generating' : status;
     const promptCopy = (project.final_prompt || project.prompt_text).replace(/`/g, '\\`');
     return `
       <div class="page">
@@ -1835,7 +1862,7 @@ const App = {
           </div>
           <div class="phase-pipeline">${phaseMarkup}</div>
         </section>
-        <div class="status-banner ${status}">${statusText}</div>
+        <div class="status-banner ${statusClass}">${statusText}</div>
         <section class="panel" id="candidatesSection">
           <div class="panel-head">
             <div>
@@ -1857,28 +1884,19 @@ const App = {
           </div>
           <textarea class="textarea" placeholder="추가 코멘트 (선택)" oninput="App.setComment(this.value)">${project.feedback.comment || ''}</textarea>
         </section>
-        <section class="collapse">
-          <div class="collapse-head" onclick="this.nextElementSibling.classList.toggle('open')"><h4>📋 생성 프롬프트 보기</h4><span>▼</span></div>
-          <div class="collapse-body">
-            <div class="preview-box">${project.final_prompt || project.prompt_text}</div>
-            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(\`${promptCopy}\`); toast('복사 완료!', 'success')">📋 복사</button>
-          </div>
-        </section>
-        <section class="collapse">
-          <div class="collapse-head" onclick="this.nextElementSibling.classList.toggle('open')"><h4>📎 참고 자료</h4><span>▼</span></div>
-          <div class="collapse-body">
-            ${project.reference_images.length || project.reference_urls.length ? `
-              <div class="stack">
-                <div class="ref-grid">${project.reference_images.map(image => image.data ? `<div class="ref-thumb"><img src="${image.data}" alt="${image.name}"></div>` : image.url ? `<div class="ref-thumb"><a href="${image.url}" target="_blank" rel="noreferrer"><img src="${image.url}" alt="${image.name}"></a></div>` : `<div class="ref-chip">📎 ${image.name}</div>`).join('')}</div>
-                <div class="ref-grid">${project.reference_urls.map(url => `<div class="ref-chip">🔗 <a href="${url.url}" target="_blank" rel="noreferrer">${url.title}</a></div>`).join('')}</div>
-              </div>
-            ` : '<p class="empty-copy">참고 자료 없음</p>'}
-          </div>
+        <section class="panel stack">
+          <div class="panel-title">📋 생성 프롬프트</div>
+          <div class="preview-box">${project.final_prompt || project.prompt_text || '<span class="empty-copy">프롬프트 없음</span>'}</div>
+          <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(\`${promptCopy}\`); toast('복사 완료!', 'success')">📋 복사</button>
         </section>
         <section class="panel stack">
-          <div class="panel-title">🔗 복구 URL</div>
-          <div class="preview-box">#/resume/${project.recoveryToken}</div>
-          <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText(location.origin + location.pathname + '#/resume/${project.recoveryToken}'); toast('클립보드에 복사!', 'success')">📋 복사</button>
+          <div class="panel-title">📎 참고 자료</div>
+          ${project.reference_images.length || project.reference_urls.length ? `
+            <div class="stack">
+              <div class="ref-grid">${project.reference_images.map(image => image.data ? `<div class="ref-thumb"><img src="${image.data}" alt="${image.name}"></div>` : image.url ? `<div class="ref-thumb"><a href="${image.url}" target="_blank" rel="noreferrer"><img src="${image.url}" alt="${image.name}"></a></div>` : `<div class="ref-chip">📎 ${image.name}</div>`).join('')}</div>
+              <div class="ref-grid">${project.reference_urls.map(url => `<div class="ref-chip">🔗 <a href="${url.url}" target="_blank" rel="noreferrer">${url.title}</a></div>`).join('')}</div>
+            </div>
+          ` : '<p class="empty-copy">참고 자료 없음</p>'}
         </section>
         <section class="panel stack">
           <div class="panel-title">🔒 공개 설정</div>
@@ -2049,6 +2067,8 @@ const App = {
 
   autoSimulateProject() {
     const project = this.getProject();
+    // GitHub 연동 프로젝트는 자동 시뮬레이션하지 않음
+    if (project && project.cle_issue_number) return;
     if (project && project.phases.define.status === 'idle' && project.phases.generate.status === 'idle') {
       this.simulatePhases(project.id);
     }
