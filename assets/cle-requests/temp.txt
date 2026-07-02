@@ -1,0 +1,1 @@
+PNG File Content - CLE Issue Simulation - This is a larger test file that will pass the validation threshold of 10000 bytes. 
