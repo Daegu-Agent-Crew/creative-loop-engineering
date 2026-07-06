@@ -1,0 +1,20 @@
+{
+  "prompt": "Future cityscape with towering skyscrapers and flying cars. Topics: Futuristic cities, Urban landscape, Technology. Style: Realistic painting. Mood: Bright and energetic. Consider: detailed background.",
+  "topics": [
+    "Futuristic cities",
+    "Urban landscape",
+    "Technology"
+  ],
+  "style": "Realistic painting",
+  "mood": "Bright and energetic",
+  "complexity": "medium",
+  "feedback": [
+    "detailed background"
+  ],
+  "needs_revision": false,
+  "version": 1,
+  "reference_images": [
+    "https://example.com/reference1.png",
+    "https://example.com/reference2.jpg"
+  ]
+}
