@@ -1,0 +1,12 @@
+Use case: photorealistic-natural
+Asset type: test image for project preview
+Primary request: beautiful landscape with mountains
+Scene/backdrop: expansive alpine landscape with layered mountain ranges, a calm valley, and subtle natural detail
+Subject: realistic mountain scenery
+Style/medium: realistic landscape photography
+Composition/framing: wide cinematic composition, balanced horizon, strong depth, no people, no buildings
+Lighting/mood: soft natural daylight, peaceful and serene atmosphere
+Color palette: natural greens, stone grays, soft blue sky
+Materials/textures: crisp rock textures, distant atmospheric haze, natural vegetation
+Constraints: realistic only; peaceful mood; no text; no watermark
+Avoid: fantasy elements, surreal colors, oversaturated look
